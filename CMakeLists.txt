@@ -13,5 +13,5 @@ add_subdirectory(src)
 add_subdirectory(test)
 
 # ターゲットの設定
-set_target_properties(sample PROPERTIES FOLDER library)
+set_target_properties(sfinder PROPERTIES FOLDER library)
 set_target_properties(test PROPERTIES FOLDER executable)
