@@ -5,7 +5,7 @@ set(SRC_PROJECT_NAME sfinder)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-O3 -Wall")
 
-file(GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/test*.cpp ${CMAKE_CURRENT_LIST_DIR}/*.hpp)
+file(GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/*/test*.cpp ${CMAKE_CURRENT_LIST_DIR}/*/*.hpp)
 
 include_directories(${googletest_SOURCE_DIR}/include)
 include_directories(${googlemock_SOURCE_DIR}/include)

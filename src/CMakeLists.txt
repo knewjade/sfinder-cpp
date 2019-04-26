@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.6)
 set(LIBRARY_TYPE SHARED)
 set(PROJECT_NAME sfinder)
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "-O3 -Wall")
 
 project(${PROJECT_NAME})
 

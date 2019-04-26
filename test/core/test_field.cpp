@@ -1,9 +1,7 @@
 #include "gtest/gtest.h"
 #include "core/field.hpp"
 
-namespace {
-    using namespace core;
-
+namespace core {
     class FieldTest : public ::testing::Test {
     };
 

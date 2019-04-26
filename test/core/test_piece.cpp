@@ -2,8 +2,7 @@
 #include "core/types.hpp"
 #include "core/piece.hpp"
 
-namespace {
-    using namespace core;
+namespace core {
     using namespace std::literals::string_literals;
 
     class FactoryTest : public ::testing::Test {

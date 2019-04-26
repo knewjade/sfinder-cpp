@@ -11,7 +11,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_subdirectory(googletest)
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(main)
 
 # ターゲットの設定
 set_target_properties(sfinder PROPERTIES FOLDER library)
 set_target_properties(test PROPERTIES FOLDER executable)
+set_target_properties(main PROPERTIES FOLDER executable)
