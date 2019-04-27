@@ -55,6 +55,7 @@ namespace core {
 
     template<size_t N>
     Piece Piece::create(
+            const PieceType pieceType,
             const std::string &name,
             const std::array<Point, 4> &points,
             const std::array<std::array<Offset, N>, 4> &offsets,
@@ -105,7 +106,7 @@ namespace core {
             uniqueRotate |= 1 << transform.toRotate;
         }
 
-        return Piece(name, std::array<Blocks, 4>{
+        return Piece(pieceType, name, std::array<Blocks, 4>{
                 spawn, right, reverse, left
         }, rightOffsets, leftOffsets, N, transforms, uniqueRotate);
     }
@@ -149,7 +150,7 @@ namespace core {
                 std::array<Offset, 5>{Offset{0, 0}, Offset{-1, 0}, Offset{-1, -1}, Offset{0, 2}, Offset{-1, 2}},
         };
 
-        auto t = Piece::create("T"s, std::array<Point, 4>{
+        auto t = Piece::create(PieceType::T, "T"s, std::array<Point, 4>{
                 Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{0, 1},
         }, other, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -158,7 +159,7 @@ namespace core {
                 Transform{Offset{0, 0}, RotateType::Left},
         });
 
-        auto i = Piece::create("I"s, std::array<Point, 4>{
+        auto i = Piece::create(PieceType::I, "I"s, std::array<Point, 4>{
                 Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{2, 0}
         }, io, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -167,7 +168,7 @@ namespace core {
                 Transform{Offset{0, 0}, RotateType::Left},
         });
 
-        auto l = Piece::create("L"s, std::array<Point, 4>{
+        auto l = Piece::create(PieceType::L, "L"s, std::array<Point, 4>{
                 Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{1, 1}
         }, other, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -176,7 +177,7 @@ namespace core {
                 Transform{Offset{0, 0}, RotateType::Left},
         });
 
-        auto j = Piece::create("J"s, std::array<Point, 4>{
+        auto j = Piece::create(PieceType::J, "J"s, std::array<Point, 4>{
                 Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{-1, 1}
         }, other, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -185,7 +186,7 @@ namespace core {
                 Transform{Offset{0, 0}, RotateType::Left},
         });
 
-        auto s = Piece::create("S"s, std::array<Point, 4>{
+        auto s = Piece::create(PieceType::S, "S"s, std::array<Point, 4>{
                 Point{0, 0}, Point{-1, 0}, Point{0, 1}, Point{1, 1}
         }, other, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -194,7 +195,7 @@ namespace core {
                 Transform{Offset{0, 0}, RotateType::Left},
         });
 
-        auto z = Piece::create("Z"s, std::array<Point, 4>{
+        auto z = Piece::create(PieceType::Z, "Z"s, std::array<Point, 4>{
                 Point{0, 0}, Point{1, 0}, Point{0, 1}, Point{-1, 1}
         }, other, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
@@ -203,7 +204,7 @@ namespace core {
                 Transform{Offset{-1, 0}, RotateType::Right},
         });
 
-        auto o = Piece::create("O"s, std::array<Point, 4>{
+        auto o = Piece::create(PieceType::O, "O"s, std::array<Point, 4>{
                 Point{0, 0}, Point{1, 0}, Point{0, 1}, Point{1, 1}
         }, oo, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},

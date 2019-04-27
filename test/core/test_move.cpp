@@ -4,12 +4,19 @@
 #include "core/move.hpp"
 
 namespace core {
+    using namespace std::literals::string_literals;
+
     class MoveTest : public ::testing::Test {
     };
 
-    TEST_F(MoveTest, block) {
-        using namespace std::literals::string_literals;
+    bool assertMove(std::vector<Move> &moves, const Move &move) {
+        auto result = std::find_if(moves.begin(), moves.end(), [&](Move it) {
+            return move.rotateType == it.rotateType && move.x == it.x && move.y == it.y;
+        });
+        return result != moves.end();
+    }
 
+    TEST_F(MoveTest, case1) {
         auto field = createField(
                 "XXXX____XX"s +
                 "XXXX___XXX"s +
@@ -18,67 +25,53 @@ namespace core {
                 ""
         );
 
-        std::cout << field.toString(5) << std::endl;
-
         auto factory = Factory::create();
-        auto cache = srs::Cache();
-        auto searcher = srs::Searcher(cache);
+        auto searcher = srs::Searcher(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, factory, field, PieceType::T, 4);
-
-            for (const auto &move : moves) {
-                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
-            }
+            searcher.search(moves, field, PieceType::T, 4);
 
             EXPECT_EQ(moves.size(), 7);
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 0}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 4, 1}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 5, 2}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 2}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 6, 3}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1}));
         }
-
-        std::cout << "===========" << std::endl;
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, factory, field, PieceType::S, 4);
-
-            for (const auto &move : moves) {
-                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
-            }
+            searcher.search(moves, field, PieceType::S, 4);
 
             EXPECT_EQ(moves.size(), 3);
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 1}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 2}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1}));
         }
     }
 
-    TEST_F(MoveTest, block2) {
-        using namespace std::literals::string_literals;
-
+    TEST_F(MoveTest, case2) {
         auto field = createField(
                 "XXXXXX__XX"s +
                 "XXXXX__XXX"s +
                 ""
         );
 
-        std::cout << field.toString(3) << std::endl;
-
         auto factory = Factory::create();
-        auto cache = srs::Cache();
-        auto searcher = srs::Searcher(cache);
+        auto searcher = srs::Searcher(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, factory, field, PieceType::S, 2);
-
-            for (const auto &move : moves) {
-                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
-            }
+            searcher.search(moves, field, PieceType::S, 2);
 
             EXPECT_EQ(moves.size(), 1);
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 0}));
         }
     }
 
-    TEST_F(MoveTest, block3) {
-        using namespace std::literals::string_literals;
-
+    TEST_F(MoveTest, case3) {
         auto field = createField(
                 "XXXX_X__XX"s +
                 "XXXX__XXXX"s +
@@ -86,19 +79,12 @@ namespace core {
                 ""
         );
 
-        std::cout << field.toString(4) << std::endl;
-
         auto factory = Factory::create();
-        auto cache = srs::Cache();
-        auto searcher = srs::Searcher(cache);
+        auto searcher = srs::Searcher(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, factory, field, PieceType::S, 3);
-
-            for (const auto &move : moves) {
-                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
-            }
+            searcher.search(moves, field, PieceType::S, 3);
 
             EXPECT_EQ(moves.size(), 0);
         }

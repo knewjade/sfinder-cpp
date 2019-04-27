@@ -57,6 +57,23 @@ namespace core {
         }
     }
 
+    void Field::remove(const Blocks &blocks, int x, int y) {
+        putAtMaskIndex(blocks, x + blocks.minX, y + blocks.minY);
+    }
+
+    void Field::removeAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) {
+        assert(0 <= leftX && leftX < FIELD_WIDTH);
+        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+
+        int index = lowerY / 6;
+        BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
+
+        boards[index] &= ~mask.low;
+        if (index <= 2) {
+            boards[index + 1] &= ~mask.high;
+        }
+    }
+
     bool Field::canPut(const Blocks &blocks, int x, int y) const {
         return canPutAtMaskIndex(blocks, x + blocks.minX, y + blocks.minY);
     }
@@ -88,6 +105,7 @@ namespace core {
     }
 
     bool Field::canReachOnHarddrop(const Blocks &blocks, int x, int y) const {
+        // TODO optimize
         int max = MAX_FIELD_HEIGHT - blocks.minY;
         for (int yIndex = y + 1; yIndex < max; yIndex++)
             if (!canPut(blocks, x, yIndex))
@@ -106,8 +124,9 @@ namespace core {
         return (b3 & a0000000100) >> 2 & b3;
     }
 
-    void
-    Field::deleteLine_(LineKey deleteKeyLow, LineKey deleteKeyMidLow, LineKey deleteKeyMidHigh, LineKey deleteKeyHigh) {
+    void Field::deleteLine_(
+            LineKey deleteKeyLow, LineKey deleteKeyMidLow, LineKey deleteKeyMidHigh, LineKey deleteKeyHigh
+    ) {
         // 下半分
         long newXBoardLow = deleteLine(xBoardLow, deleteKeyLow);
 
@@ -165,6 +184,17 @@ namespace core {
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
 
         return deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3);
+    }
+
+    int Field::clearLineReturnNum() {
+        LineKey deleteKeyLow = getDeleteKey(xBoardLow);
+        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow);
+        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh);
+        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh);
+
+        deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
+
+        return bitCount(deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3));
     }
 
     std::string Field::toString(int height) {

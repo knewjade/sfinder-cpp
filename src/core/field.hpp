@@ -30,6 +30,10 @@ namespace core {
 
         void putAtMaskIndex(const Blocks &blocks, int leftX, int lowerY);
 
+        void remove(const Blocks &blocks, int x, int y);
+
+        void removeAtMaskIndex(const Blocks &blocks, int leftX, int lowerY);
+
         bool canPut(const Blocks &blocks, int x, int y) const;
 
         bool canPutAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) const;
@@ -41,6 +45,8 @@ namespace core {
         bool canReachOnHarddrop(const Blocks &blocks, int x, int startY) const;
 
         void clearLine();
+
+        int clearLineReturnNum();
 
         LineKey clearLineReturnKey();
 

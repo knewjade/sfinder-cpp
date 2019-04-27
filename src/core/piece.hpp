@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 #include <array>
+#include <cassert>
 
 #include "types.hpp"
 
@@ -58,12 +59,14 @@ namespace core {
     public:
         template<size_t N>
         static Piece create(
+                const PieceType pieceType,
                 const std::string &name,
                 const std::array<Point, 4> &points,
                 const std::array<std::array<Offset, N>, 4> &offsets,
                 const std::array<Transform, 4> &transforms
         );
 
+        const PieceType pieceType;
         const std::string name;
         const std::array<Blocks, 4> blocks;
         const std::array<Offset, 20> rightOffsets;
@@ -74,6 +77,7 @@ namespace core {
 
     private:
         Piece(
+                const PieceType pieceType,
                 const std::string name,
                 const std::array<Blocks, 4> blocks,
                 const std::array<Offset, 20> rightOffsets,
@@ -81,7 +85,7 @@ namespace core {
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
                 const int32_t uniqueRotate
-        ) : name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets), offsetsSize(offsetsSize),
+        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets), offsetsSize(offsetsSize),
             transforms(transforms), uniqueRotateBit(uniqueRotate) {
         };
     };
