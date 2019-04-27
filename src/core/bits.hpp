@@ -18,7 +18,7 @@ namespace core {
 
     Bitboard insertWhiteLine(Bitboard x, LineKey mask);
 
-    int bitCount(Bitboard b);
+    int bitCount(uint64_t b);
 }
 
 #endif //CORE_BITS_HPP

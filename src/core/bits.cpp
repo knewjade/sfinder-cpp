@@ -424,7 +424,7 @@ namespace core {
         return insertWhiteLine_(x, key);
     }
 
-    int bitCount(Bitboard b) {
+    int bitCount(uint64_t b) {
         b -= (b >> 1) & 0x5555555555555555ULL;
         b = ((b >> 2) & 0x3333333333333333ULL) + (b & 0x3333333333333333ULL);
         b = ((b >> 4) + b) & 0x0F0F0F0F0F0F0F0FULL;

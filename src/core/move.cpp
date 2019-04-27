@@ -1,3 +1,4 @@
+#include <iostream>
 #include "move.hpp"
 #include "srs.hpp"
 
@@ -65,7 +66,7 @@ namespace core {
                                 RotateType newRotate = transform.toRotate;
                                 int newX = x + transform.offset.x;
                                 int newY = y + transform.offset.y;
-                                if (cache.isFound(newX, newY, newRotate)) {
+                                if (!cache.isFound(newX, newY, newRotate)) {
                                     cache.found(newX, newY, newRotate);
                                     moves.push_back(Move{newRotate, newX, newY});
                                 }
@@ -91,12 +92,18 @@ namespace core {
             int width = FIELD_WIDTH - fromBlocks.width;
             for (int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
-                int fromX = toLeftX - offset.x;
-                int fromY = toLowerY - offset.y;
-                if (0 <= fromX && fromX <= width && 0 <= fromY && field.canPutAtMaskIndex(toBlocks, fromX, fromY)) {
-                    int index = srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
+                int fromLeftX = toLeftX - offset.x;
+                int fromLowerY = toLowerY - offset.y;
+                if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY && field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                    int fromX = toX - offset.x;
+                    int fromY = toY - offset.y;
+                    int index = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                    if (index == -1) {
+                        continue;
+                    }
+
                     auto &kicks = piece.leftOffsets[index];
-                    if (index != -1 && offset.x == kicks.x && offset.y == kicks.y) {
+                    if (offset.x == kicks.x && offset.y == kicks.y) {
                         if (check(field, piece, fromBlocks, fromX, fromY, From::None)) {
                             return true;
                         }
@@ -107,8 +114,7 @@ namespace core {
             return false;
         }
 
-        bool
-        Searcher::checkRightRotation(const Field &field, const Piece &piece, const Blocks &toBlocks, int toX, int toY) {
+        bool Searcher::checkRightRotation(const Field &field, const Piece &piece, const Blocks &toBlocks, int toX, int toY) {
             // 右回転前の方向
             RotateType fromRotate = static_cast<RotateType>((toBlocks.rotateType + 3) % 4);
             auto &fromBlocks = piece.blocks[fromRotate];
@@ -121,12 +127,18 @@ namespace core {
             int width = FIELD_WIDTH - fromBlocks.width;
             for (int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
-                int fromX = toLeftX - offset.x;
-                int fromY = toLowerY - offset.y;
-                if (0 <= fromX && fromX <= width && 0 <= fromY && field.canPutAtMaskIndex(toBlocks, fromX, fromY)) {
+                int fromLeftX = toLeftX - offset.x;
+                int fromLowerY = toLowerY - offset.y;
+                if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY && field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                    int fromX = toX - offset.x;
+                    int fromY = toY - offset.y;
                     int index = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                    if (index == -1) {
+                        continue;
+                    }
+
                     auto &kicks = piece.rightOffsets[index];
-                    if (index != -1 && offset.x == kicks.x && offset.y == kicks.y) {
+                    if (offset.x == kicks.x && offset.y == kicks.y) {
                         if (check(field, piece, fromBlocks, fromX, fromY, From::None)) {
                             return true;
                         }
@@ -211,7 +223,7 @@ namespace core {
             uint64_t mask = getXMask(x, y - 6 * index);
 
             int boardIndex = index + 4 * rotateType;
-            return (visitedBoard[boardIndex] & mask) == 0;
+            return (visitedBoard[boardIndex] & mask) != 0;
         }
 
         void Cache::found(int x, int y, RotateType rotateType) {
@@ -233,7 +245,7 @@ namespace core {
             uint64_t mask = getXMask(x, y - 6 * index);
 
             int boardIndex = index + 4 * rotateType;
-            return (foundBoard[boardIndex] & mask) == 0;
+            return (foundBoard[boardIndex] & mask) != 0;
         }
 
         void Cache::clear() {
