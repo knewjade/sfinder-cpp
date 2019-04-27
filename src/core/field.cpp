@@ -1,8 +1,9 @@
+#include <iostream>
+
 #include "field.hpp"
 
 namespace core {
     namespace {
-        const int FIELD_WIDTH = 10;
         const int MAX_FIELD_HEIGHT = 24;
         const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
@@ -10,7 +11,7 @@ namespace core {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
-            return static_cast<uint64_t >(1) << (x + y * FIELD_WIDTH);
+            return 1LLU << (x + y * FIELD_WIDTH);
         }
     }
 
@@ -74,8 +75,16 @@ namespace core {
         return (boards[index] & mask.low) == 0;
     }
 
-    bool Field::isOnGround(const Blocks &blocks, int x, int y) {
+    bool Field::isOnGround(const Blocks &blocks, int x, int y) const  {
         return y <= -blocks.minY || !canPut(blocks, x, y - 1);
+    }
+
+    int Field::getYOnHarddrop(const Blocks &blocks, int x, int startY) const {
+        int min = -blocks.minY;
+        for (int y = startY - 1; min <= y; y--)
+            if (!canPut(blocks, x, y))
+                return y + 1;
+        return min;
     }
 
     LineKey getDeleteKey(Bitboard board) {
@@ -151,9 +160,7 @@ namespace core {
     }
 
     std::string Field::toString(int height) {
-        using namespace std::literals::string_literals;
-
-        auto str = ""s;
+        auto str = std::string("");
         for (int y = height - 1; 0 <= y; --y) {
             for (int x = 0; x < 10; ++x) {
                 if (isEmpty(x, y)) {
@@ -167,47 +174,21 @@ namespace core {
         return str;
     }
 
-    int rotateRight(
-            const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
-    ) {
-        auto &toBlocks = piece.blocks[toRotate];
+    Field createField(std::string marks) {
+        assert(marks.length() < 240);
+        assert(marks.length() % 10 == 0);
 
-        int toLeftX = fromX + toBlocks.minX;
-        int toLowerY = fromY + toBlocks.minY;
-
-        auto head = fromRotate * 5;
-        int width = FIELD_WIDTH - toBlocks.width;
-        for (int index = head; index < head + piece.offsetsSize; ++index) {
-            auto &offset = piece.rightOffsets[index];
-            int x = toLeftX + offset.x;
-            int y = toLowerY + offset.y;
-            if (0 <= x && x <= width && 0 <= y && field.canPutAtMaskIndex(toBlocks, x, y)) {
-                return index;
+        int maxY = marks.length() / 10;
+        Field field = Field();
+        for (int y = 0; y < maxY; y++) {
+            for (int x = 0; x < 10; x++) {
+                char mark = marks.at((maxY - y - 1) * 10 + x);
+                if (mark != ' ' && mark != '_') {
+                    field.setBlock(x, y);
+                }
             }
         }
 
-        return -1;
-    }
-
-    int rotateLeft(
-            const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
-    ) {
-        auto &toBlocks = piece.blocks[toRotate];
-
-        int toLeftX = fromX + toBlocks.minX;
-        int toLowerY = fromY + toBlocks.minY;
-
-        auto head = fromRotate * 5;
-        int width = FIELD_WIDTH - toBlocks.width;
-        for (int index = head; index < head + piece.offsetsSize; ++index) {
-            auto &offset = piece.leftOffsets[index];
-            int x = toLeftX + offset.x;
-            int y = toLowerY + offset.y;
-            if (0 <= x && x <= width && 0 <= y && field.canPutAtMaskIndex(toBlocks, x, y)) {
-                return index;
-            }
-        }
-
-        return -1;
+        return field;
     }
 }

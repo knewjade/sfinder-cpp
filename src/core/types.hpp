@@ -1,6 +1,8 @@
 #ifndef CORE_TYPES_HPP
 #define CORE_TYPES_HPP
 
+#include <cstdint>
+
 namespace core {
     using Bitboard = uint64_t;
     using LineKey = uint64_t;
@@ -21,6 +23,17 @@ namespace core {
         Reverse = 2,
         Left = 3,
     };
+
+    const auto dummyRotate = RotateType::Spawn;
+    const RotateType rotateBitToVal[16] {dummyRotate,
+                                        RotateType::Spawn,
+                                        RotateType::Right, dummyRotate,
+                                        RotateType::Reverse, dummyRotate, dummyRotate, dummyRotate,
+                                        RotateType::Left,
+    };
+
+
+    const int FIELD_WIDTH = 10;
 }
 
 #endif //CORE_TYPES_HPP

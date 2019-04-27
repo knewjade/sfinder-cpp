@@ -6,7 +6,10 @@ namespace core {
     };
 
     TEST_F(FieldTest, block) {
-        auto field = Field(1, 0, 0, 0);
+        auto field = createField(
+                std::string("X_________")
+        );
+
         EXPECT_EQ(field.isEmpty(0, 0), false);
         EXPECT_EQ(field.isEmpty(1, 0), true);
 

@@ -2,7 +2,6 @@
 
 namespace core {
     namespace {
-        const int FIELD_WIDTH = 10;
         const int MAX_FIELD_HEIGHT = 24;
         const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
@@ -37,7 +36,7 @@ namespace core {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
-            return static_cast<uint64_t >(1) << (x + y * FIELD_WIDTH);
+            return 1LLU << (x + y * FIELD_WIDTH);
         }
     }
 
@@ -100,10 +99,10 @@ namespace core {
             }
         }
 
-        u_int32_t uniqueRotate = 0;
+        int32_t uniqueRotate = 0;
         for (int rotate = 0; rotate < 4; ++rotate) {
             const auto &transform = transforms[rotate];
-            uniqueRotate |= static_cast<u_int32_t>(1) << transform.toRotate;
+            uniqueRotate |= 1 << transform.toRotate;
         }
 
         return Piece(name, std::array<Blocks, 4>{
@@ -242,11 +241,11 @@ namespace core {
         );
     }
 
-    Piece Factory::get(PieceType piece) const {
+    const Piece& Factory::get(PieceType piece) const {
         return pieces[piece];
     }
 
-    Blocks Factory::get(PieceType piece, RotateType rotate) const {
+    const Blocks& Factory::get(PieceType piece, RotateType rotate) const {
         int index = piece * 4 + rotate;
         assert(0 <= index && index < blocks.size());
         return blocks[index];

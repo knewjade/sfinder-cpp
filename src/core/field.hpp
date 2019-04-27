@@ -2,7 +2,6 @@
 #define CORE_FIELD_HPP
 
 #include <cassert>
-#include <cstdint>
 
 #include "types.hpp"
 #include "bits.hpp"
@@ -21,9 +20,6 @@ namespace core {
 
         Field() : xBoardLow(0), xBoardMidLow(0), xBoardMidHigh(0), xBoardHigh(0) {};
 
-        Field(uint64_t low, uint64_t midLow, uint64_t midHigh, uint64_t high)
-                : xBoardLow(low), xBoardMidLow(midLow), xBoardMidHigh(midHigh), xBoardHigh(high) {};
-
         void setBlock(int x, int y);
 
         void removeBlock(int x, int y);
@@ -38,7 +34,9 @@ namespace core {
 
         bool canPutAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) const;
 
-        bool isOnGround(const Blocks &blocks, int x, int y);
+        bool isOnGround(const Blocks &blocks, int x, int y) const;
+
+        int getYOnHarddrop(const Blocks &blocks, int x, int startY) const;
 
         void clearLine();
 
@@ -50,13 +48,7 @@ namespace core {
         void deleteLine_(LineKey low, LineKey midLow, LineKey midHigh, LineKey high);
     };
 
-    int rotateRight(
-            const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
-    );
-
-    int rotateLeft(
-            const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
-    );
+    Field createField(std::string marks);
 }
 
 #endif //CORE_FIELD_HPP

@@ -69,7 +69,7 @@ namespace core {
         const std::array<Offset, 20> leftOffsets;
         const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
-        const u_int32_t uniqueRotate;
+        const int32_t uniqueRotateBit;
 
     private:
         Piece(
@@ -79,9 +79,9 @@ namespace core {
                 const std::array<Offset, 20> leftOffsets,
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
-                const u_int32_t uniqueRotate
+                const int32_t uniqueRotate
         ) : name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets), offsetsSize(offsetsSize),
-            transforms(transforms), uniqueRotate(uniqueRotate) {
+            transforms(transforms), uniqueRotateBit(uniqueRotate) {
         };
     };
 
@@ -89,9 +89,9 @@ namespace core {
     public:
         static Factory create();
 
-        Piece get(PieceType piece) const;
+        const Piece &get(PieceType piece) const;
 
-        Blocks get(PieceType piece, RotateType rotate) const;
+        const Blocks &get(PieceType piece, RotateType rotate) const;
 
     private:
         Factory(const std::array<Piece, 7> pieces, const std::array<Blocks, 28> blocks)

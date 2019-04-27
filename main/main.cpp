@@ -2,6 +2,7 @@
 #include <string>
 
 #include "core/field.hpp"
+#include "core/srs.hpp"
 
 int main() {
     using namespace std::literals::string_literals;
@@ -24,7 +25,7 @@ int main() {
         int fromX = 2;
         int fromY = 2;
 
-        int index = rotateLeft(field, piece, rotateType, nextRotate, fromX, fromY);
+        int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
 
         auto offset = piece.leftOffsets[index];
         field.put(piece.blocks[nextRotate], fromX + offset.x, fromY + offset.y);
@@ -50,7 +51,7 @@ int main() {
         int fromX = 0;
         int fromY = 4;
 
-        int index = rotateLeft(field, piece, rotateType, nextRotate, fromX, fromY);
+        int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
 
         auto offset = piece.leftOffsets[index];
         int nextX = offset.x;
@@ -63,7 +64,7 @@ int main() {
             int fromX = nextX;
             int fromY = nextY;
 
-            int index = rotateLeft(field, piece, rotateType, nextRotate, fromX, fromY);
+            int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
 
             auto offset = piece.leftOffsets[index];
             field.put(piece.blocks[nextRotate], fromX + offset.x, fromY + offset.y);
