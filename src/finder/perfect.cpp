@@ -1,6 +1,24 @@
 #include "perfect.hpp"
 
 namespace finder {
+    namespace {
+        bool validate(const core::Field &field, int maxLine) {
+            int sum = maxLine - field.getBlockOnX(0, maxLine);
+            for (int x = 1; x < core::FIELD_WIDTH; x++) {
+                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
+                if (field.isWallBetween(x, maxLine)) {
+                    if (sum % 4 != 0)
+                        return false;
+                    sum = emptyCountInColumn;
+                } else {
+                    sum += emptyCountInColumn;
+                }
+            }
+
+            return sum % 4 == 0;
+        }
+    }
+
     template<>
     bool PerfectFinder<core::srs::MoveGenerator>::search(
             Configure &configure,
@@ -38,6 +56,10 @@ namespace finder {
                     continue;
                 }
 
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
                 Candidate candidate = Candidate{freeze, currentIndex + 1, holdIndex, nextLeftLine, nextDepth};
                 if (search(configure, candidate)) {
                     return true;
@@ -71,6 +93,10 @@ namespace finder {
                         continue;
                     }
 
+                    if (!validate(freeze, nextLeftLine)) {
+                        continue;
+                    }
+
                     Candidate candidate = Candidate{freeze, currentIndex + 1, currentIndex, nextLeftLine, nextDepth};
                     if (search(configure, candidate)) {
                         return true;
@@ -101,6 +127,10 @@ namespace finder {
 
                     auto nextDepth = candidate.depth + 1;
                     if (maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(freeze, nextLeftLine)) {
                         continue;
                     }
 

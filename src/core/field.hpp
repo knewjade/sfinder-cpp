@@ -50,6 +50,10 @@ namespace core {
 
         LineKey clearLineReturnKey();
 
+        int getBlockOnX(int x, int maxY) const;
+
+        bool isWallBetween(int x, int maxY) const;
+
         std::string toString(int height);
 
     private:

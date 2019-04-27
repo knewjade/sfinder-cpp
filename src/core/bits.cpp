@@ -428,6 +428,27 @@ namespace core {
         return insertWhiteLine_(x, key);
     }
 
+    const Bitboard kColumnOneLineBelowY[]{
+            0ULL, 0x1ULL, 0x401ULL, 0x100401ULL, 0x40100401ULL, 0x10040100401ULL, 0x4010040100401ULL
+    };
+
+    Bitboard getColumnOneLineBelowY(int maxY) {
+        assert(0 <= maxY && maxY <= 6);
+        return kColumnOneLineBelowY[maxY];
+    }
+
+    // x列とその左の列の間が壁（隙間がない）とき true を返却。1 <= xであること
+    bool isWallBetweenLeft(int x, int maxY, Bitboard board) {
+        assert(1 <= x && x < 10);
+
+        Bitboard maskHigh = getColumnOneLineBelowY(maxY);
+        Bitboard reverseXBoardHigh = ~board;
+        Bitboard columnHigh = maskHigh << x;
+        Bitboard rightHigh = reverseXBoardHigh & columnHigh;
+        Bitboard leftHigh = reverseXBoardHigh & (columnHigh >> 1);
+        return ((leftHigh << 1) & rightHigh) == 0L;
+    }
+
     int bitCount(uint64_t b) {
         b -= (b >> 1) & 0x5555555555555555ULL;
         b = ((b >> 2) & 0x3333333333333333ULL) + (b & 0x3333333333333333ULL);

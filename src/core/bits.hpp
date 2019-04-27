@@ -18,6 +18,10 @@ namespace core {
 
     Bitboard insertWhiteLine(Bitboard x, LineKey mask);
 
+    Bitboard getColumnOneLineBelowY(int maxY);
+
+    bool isWallBetweenLeft(int x, int maxY, Bitboard board);
+
     int bitCount(uint64_t b);
 }
 

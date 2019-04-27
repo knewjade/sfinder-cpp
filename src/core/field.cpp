@@ -186,6 +186,87 @@ namespace core {
         return deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3);
     }
 
+    int Field::getBlockOnX(int x, int maxY) const {
+        assert(0 <= maxY && maxY < MAX_FIELD_HEIGHT);
+
+        if (maxY < 12) {
+            if (maxY < 6) {
+                long mask = getColumnOneLineBelowY(maxY) << x;
+                return bitCount(xBoardLow & mask);
+            } else {
+                long fullMask = getColumnOneLineBelowY(6) << x;
+                long mask = getColumnOneLineBelowY(maxY - 6) << x;
+                return bitCount(xBoardLow & fullMask)
+                       + bitCount(xBoardMidLow & mask);
+            }
+        } else {
+            if (maxY < 18) {
+                long fullMask = getColumnOneLineBelowY(6) << x;
+                long mask = getColumnOneLineBelowY(maxY - 12) << x;
+                return bitCount(xBoardLow & fullMask)
+                       + bitCount(xBoardMidLow & fullMask) +
+                       bitCount(xBoardMidHigh & mask);
+            } else {
+                long fullMask = getColumnOneLineBelowY(6) << x;
+                long mask = getColumnOneLineBelowY(maxY - 18) << x;
+                return bitCount(xBoardLow & fullMask)
+                       + bitCount(xBoardMidLow & fullMask)
+                       + bitCount(xBoardMidHigh & fullMask)
+                       + bitCount(xBoardHigh & mask);
+            }
+        }
+    }
+
+    bool Field::isWallBetween(int x, int maxY) const {
+        assert(0 <= maxY && maxY < MAX_FIELD_HEIGHT);
+
+        if (maxY == 0) {
+            return true;
+        }
+
+        if (maxY < 12) {
+            if (maxY < 6) {
+                // Lowのチェック
+                return isWallBetweenLeft(x, maxY, xBoardLow);
+            } else {
+                // Lowのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                    return false;
+
+                // MidLowのチェック
+                return isWallBetweenLeft(x, maxY - 6, xBoardMidLow);
+            }
+        } else {
+            if (maxY < 18) {
+                // Lowのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                    return false;
+
+                // MidLowのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardMidLow))
+                    return false;
+
+                // MidHighのチェック
+                return isWallBetweenLeft(x, maxY - 12, xBoardMidHigh);
+            } else {
+                // Lowのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                    return false;
+
+                // MidLowのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardMidLow))
+                    return false;
+
+                // MidHighのチェック
+                if (!isWallBetweenLeft(x, 6, xBoardMidHigh))
+                    return false;
+
+                // Highのチェック
+                return isWallBetweenLeft(x, maxY - 18, xBoardHigh);
+            }
+        }
+    }
+
     int Field::clearLineReturnNum() {
         LineKey deleteKeyLow = getDeleteKey(xBoardLow);
         LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow);

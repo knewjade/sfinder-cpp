@@ -3,6 +3,7 @@
 
 #include "../core/piece.hpp"
 #include "../core/moves.hpp"
+#include "../core/types.hpp"
 
 namespace finder {
     struct Candidate {

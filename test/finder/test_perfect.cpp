@@ -165,6 +165,12 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::J, core::PieceType::Z, core::PieceType::T};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_TRUE(result);
+        }
+
+        {
+            auto pieces = std::vector{core::PieceType::S, core::PieceType::O, core::PieceType::L, core::PieceType::T};
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
             EXPECT_FALSE(result);
         }
     }
@@ -215,7 +221,7 @@ namespace finder {
         }
     }
 
-    TEST_F(PerfectTest, measure) {
+    TEST_F(PerfectTest, measure1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
@@ -244,7 +250,6 @@ namespace finder {
 
             auto end = std::chrono::system_clock::now();
 
-            // 経過時間をミリ秒単位で表示
             auto diff = end - start;
             sum += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
 
@@ -252,5 +257,43 @@ namespace finder {
         }
 
         std::cout << "elapsed time = " << (sum / 100.0) << " msec." << std::endl;
+    }
+
+    TEST_F(PerfectTest, measure2) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        auto field = core::createField(
+                "XXXXX_____"s +
+                "XXXXX_____"s +
+                "XXXXX____X"s +
+                "XXXXXXX__X"s +
+                "XXXXXX___X"s +
+                "XXXXXXX_XX"s +
+                ""
+        );
+        auto maxDepth = 5;
+        auto maxLine = 6;
+
+        long long int sum = 0;
+        for (int count = 0; count < 10; ++count) {
+            auto start = std::chrono::system_clock::now();
+
+            auto pieces = std::vector{
+                    core::PieceType::I, core::PieceType::T, core::PieceType::Z,
+                    core::PieceType::O, core::PieceType::L
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+
+            auto end = std::chrono::system_clock::now();
+
+            auto diff = end - start;
+            sum += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
+
+            EXPECT_TRUE(result);
+        }
+
+        std::cout << "elapsed time = " << (sum / 10.0) << " msec." << std::endl;
     }
 }
