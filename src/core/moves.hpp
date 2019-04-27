@@ -34,9 +34,9 @@ namespace core {
     };
 
     namespace harddrop {
-        class Searcher {
+        class MoveGenerator {
         public:
-            Searcher(const Factory &factory) : factory(factory) {
+            MoveGenerator(const Factory &factory) : factory(factory) {
             }
 
             void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);
@@ -58,9 +58,9 @@ namespace core {
             const Piece &piece;
         };
 
-        class Searcher {
+        class MoveGenerator {
         public:
-            Searcher(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
+            MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
             void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);

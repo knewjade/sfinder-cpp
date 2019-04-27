@@ -1,12 +1,12 @@
 #include "gtest/gtest.h"
 
 #include "core/field.hpp"
-#include "core/move.hpp"
+#include "core/moves.hpp"
 
 namespace core {
     using namespace std::literals::string_literals;
 
-    class MoveTest : public ::testing::Test {
+    class MovesTest : public ::testing::Test {
     };
 
     bool assertMove(std::vector<Move> &moves, const Move &move) {
@@ -16,7 +16,7 @@ namespace core {
         return result != moves.end();
     }
 
-    TEST_F(MoveTest, case1) {
+    TEST_F(MovesTest, case1) {
         auto field = createField(
                 "XXXX____XX"s +
                 "XXXX___XXX"s +
@@ -26,11 +26,11 @@ namespace core {
         );
 
         auto factory = Factory::create();
-        auto searcher = srs::Searcher(factory);
+        auto generator = srs::MoveGenerator(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, field, PieceType::T, 4);
+            generator.search(moves, field, PieceType::T, 4);
 
             EXPECT_EQ(moves.size(), 7);
             EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 0}));
@@ -43,7 +43,7 @@ namespace core {
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, field, PieceType::S, 4);
+            generator.search(moves, field, PieceType::S, 4);
 
             EXPECT_EQ(moves.size(), 3);
             EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 1}));
@@ -52,7 +52,7 @@ namespace core {
         }
     }
 
-    TEST_F(MoveTest, case2) {
+    TEST_F(MovesTest, case2) {
         auto field = createField(
                 "XXXXXX__XX"s +
                 "XXXXX__XXX"s +
@@ -60,18 +60,18 @@ namespace core {
         );
 
         auto factory = Factory::create();
-        auto searcher = srs::Searcher(factory);
+        auto generator = srs::MoveGenerator(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, field, PieceType::S, 2);
+            generator.search(moves, field, PieceType::S, 2);
 
             EXPECT_EQ(moves.size(), 1);
             EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 0}));
         }
     }
 
-    TEST_F(MoveTest, case3) {
+    TEST_F(MovesTest, case3) {
         auto field = createField(
                 "XXXX_X__XX"s +
                 "XXXX__XXXX"s +
@@ -80,11 +80,11 @@ namespace core {
         );
 
         auto factory = Factory::create();
-        auto searcher = srs::Searcher(factory);
+        auto generator = srs::MoveGenerator(factory);
 
         {
             auto moves = std::vector<Move>();
-            searcher.search(moves, field, PieceType::S, 3);
+            generator.search(moves, field, PieceType::S, 3);
 
             EXPECT_EQ(moves.size(), 0);
         }

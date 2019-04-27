@@ -1,4 +1,4 @@
-#include "move.hpp"
+#include "moves.hpp"
 
 namespace core {
     namespace {
@@ -72,7 +72,7 @@ namespace core {
     }
 
     namespace harddrop {
-        void Searcher::search(
+        void MoveGenerator::search(
                 std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight
         ) {
             auto &piece = factory.get(pieceType);
@@ -101,7 +101,7 @@ namespace core {
     }
 
     namespace srs {
-        void Searcher::search(
+        void MoveGenerator::search(
                 std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight
         ) {
             appearY = validHeight;
@@ -135,8 +135,7 @@ namespace core {
             }
         }
 
-        bool
-        Searcher::checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+        bool MoveGenerator::checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
@@ -175,8 +174,7 @@ namespace core {
             return false;
         }
 
-        bool
-        Searcher::checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+        bool MoveGenerator::checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
@@ -215,7 +213,7 @@ namespace core {
             return false;
         }
 
-        bool Searcher::check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
+        bool MoveGenerator::check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
             // 一番上までたどり着いたとき
             if (appearY <= y)
                 return true;

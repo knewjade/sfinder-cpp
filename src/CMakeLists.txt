@@ -7,7 +7,7 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall")
 
 project(${PROJECT_NAME})
 
-file(GLOB SRC *.cpp *.hpp core/*.cpp core/*.hpp)
+file(GLOB SRC *.cpp *.hpp core/*.cpp core/*.hpp finder/*.cpp finder/*.hpp)
 
 add_definitions(-D${PROJECT_NAME}_EXPORTS)
 
