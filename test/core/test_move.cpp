@@ -20,14 +20,32 @@ namespace core {
 
         std::cout << field.toString(5) << std::endl;
 
-        auto moves = std::vector<Move>();
         auto factory = Factory::create();
-        harddrop::search(moves, factory, field, PieceType::T, 4);
+        auto cache = srs::Cache();
+        auto searcher = srs::Searcher(cache);
 
-        for (const auto &move : moves) {
-            std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
+        {
+            auto moves = std::vector<Move>();
+            searcher.search(moves, factory, field, PieceType::T, 4);
+
+            for (const auto &move : moves) {
+                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
+            }
+
+            EXPECT_EQ(moves.size(), 7);
         }
 
-//        EXPECT_EQ(field.isEmpty(0, 0), false);
+        std::cout << "===========" << std::endl;
+
+        {
+            auto moves = std::vector<Move>();
+            searcher.search(moves, factory, field, PieceType::S, 4);
+
+            for (const auto &move : moves) {
+                std::cout << move.rotateType << "," << move.x << "," << move.y << std::endl;
+            }
+
+            EXPECT_EQ(moves.size(), 3);
+        }
     }
 }

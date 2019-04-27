@@ -40,7 +40,7 @@ namespace core {
         }
     }
 
-    Blocks Blocks::create(const std::array<Point, 4> &points) {
+    Blocks Blocks::create(const RotateType rotateType, const std::array<Point, 4> &points) {
         MinMax minmaxX = std::minmax({points[0].x, points[1].x, points[2].x, points[3].x});
         MinMax minmaxY = std::minmax({points[0].y, points[1].y, points[2].y, points[3].y});
 
@@ -50,7 +50,7 @@ namespace core {
             mask |= getXMask(point.x - minmaxX.first, point.y - minmaxY.first);
         }
 
-        return Blocks(points, mask, minmaxX, minmaxY);
+        return Blocks(rotateType, points, mask, minmaxX, minmaxY);
     }
 
     template<size_t N>
@@ -60,10 +60,10 @@ namespace core {
             const std::array<std::array<Offset, N>, 4> &offsets,
             const std::array<Transform, 4> &transforms
     ) {
-        const Blocks &spawn = Blocks::create(points);
-        const Blocks &right = Blocks::create(rotateRight_(points));
-        const Blocks &reverse = Blocks::create(rotateReverse_(points));
-        const Blocks &left = Blocks::create(rotateLeft_(points));
+        const Blocks &spawn = Blocks::create(RotateType::Spawn, points);
+        const Blocks &right = Blocks::create(RotateType::Right, rotateRight_(points));
+        const Blocks &reverse = Blocks::create(RotateType::Reverse, rotateReverse_(points));
+        const Blocks &left = Blocks::create(RotateType::Left, rotateLeft_(points));
 
         std::array<Offset, 20> rightOffsets{};
         for (int rotate = 0; rotate < 4; ++rotate) {
@@ -241,11 +241,11 @@ namespace core {
         );
     }
 
-    const Piece& Factory::get(PieceType piece) const {
+    const Piece &Factory::get(PieceType piece) const {
         return pieces[piece];
     }
 
-    const Blocks& Factory::get(PieceType piece, RotateType rotate) const {
+    const Blocks &Factory::get(PieceType piece, RotateType rotate) const {
         int index = piece * 4 + rotate;
         assert(0 <= index && index < blocks.size());
         return blocks[index];

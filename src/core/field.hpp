@@ -38,6 +38,8 @@ namespace core {
 
         int getYOnHarddrop(const Blocks &blocks, int x, int startY) const;
 
+        bool canReachOnHarddrop(const Blocks &blocks, int x, int startY) const;
+
         void clearLine();
 
         LineKey clearLineReturnKey();

@@ -75,7 +75,7 @@ namespace core {
         return (boards[index] & mask.low) == 0;
     }
 
-    bool Field::isOnGround(const Blocks &blocks, int x, int y) const  {
+    bool Field::isOnGround(const Blocks &blocks, int x, int y) const {
         return y <= -blocks.minY || !canPut(blocks, x, y - 1);
     }
 
@@ -85,6 +85,14 @@ namespace core {
             if (!canPut(blocks, x, y))
                 return y + 1;
         return min;
+    }
+
+    bool Field::canReachOnHarddrop(const Blocks &blocks, int x, int y) const {
+        int max = MAX_FIELD_HEIGHT - blocks.minY;
+        for (int yIndex = y + 1; yIndex < max; yIndex++)
+            if (!canPut(blocks, x, yIndex))
+                return false;
+        return true;
     }
 
     LineKey getDeleteKey(Bitboard board) {

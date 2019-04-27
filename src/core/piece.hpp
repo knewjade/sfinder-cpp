@@ -32,8 +32,9 @@ namespace core {
 
     class Blocks {
     public:
-        static Blocks create(const std::array<Point, 4> &points);
+        static Blocks create(const RotateType rotateType, const std::array<Point, 4> &points);
 
+        const RotateType rotateType;
         const std::array<Point, 4> points;
         const int minX;
         const int maxX;
@@ -45,8 +46,8 @@ namespace core {
         BlocksMask mask(int leftX, int lowerY) const;
 
     private:
-        Blocks(const std::array<Point, 4> points, const Bitboard mask, const MinMax &minMaxX, const MinMax &minMaxY)
-                : points(points), minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
+        Blocks(const RotateType rotateType, const std::array<Point, 4> points, const Bitboard mask, const MinMax &minMaxX, const MinMax &minMaxY)
+                : rotateType(rotateType), points(points), minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
                   width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1), mask_(mask) {
         };
 

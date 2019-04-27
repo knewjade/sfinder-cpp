@@ -5,17 +5,22 @@ namespace core::srs {
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
     ) {
         auto &toBlocks = piece.blocks[toRotate];
+        return right(field, piece, fromRotate, toBlocks, fromX, fromY);
+    }
 
-        int toLeftX = fromX + toBlocks.minX;
-        int toLowerY = fromY + toBlocks.minY;
+    int right(
+            const Field &field, const Piece &piece, RotateType fromRotate, const Blocks &toBlocks, int fromX, int fromY
+    ) {
+        int fromLeftX = fromX + toBlocks.minX;
+        int fromLowerY = fromY + toBlocks.minY;
 
         auto head = fromRotate * 5;
         int width = FIELD_WIDTH - toBlocks.width;
         for (int index = head; index < head + piece.offsetsSize; ++index) {
             auto &offset = piece.rightOffsets[index];
-            int x = toLeftX + offset.x;
-            int y = toLowerY + offset.y;
-            if (0 <= x && x <= width && 0 <= y && field.canPutAtMaskIndex(toBlocks, x, y)) {
+            int toX = fromLeftX + offset.x;
+            int toY = fromLowerY + offset.y;
+            if (0 <= toX && toX <= width && 0 <= toY && field.canPutAtMaskIndex(toBlocks, toX, toY)) {
                 return index;
             }
         }
@@ -27,17 +32,22 @@ namespace core::srs {
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
     ) {
         auto &toBlocks = piece.blocks[toRotate];
+        return left(field, piece, fromRotate, toBlocks, fromX, fromY);
+    }
 
-        int toLeftX = fromX + toBlocks.minX;
-        int toLowerY = fromY + toBlocks.minY;
+    int left(
+            const Field &field, const Piece &piece, RotateType fromRotate, const Blocks &toBlocks, int fromX, int fromY
+    ) {
+        int fromLeftX = fromX + toBlocks.minX;
+        int fromLowerY = fromY + toBlocks.minY;
 
         auto head = fromRotate * 5;
         int width = FIELD_WIDTH - toBlocks.width;
         for (int index = head; index < head + piece.offsetsSize; ++index) {
             auto &offset = piece.leftOffsets[index];
-            int x = toLeftX + offset.x;
-            int y = toLowerY + offset.y;
-            if (0 <= x && x <= width && 0 <= y && field.canPutAtMaskIndex(toBlocks, x, y)) {
+            int toX = fromLeftX + offset.x;
+            int toY = fromLowerY + offset.y;
+            if (0 <= toX && toX <= width && 0 <= toY && field.canPutAtMaskIndex(toBlocks, toX, toY)) {
                 return index;
             }
         }

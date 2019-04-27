@@ -9,8 +9,16 @@ namespace core::srs {
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
     );
 
+    int right(
+            const Field &field, const Piece &piece, RotateType fromRotate, const Blocks &toBlocks, int fromX, int fromY
+    );
+
     int left(
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
+    );
+
+    int left(
+            const Field &field, const Piece &piece, RotateType fromRotate, const Blocks &toBlocks, int fromX, int fromY
     );
 }
 
