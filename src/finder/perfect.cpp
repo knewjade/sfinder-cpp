@@ -26,13 +26,20 @@ namespace finder {
     ) {
         auto maxDepth = configure.maxDepth;
         auto pieces = configure.pieces;
-        auto leftLine = candidate.leftLine;
         auto moves = configure.movePool[candidate.depth];
+
+        auto leftLine = candidate.leftLine;
+        assert(0 < leftLine);
         auto currentIndex = candidate.currentIndex;
+        assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
         auto holdIndex = candidate.holdIndex;
+        assert(-1 <= holdIndex && holdIndex < configure.pieceSize);
+
         auto &field = candidate.field;
 
-        if (currentIndex < configure.pieceSize) {
+        bool canUseCurrent = currentIndex < configure.pieceSize;
+        if (canUseCurrent) {
+            assert(pieces.at(currentIndex));
             auto &current = pieces[currentIndex];
 
             moves.clear();
@@ -47,7 +54,7 @@ namespace finder {
                 int numCleared = freeze.clearLineReturnNum();
 
                 int nextLeftLine = leftLine - numCleared;
-                if (nextLeftLine == 0) {
+                if (freeze == core::Field{}) {
                     return true;
                 }
 
@@ -68,8 +75,11 @@ namespace finder {
         }
 
         if (0 <= holdIndex) {
+            assert(holdIndex < configure.pieceSize);
+
             // Hold exists
-            if (pieces[currentIndex] != pieces[holdIndex]) {
+            if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
+                assert(pieces.at(holdIndex));
                 auto &hold = pieces[holdIndex];
 
                 moves.clear();
@@ -104,9 +114,12 @@ namespace finder {
                 }
             }
         } else {
+            assert(canUseCurrent);
+
             // Empty hold
             int nextIndex = currentIndex + 1;
             if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
+                assert(pieces.at(nextIndex));
                 auto &next = pieces[nextIndex];
 
                 moves.clear();
@@ -147,14 +160,14 @@ namespace finder {
 
     template<>
     bool PerfectFinder<core::srs::MoveGenerator>::run(
-            const core::Field &field, std::vector<core::PieceType> &pieces,
+            const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty
     ) {
         auto freeze = core::Field(field);
 
         std::vector<std::vector<core::Move>> movePool;
         for (int i = 0; i < maxDepth; ++i) {
-            movePool.push_back(std::vector<core::Move>{});
+            movePool.emplace_back(std::vector<core::Move>{});
         }
 
         Configure configure{

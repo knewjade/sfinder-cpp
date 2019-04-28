@@ -7,18 +7,19 @@
 
 namespace finder {
     struct Candidate {
-        core::Field &field;
-        int currentIndex;
-        int holdIndex;
-        int leftLine;
-        int depth;
+        const core::Field &field;
+        const int currentIndex;
+        const int holdIndex;
+        const int leftLine;
+        const int depth;
     };
 
     struct Configure {
-        std::vector<core::PieceType> &pieces;
-        std::vector<std::vector<core::Move>> &movePool;
-        int maxDepth;
-        int pieceSize;
+        const std::vector<core::PieceType> &pieces;
+        const std::vector<std::vector<core::Move>> &movePool;
+        const int maxDepth;
+        const int pieceSize;
+        int moveCounter;
     };
 
     // T: srs::MoveGenerator
@@ -30,7 +31,7 @@ namespace finder {
         }
 
         bool run(
-                const core::Field &field, std::vector<core::PieceType> &pieces,
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         );
 
