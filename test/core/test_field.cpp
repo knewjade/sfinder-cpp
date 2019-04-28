@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "core/field.hpp"
+#include "core/piece.hpp"
 
 namespace core {
     class FieldTest : public ::testing::Test {
@@ -36,5 +37,24 @@ namespace core {
         field2.setBlock(0, 0);
 
         EXPECT_TRUE(field1 == field2);
+    }
+
+    TEST_F(FieldTest, canReachOnHarddrop) {
+        auto field = createField(
+                std::string("_________X") +
+                std::string("__________")
+        );
+
+        auto factory = Factory::create();
+
+        {
+            auto result = field.canReachOnHarddrop(factory.get(PieceType::T, RotateType::Spawn), 1, 0);
+            EXPECT_TRUE(result);
+        }
+
+        {
+            auto result = field.canReachOnHarddrop(factory.get(PieceType::T, RotateType::Spawn), 8, 0);
+            EXPECT_FALSE(result);
+        }
     }
 }

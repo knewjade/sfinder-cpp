@@ -39,7 +39,7 @@ namespace finder {
 
         bool canUseCurrent = currentIndex < configure.pieceSize;
         if (canUseCurrent) {
-            assert(pieces.at(currentIndex));
+            assert(currentIndex < pieces.size());
             auto &current = pieces[currentIndex];
 
             moves.clear();
@@ -75,11 +75,10 @@ namespace finder {
         }
 
         if (0 <= holdIndex) {
-            assert(holdIndex < configure.pieceSize);
+            assert(holdIndex < pieces.size());
 
             // Hold exists
             if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
-                assert(pieces.at(holdIndex));
                 auto &hold = pieces[holdIndex];
 
                 moves.clear();
@@ -118,6 +117,8 @@ namespace finder {
 
             // Empty hold
             int nextIndex = currentIndex + 1;
+            assert(nextIndex < pieces.size() + 1);
+
             if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
                 assert(pieces.at(nextIndex));
                 auto &next = pieces[nextIndex];

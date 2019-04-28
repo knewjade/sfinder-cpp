@@ -32,8 +32,8 @@ namespace core {
                                         RotateType::Left,
     };
 
-
     const int FIELD_WIDTH = 10;
+    const int MAX_FIELD_HEIGHT = 24;
 }
 
 #endif //CORE_TYPES_HPP

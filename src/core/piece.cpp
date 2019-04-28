@@ -37,6 +37,24 @@ namespace core {
 
             return 1LLU << (x + y * FIELD_WIDTH);
         }
+
+        Collider mergeCollider(const Collider &prev, const Bitboard mask, int height, int lowerY) {
+            auto collider = Collider{prev};
+            assert(0 <= lowerY && lowerY + height <= MAX_FIELD_HEIGHT);
+
+            int index = lowerY / 6;
+            int localY = lowerY - 6 * index;
+            if (6 < localY + height) {
+                // 上にはみ出る
+                collider.boards[index] |= (mask << (localY * FIELD_WIDTH)) & VALID_BOARD_RANGE;
+                collider.boards[index + 1] |= mask >> ((6 - localY) * FIELD_WIDTH);
+            } else {
+                // 下6段で収まる
+                collider.boards[index] |= mask << (localY * FIELD_WIDTH);
+            }
+
+            return collider;
+        }
     }
 
     Blocks Blocks::create(const RotateType rotateType, const std::array<Point, 4> &points) {
@@ -49,7 +67,16 @@ namespace core {
             mask |= getXMask(point.x - minmaxX.first, point.y - minmaxY.first);
         }
 
-        return Blocks(rotateType, points, mask, minmaxX, minmaxY);
+        // Create colliders for harddrop
+        std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders{};
+        int height = minmaxY.second - minmaxY.first + 1;
+        int max = MAX_FIELD_HEIGHT - height;
+        harddropColliders[max] = mergeCollider(Collider{}, mask, height, max);
+        for (int index = max - 1; 0 <= index; --index) {
+            harddropColliders[index] = mergeCollider(harddropColliders[index + 1], mask, height, index);
+        }
+
+        return Blocks(rotateType, points, mask, harddropColliders, minmaxX, minmaxY);
     }
 
     template<size_t N>
@@ -111,6 +138,9 @@ namespace core {
     }
 
     BlocksMask Blocks::mask(int leftX, int lowerY) const {
+        assert(0 <= leftX && leftX <= FIELD_WIDTH - width);
+        assert(0 <= lowerY && lowerY < 6);
+
         if (6 < lowerY + height) {
             // 上にはみ出る
             const auto slide = mask_ << leftX;
@@ -123,6 +153,19 @@ namespace core {
                     mask_ << (lowerY * FIELD_WIDTH + leftX), 0
             };
         }
+    }
+
+    Collider Blocks::harddrop(int leftX, int lowerY) const {
+        assert(0 <= leftX && leftX <= FIELD_WIDTH - width);
+        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+
+        auto &collider = harddropColliders[lowerY];
+        return Collider{
+                collider.boards[0] << leftX,
+                collider.boards[1] << leftX,
+                collider.boards[2] << leftX,
+                collider.boards[3] << leftX,
+        };
     }
 
     Factory Factory::create() {

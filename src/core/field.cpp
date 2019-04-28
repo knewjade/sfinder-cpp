@@ -1,10 +1,7 @@
-#include <iostream>
-
 #include "field.hpp"
 
 namespace core {
     namespace {
-        const int MAX_FIELD_HEIGHT = 24;
         const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
         uint64_t getXMask(int x, int y) {
@@ -105,12 +102,18 @@ namespace core {
     }
 
     bool Field::canReachOnHarddrop(const Blocks &blocks, int x, int y) const {
-        // TODO optimize
-        int max = MAX_FIELD_HEIGHT - blocks.minY;
-        for (int yIndex = y + 1; yIndex < max; yIndex++)
-            if (!canPut(blocks, x, yIndex))
-                return false;
-        return true;
+        const int leftX = x + blocks.minX;
+        const int lowerY = y + blocks.minY;
+
+        assert(0 <= leftX && leftX < FIELD_WIDTH);
+        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+
+        Collider collider = blocks.harddrop(leftX, lowerY);
+
+        return (boards[0] & collider.boards[0]) == 0 &&
+               (boards[1] & collider.boards[1]) == 0 &&
+               (boards[2] & collider.boards[2]) == 0 &&
+               (boards[3] & collider.boards[3]) == 0;
     }
 
     LineKey getDeleteKey(Bitboard board) {

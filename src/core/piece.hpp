@@ -21,6 +21,10 @@ namespace core {
         int y;
     };
 
+    struct Collider {
+        Bitboard boards[4];
+    };
+
     struct BlocksMask {
         Bitboard low;
         Bitboard high;
@@ -37,6 +41,7 @@ namespace core {
 
         const RotateType rotateType;
         const std::array<Point, 4> points;
+        const std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders;
         const int minX;
         const int maxX;
         const int minY;
@@ -46,9 +51,14 @@ namespace core {
 
         BlocksMask mask(int leftX, int lowerY) const;
 
+        Collider harddrop(int leftX, int lowerY) const;
+
     private:
-        Blocks(const RotateType rotateType, const std::array<Point, 4> points, const Bitboard mask, const MinMax &minMaxX, const MinMax &minMaxY)
-                : rotateType(rotateType), points(points), minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
+        Blocks(const RotateType rotateType, const std::array<Point, 4> points, const Bitboard mask,
+               const std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders,
+               const MinMax &minMaxX, const MinMax &minMaxY)
+                : rotateType(rotateType), points(points), harddropColliders(harddropColliders),
+                  minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
                   width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1), mask_(mask) {
         };
 
@@ -85,7 +95,8 @@ namespace core {
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
                 const int32_t uniqueRotate
-        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets), offsetsSize(offsetsSize),
+        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
+            offsetsSize(offsetsSize),
             transforms(transforms), uniqueRotateBit(uniqueRotate) {
         };
     };
