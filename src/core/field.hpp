@@ -54,11 +54,20 @@ namespace core {
 
         bool isWallBetween(int x, int maxY) const;
 
-        std::string toString(int height);
+        std::string toString(int height) const;
 
     private:
         void deleteLine_(LineKey low, LineKey midLow, LineKey midHigh, LineKey high);
     };
+
+    inline bool operator==(const Field &lhs, const Field &rhs) {
+        return lhs.xBoardLow == rhs.xBoardLow && lhs.xBoardMidLow == rhs.xBoardMidLow
+               && lhs.xBoardMidHigh == rhs.xBoardMidHigh && lhs.xBoardHigh == rhs.xBoardHigh;
+    }
+
+    inline bool operator!=(const Field &lhs, const Field &rhs) {
+        return !(lhs == rhs);
+    }
 
     Field createField(std::string marks);
 }

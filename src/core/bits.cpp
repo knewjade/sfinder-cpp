@@ -133,6 +133,7 @@ namespace core {
                 return ((x >> 10) & 1023ULL) | ((x >> 30) & 1047552ULL);
             default:
                 assert(false);
+                return x;
         }
     }
 
@@ -278,6 +279,7 @@ namespace core {
                 return ((x & 1023ULL) << 10) | ((x & 1047552ULL) << 30) | (1151796704210584575ULL);
             default:
                 assert(false);
+                return x;
         }
     }
 
@@ -419,6 +421,7 @@ namespace core {
                 return ((x & 1023ULL) << 10) | ((x & 1047552ULL) << 30);
             default:
                 assert(false);
+                return x;
         }
     }
 

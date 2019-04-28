@@ -12,9 +12,9 @@ namespace core {
 
     Bitboard insertBlackLine_(Bitboard x, LineKey key);
 
-    Bitboard insertBlackLine(Bitboard x, LineKey mask) ;
+    Bitboard insertBlackLine(Bitboard x, LineKey mask);
 
-    Bitboard insertWhiteLine_(Bitboard x, LineKey key) ;
+    Bitboard insertWhiteLine_(Bitboard x, LineKey key);
 
     Bitboard insertWhiteLine(Bitboard x, LineKey mask);
 

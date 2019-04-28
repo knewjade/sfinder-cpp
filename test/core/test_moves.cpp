@@ -10,9 +10,7 @@ namespace core {
     };
 
     bool assertMove(std::vector<Move> &moves, const Move &move) {
-        auto result = std::find_if(moves.begin(), moves.end(), [&](Move it) {
-            return move.rotateType == it.rotateType && move.x == it.x && move.y == it.y;
-        });
+        auto result = std::find(moves.begin(), moves.end(), move);
         return result != moves.end();
     }
 

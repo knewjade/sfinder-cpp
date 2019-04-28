@@ -14,6 +14,14 @@ namespace core {
         int y;
     };
 
+    inline bool operator==(const Move &lhs, const Move &rhs) {
+        return lhs.rotateType == rhs.rotateType && lhs.x == rhs.x && lhs.y == rhs.y;
+    }
+
+    inline bool operator!=(const Move &lhs, const Move &rhs) {
+        return !(lhs == rhs);
+    }
+
     class Cache {
     public:
         void visit(int x, int y, RotateType rotateType);

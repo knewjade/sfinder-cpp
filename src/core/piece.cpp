@@ -2,7 +2,6 @@
 
 namespace core {
     namespace {
-        const int MAX_FIELD_HEIGHT = 24;
         const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
         std::array<Point, 4> rotateRight_(std::array<Point, 4> points) {
@@ -129,30 +128,30 @@ namespace core {
     Factory Factory::create() {
         using namespace std::literals::string_literals;
 
-        auto io = std::array<std::array<Offset, 5>, 4>{
-                std::array<Offset, 5>{Offset{0, 0}, Offset{-1, 0}, Offset{2, 0}, Offset{-1, 0}, Offset{2, 0}},
-                std::array<Offset, 5>{Offset{-1, 0}, Offset{0, 0}, Offset{0, 0}, Offset{0, 1}, Offset{0, -2}},
-                std::array<Offset, 5>{Offset{-1, 1}, Offset{1, 1}, Offset{-2, 1}, Offset{1, 0}, Offset{-2, 0}},
-                std::array<Offset, 5>{Offset{0, 1}, Offset{0, 1}, Offset{0, 1}, Offset{0, -1}, Offset{0, 2}},
+        auto iOffsets = std::array<std::array<Offset, 5>, 4>{
+                std::array<Offset, 5>{Offset{0, 0}, {-1, 0}, {2, 0}, {-1, 0}, {2, 0}},
+                std::array<Offset, 5>{Offset{-1, 0}, {0, 0}, {0, 0}, {0, 1}, {0, -2}},
+                std::array<Offset, 5>{Offset{-1, 1}, {1, 1}, {-2, 1}, {1, 0}, {-2, 0}},
+                std::array<Offset, 5>{Offset{0, 1}, {0, 1}, {0, 1}, {0, -1}, {0, 2}},
         };
 
-        auto oo = std::array<std::array<Offset, 1>, 4>{
+        auto oOffsets = std::array<std::array<Offset, 1>, 4>{
                 std::array<Offset, 1>{Offset{0, 0}},
                 std::array<Offset, 1>{Offset{0, -1}},
                 std::array<Offset, 1>{Offset{-1, -1}},
                 std::array<Offset, 1>{Offset{-1, 0}},
         };
 
-        auto other = std::array<std::array<Offset, 5>, 4>{
-                std::array<Offset, 5>{Offset{0, 0}, Offset{0, 0}, Offset{0, 0}, Offset{0, 0}, Offset{0, 0}},
-                std::array<Offset, 5>{Offset{0, 0}, Offset{1, 0}, Offset{1, -1}, Offset{0, 2}, Offset{1, 2}},
-                std::array<Offset, 5>{Offset{0, 0}, Offset{0, 0}, Offset{0, 0}, Offset{0, 0}, Offset{0, 0}},
-                std::array<Offset, 5>{Offset{0, 0}, Offset{-1, 0}, Offset{-1, -1}, Offset{0, 2}, Offset{-1, 2}},
+        auto otherOffsets = std::array<std::array<Offset, 5>, 4>{
+                std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+                std::array<Offset, 5>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+                std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+                std::array<Offset, 5>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
         };
 
         auto t = Piece::create(PieceType::T, "T"s, std::array<Point, 4>{
-                Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{0, 1},
-        }, other, std::array<Transform, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {0, 1},
+        }, otherOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, 0}, RotateType::Right},
                 Transform{Offset{0, 0}, RotateType::Reverse},
@@ -160,8 +159,8 @@ namespace core {
         });
 
         auto i = Piece::create(PieceType::I, "I"s, std::array<Point, 4>{
-                Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{2, 0}
-        }, io, std::array<Transform, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {2, 0}
+        }, iOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, -1}, RotateType::Left},
                 Transform{Offset{-1, 0}, RotateType::Spawn},
@@ -169,8 +168,8 @@ namespace core {
         });
 
         auto l = Piece::create(PieceType::L, "L"s, std::array<Point, 4>{
-                Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{1, 1}
-        }, other, std::array<Transform, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {1, 1}
+        }, otherOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, 0}, RotateType::Right},
                 Transform{Offset{0, 0}, RotateType::Reverse},
@@ -178,8 +177,8 @@ namespace core {
         });
 
         auto j = Piece::create(PieceType::J, "J"s, std::array<Point, 4>{
-                Point{0, 0}, Point{-1, 0}, Point{1, 0}, Point{-1, 1}
-        }, other, std::array<Transform, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {-1, 1}
+        }, otherOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, 0}, RotateType::Right},
                 Transform{Offset{0, 0}, RotateType::Reverse},
@@ -187,8 +186,8 @@ namespace core {
         });
 
         auto s = Piece::create(PieceType::S, "S"s, std::array<Point, 4>{
-                Point{0, 0}, Point{-1, 0}, Point{0, 1}, Point{1, 1}
-        }, other, std::array<Transform, 4>{
+                Point{0, 0}, {-1, 0}, {0, 1}, {1, 1}
+        }, otherOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{1, 0}, RotateType::Left},
                 Transform{Offset{0, -1}, RotateType::Spawn},
@@ -196,8 +195,8 @@ namespace core {
         });
 
         auto z = Piece::create(PieceType::Z, "Z"s, std::array<Point, 4>{
-                Point{0, 0}, Point{1, 0}, Point{0, 1}, Point{-1, 1}
-        }, other, std::array<Transform, 4>{
+                Point{0, 0}, {1, 0}, {0, 1}, {-1, 1}
+        }, otherOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, 0}, RotateType::Right},
                 Transform{Offset{0, -1}, RotateType::Spawn},
@@ -205,8 +204,8 @@ namespace core {
         });
 
         auto o = Piece::create(PieceType::O, "O"s, std::array<Point, 4>{
-                Point{0, 0}, Point{1, 0}, Point{0, 1}, Point{1, 1}
-        }, oo, std::array<Transform, 4>{
+                Point{0, 0}, {1, 0}, {0, 1}, {1, 1}
+        }, oOffsets, std::array<Transform, 4>{
                 Transform{Offset{0, 0}, RotateType::Spawn},
                 Transform{Offset{0, -1}, RotateType::Spawn},
                 Transform{Offset{-1, -1}, RotateType::Spawn},

@@ -24,4 +24,17 @@ namespace core {
 
         std::cout << field.toString(8) << std::endl;
     }
+
+    TEST_F(FieldTest, equals) {
+        auto field1 = createField(
+                std::string("X_________")
+        );
+
+        auto field2 = createField(
+                std::string("__________")
+        );
+        field2.setBlock(0, 0);
+
+        EXPECT_TRUE(field1 == field2);
+    }
 }

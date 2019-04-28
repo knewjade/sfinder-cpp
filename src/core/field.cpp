@@ -278,7 +278,7 @@ namespace core {
         return bitCount(deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3));
     }
 
-    std::string Field::toString(int height) {
+    std::string Field::toString(int height) const {
         auto str = std::string("");
         for (int y = height - 1; 0 <= y; --y) {
             for (int x = 0; x < 10; ++x) {

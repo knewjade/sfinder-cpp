@@ -219,6 +219,33 @@ namespace finder {
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
             EXPECT_TRUE(result);
         }
+
+        {
+            auto pieces = std::vector{
+                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
+                    core::PieceType::S, core::PieceType::O, core::PieceType::L
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_TRUE(result);
+        }
+
+        {
+            auto pieces = std::vector{
+                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
+                    core::PieceType::O, core::PieceType::S, core::PieceType::L
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_TRUE(result);
+        }
+
+        {
+            auto pieces = std::vector{
+                    core::PieceType::I, core::PieceType::J, core::PieceType::T, core::PieceType::Z,
+                    core::PieceType::O, core::PieceType::S, core::PieceType::L
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_TRUE(result);
+        }
     }
 
     TEST_F(PerfectTest, measure1) {
@@ -277,7 +304,8 @@ namespace finder {
         auto maxLine = 6;
 
         long long int sum = 0;
-        for (int count = 0; count < 10; ++count) {
+        int max = 100;
+        for (int count = 0; count < max; ++count) {
             auto start = std::chrono::system_clock::now();
 
             auto pieces = std::vector{
@@ -289,11 +317,11 @@ namespace finder {
             auto end = std::chrono::system_clock::now();
 
             auto diff = end - start;
-            sum += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
+            sum += std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
 
             EXPECT_TRUE(result);
         }
 
-        std::cout << "elapsed time = " << (sum / 10.0) << " msec." << std::endl;
+        std::cout << "elapsed time = " << (sum / static_cast<double>(max)) << " microsec." << std::endl;
     }
 }

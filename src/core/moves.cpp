@@ -2,8 +2,6 @@
 
 namespace core {
     namespace {
-        const int MAX_FIELD_HEIGHT = 24;
-
         uint64_t getXMask(int x, int y) {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
