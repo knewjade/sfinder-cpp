@@ -1,78 +1,98 @@
 #include <iostream>
 #include <string>
+#include <random>
+#include <core/moves.hpp>
 
 #include "core/field.hpp"
 #include "core/srs.hpp"
+#include "core/types.hpp"
+#include "finder/perfect.hpp"
 
-int main() {
-    using namespace std::literals::string_literals;
-    using namespace core;
+template<int N>
+std::array<core::PieceType, N> toPieces(int value) {
+    int arr[N];
 
-    auto field = Field();
-    auto factory = Factory::create();
-
-    field.put(factory.get(PieceType::S, RotateType::Right), 0, 1);
-    field.put(factory.get(PieceType::O, RotateType::Spawn), 3, 0);
-    field.put(factory.get(PieceType::Z, RotateType::Spawn), 4, 2);
-    field.put(factory.get(PieceType::L, RotateType::Reverse), 6, 1);
-    field.put(factory.get(PieceType::J, RotateType::Reverse), 7, 2);
-    field.put(factory.get(PieceType::I, RotateType::Left), 9, 1);
-
-    {
-        auto piece = factory.get(PieceType::T);
-        RotateType rotateType = RotateType::Left;
-        RotateType nextRotate = static_cast<RotateType>((rotateType + 3) % 4);
-        int fromX = 2;
-        int fromY = 2;
-
-        int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
-
-        auto offset = piece.leftOffsets[index];
-        field.put(piece.blocks[nextRotate], fromX + offset.x, fromY + offset.y);
+    for (int index = N - 1; 0 <= index; --index) {
+        int scale = 7 - index;
+        arr[index] = value % scale;
+        value /= scale;
     }
 
-    std::cout << field.toString(20) << std::endl;
-    std::cout << "========="s << std::endl;
-
-    field.clearLine();
-
-    field.put(factory.get(PieceType::J, RotateType::Right), 0, 1);
-    field.put(factory.get(PieceType::L, RotateType::Left), 3, 3);
-    field.put(factory.get(PieceType::O, RotateType::Spawn), 7, 0);
-    field.put(factory.get(PieceType::S, RotateType::Right), 5, 1);
-    field.put(factory.get(PieceType::Z, RotateType::Right), 4, 3);
-    field.put(factory.get(PieceType::I, RotateType::Spawn), 7, 2);
-
-    {
-        auto piece = factory.get(PieceType::T);
-        RotateType rotateType = RotateType::Right;
-        RotateType nextRotate = static_cast<RotateType>((rotateType + 3) % 4);
-
-        int fromX = 0;
-        int fromY = 4;
-
-        int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
-
-        auto offset = piece.leftOffsets[index];
-        int nextX = offset.x;
-        int nextY = fromY + offset.y;
-
-        {
-            RotateType rotateType = nextRotate;
-            RotateType nextRotate = static_cast<RotateType>((rotateType + 3) % 4);
-
-            int fromX = nextX;
-            int fromY = nextY;
-
-            int index = srs::left(field, piece, rotateType, nextRotate, fromX, fromY);
-
-            auto offset = piece.leftOffsets[index];
-            field.put(piece.blocks[nextRotate], fromX + offset.x, fromY + offset.y);
+    for (int select = N - 2; 0 <= select; --select) {
+        for (int adjust = select + 1; adjust < N; ++adjust) {
+            if (arr[select] <= arr[adjust]) {
+                arr[adjust] += 1;
+            }
         }
     }
 
-    field.clearLine();
+    std::array<core::PieceType, N> pieces = {};
+    for (int index = 0; index < N; ++index) {
+        pieces[index] = static_cast<core::PieceType>(arr[index]);
+    }
 
-    std::cout << field.toString(20) << std::endl;
-    std::cout << "========="s << std::endl;
+    return pieces;
+}
+
+int main() {
+    using namespace std::literals::string_literals;
+
+    std::cout << "# Initialize" << std::endl;
+
+    auto start = std::chrono::system_clock::now();
+
+    {
+        auto elapsed = std::chrono::system_clock::now() - start;
+        auto time = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        std::cout << time << " micro seconds" << std::endl;
+    }
+
+    std::cout << "# Measuring" << std::endl;
+
+    const int maxDepth = 7;
+    const int maxLine = 6;
+
+    int success = 0;
+    long long int totalTime = 0L;
+    int max = 5040;
+    for (int value = 0; value < max; ++value) {
+        auto arr = toPieces<maxDepth>(value);
+        auto pieces = std::vector(arr.begin(), arr.end());
+
+        auto start2 = std::chrono::system_clock::now();
+
+        auto field = core::createField(
+                "XX________"s +
+                "XX________"s +
+                "XXX______X"s +
+                "XXXXXXX__X"s +
+                "XXXXXX___X"s +
+                "XXXXXXX_XX"s +
+                ""
+        );
+
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+
+        if (result) {
+            success += 1;
+        } else {
+            // 975, 2295
+//            std::cout << value << std::endl;
+//            for (int i = 0; i < pieces.size(); ++i) {
+//                std::cout << pieces[i];
+//            }
+//            std::cout << "" << std::endl;
+        }
+
+        auto elapsed = std::chrono::system_clock::now() - start2;
+        totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+    }
+
+    std::cout << "success: " << success << std::endl;
+
+    std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
 }
