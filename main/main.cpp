@@ -110,9 +110,9 @@ void sample() {
     auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
     auto field = core::createField(
-            "XX________"s +
-            "XX________"s +
-            "XXX______X"s +
+            "__________"s +
+            "_XX_______"s +
+            "XXXXX____X"s +
             "XXXXXXX__X"s +
             "XXXXXX___X"s +
             "XXXXXXX_XX"s +
