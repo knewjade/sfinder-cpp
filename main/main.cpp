@@ -34,12 +34,26 @@ std::array<core::PieceType, N> toPieces(int value) {
     return pieces;
 }
 
-int main() {
+void benchmark() {
     using namespace std::literals::string_literals;
 
     std::cout << "# Initialize" << std::endl;
 
     auto start = std::chrono::system_clock::now();
+
+    auto field = core::createField(
+            "XX________"s +
+            "XX________"s +
+            "XXX______X"s +
+            "XXXXXXX__X"s +
+            "XXXXXX___X"s +
+            "XXXXXXX_XX"s +
+            ""
+    );
+
+    auto factory = core::Factory::create();
+    auto moveGenerator = core::srs::MoveGenerator(factory);
+    auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
     {
         auto elapsed = std::chrono::system_clock::now() - start;
@@ -61,24 +75,15 @@ int main() {
 
         auto start2 = std::chrono::system_clock::now();
 
-        auto field = core::createField(
-                "XX________"s +
-                "XX________"s +
-                "XXX______X"s +
-                "XXXXXXX__X"s +
-                "XXXXXX___X"s +
-                "XXXXXXX_XX"s +
-                ""
-        );
-
-        auto factory = core::Factory::create();
-        auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
-
         auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
-        if (result) {
+        if (!result.empty()) {
             success += 1;
+//            std::cout << value << std::endl;
+//            for (const auto &item : result) {
+//                std::cout << item.pieceType << "," << item.rotateType << "," << item.x << "," << item.y << " ";
+//            }
+//            std::cout << "" << std::endl;
         } else {
             // 975, 2295
 //            std::cout << value << std::endl;
@@ -95,4 +100,54 @@ int main() {
     std::cout << "success: " << success << std::endl;
 
     std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
+}
+
+void sample() {
+    using namespace std::literals::string_literals;
+
+    auto factory = core::Factory::create();
+    auto moveGenerator = core::srs::MoveGenerator(factory);
+    auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+    auto field = core::createField(
+            "XX________"s +
+            "XX________"s +
+            "XXX______X"s +
+            "XXXXXXX__X"s +
+            "XXXXXX___X"s +
+            "XXXXXXX_XX"s +
+            ""
+    );
+
+    auto pieces = std::vector{
+            core::PieceType::S, core::PieceType::I, core::PieceType::T, core::PieceType::Z,
+            core::PieceType::J, core::PieceType::O, core::PieceType::L
+    };
+
+    const int maxDepth = 7;
+    const int maxLine = 6;
+    const bool holdEmpty = false;  // If true, hold is empty at start
+
+    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty);
+
+    if (!result.empty()) {
+        std::cout << "PC: success" << std::endl;
+
+        for (const auto &item : result) {
+            std::cout << item.pieceType << ","  // enum PieceType in src/core/types.hpp
+                      << item.rotateType << "," // enum RotateType in src/core/types.hpp
+                      << item.x << ","
+                      << item.y << " "
+                      << std::endl;
+        }
+    } else {
+        std::cout << "PC: failed" << std::endl;
+    }
+}
+
+int main() {
+//    benchmark();
+    sample();
+
+    return 0;
 }

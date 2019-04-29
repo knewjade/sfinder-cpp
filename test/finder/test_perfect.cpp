@@ -27,13 +27,13 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::S};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::Z};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
@@ -54,19 +54,19 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::Z, core::PieceType::S};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::Z};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::T, core::PieceType::Z};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
@@ -89,13 +89,13 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::J, core::PieceType::I};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::L, core::PieceType::I};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
@@ -118,19 +118,19 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::J, core::PieceType::I, core::PieceType::O};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::O, core::PieceType::J, core::PieceType::I};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::L, core::PieceType::I, core::PieceType::O};
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
@@ -153,25 +153,25 @@ namespace finder {
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::J, core::PieceType::T, core::PieceType::O};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::O, core::PieceType::J, core::PieceType::S, core::PieceType::T};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::J, core::PieceType::Z, core::PieceType::T};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
             auto pieces = std::vector{core::PieceType::S, core::PieceType::O, core::PieceType::L, core::PieceType::T};
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
@@ -199,7 +199,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::O, core::PieceType::L
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
 
         {
@@ -208,7 +208,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::O, core::PieceType::L
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
 
         {
@@ -217,7 +217,7 @@ namespace finder {
                     core::PieceType::O, core::PieceType::I, core::PieceType::T
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
@@ -226,7 +226,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::O, core::PieceType::L
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
@@ -235,7 +235,7 @@ namespace finder {
                     core::PieceType::O, core::PieceType::S, core::PieceType::L
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         {
@@ -244,7 +244,7 @@ namespace finder {
                     core::PieceType::O, core::PieceType::S, core::PieceType::L
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
     }
 
@@ -280,7 +280,7 @@ namespace finder {
             auto diff = end - start;
             sum += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
 
-            EXPECT_FALSE(result);
+            EXPECT_FALSE(!result.empty());
         }
 
         std::cout << "elapsed time = " << (sum / 100.0) << " msec." << std::endl;
@@ -319,7 +319,7 @@ namespace finder {
             auto diff = end - start;
             sum += std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
 
-            EXPECT_TRUE(result);
+            EXPECT_TRUE(!result.empty());
         }
 
         std::cout << "elapsed time = " << (sum / static_cast<double>(max)) << " microsec." << std::endl;

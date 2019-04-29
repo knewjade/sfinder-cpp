@@ -22,11 +22,14 @@ namespace finder {
     template<>
     bool PerfectFinder<core::srs::MoveGenerator>::search(
             Configure &configure,
-            Candidate &candidate
+            const Candidate &candidate,
+            Solution &solution
     ) {
+        auto depth = candidate.depth;
+
         auto maxDepth = configure.maxDepth;
         auto pieces = configure.pieces;
-        auto moves = configure.movePool[candidate.depth];
+        auto moves = configure.movePool[depth];
 
         auto leftLine = candidate.leftLine;
         assert(0 < leftLine);
@@ -54,11 +57,15 @@ namespace finder {
                 int numCleared = freeze.clearLineReturnNum();
 
                 int nextLeftLine = leftLine - numCleared;
-                if (freeze == core::Field{}) {
+                if (nextLeftLine == 0) {
+                    solution[depth].pieceType = current;
+                    solution[depth].rotateType = move.rotateType;
+                    solution[depth].x = move.x;
+                    solution[depth].y = move.y;
                     return true;
                 }
 
-                auto nextDepth = candidate.depth + 1;
+                auto nextDepth = depth + 1;
                 if (maxDepth <= nextDepth) {
                     continue;
                 }
@@ -67,8 +74,12 @@ namespace finder {
                     continue;
                 }
 
-                Candidate candidate = Candidate{freeze, currentIndex + 1, holdIndex, nextLeftLine, nextDepth};
-                if (search(configure, candidate)) {
+                Candidate nextCandidate = Candidate{freeze, currentIndex + 1, holdIndex, nextLeftLine, nextDepth};
+                if (search(configure, nextCandidate, solution)) {
+                    solution[depth].pieceType = current;
+                    solution[depth].rotateType = move.rotateType;
+                    solution[depth].x = move.x;
+                    solution[depth].y = move.y;
                     return true;
                 }
             }
@@ -94,10 +105,14 @@ namespace finder {
 
                     int nextLeftLine = leftLine - numCleared;
                     if (nextLeftLine == 0) {
+                        solution[depth].pieceType = hold;
+                        solution[depth].rotateType = move.rotateType;
+                        solution[depth].x = move.x;
+                        solution[depth].y = move.y;
                         return true;
                     }
 
-                    auto nextDepth = candidate.depth + 1;
+                    auto nextDepth = depth + 1;
                     if (maxDepth <= nextDepth) {
                         continue;
                     }
@@ -106,8 +121,13 @@ namespace finder {
                         continue;
                     }
 
-                    Candidate candidate = Candidate{freeze, currentIndex + 1, currentIndex, nextLeftLine, nextDepth};
-                    if (search(configure, candidate)) {
+                    Candidate nextCandidate = Candidate{freeze, currentIndex + 1, currentIndex, nextLeftLine,
+                                                        nextDepth};
+                    if (search(configure, nextCandidate, solution)) {
+                        solution[depth].pieceType = hold;
+                        solution[depth].rotateType = move.rotateType;
+                        solution[depth].x = move.x;
+                        solution[depth].y = move.y;
                         return true;
                     }
                 }
@@ -136,10 +156,14 @@ namespace finder {
 
                     int nextLeftLine = leftLine - numCleared;
                     if (nextLeftLine == 0) {
+                        solution[depth].pieceType = next;
+                        solution[depth].rotateType = move.rotateType;
+                        solution[depth].x = move.x;
+                        solution[depth].y = move.y;
                         return true;
                     }
 
-                    auto nextDepth = candidate.depth + 1;
+                    auto nextDepth = depth + 1;
                     if (maxDepth <= nextDepth) {
                         continue;
                     }
@@ -148,8 +172,12 @@ namespace finder {
                         continue;
                     }
 
-                    Candidate candidate = Candidate{freeze, nextIndex + 1, currentIndex, nextLeftLine, nextDepth};
-                    if (search(configure, candidate)) {
+                    Candidate nextCandidate = Candidate{freeze, nextIndex + 1, currentIndex, nextLeftLine, nextDepth};
+                    if (search(configure, nextCandidate, solution)) {
+                        solution[depth].pieceType = next;
+                        solution[depth].rotateType = move.rotateType;
+                        solution[depth].x = move.x;
+                        solution[depth].y = move.y;
                         return true;
                     }
                 }
@@ -160,15 +188,17 @@ namespace finder {
     }
 
     template<>
-    bool PerfectFinder<core::srs::MoveGenerator>::run(
+    Solution PerfectFinder<core::srs::MoveGenerator>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty
     ) {
         auto freeze = core::Field(field);
 
-        std::vector<std::vector<core::Move>> movePool;
+        std::vector<std::vector<core::Move>> movePool(maxDepth);
+        Solution solution(maxDepth);
         for (int i = 0; i < maxDepth; ++i) {
-            movePool.emplace_back(std::vector<core::Move>{});
+            movePool[i] = std::vector<core::Move>{};
+            solution[i] = Operation{};
         }
 
         Configure configure{
@@ -178,12 +208,14 @@ namespace finder {
                 static_cast<int>(pieces.size()),
         };
 
-        if (holdEmpty) {
-            Candidate candidate = Candidate{freeze, 0, -1, maxLine, 0};
-            return search(configure, candidate);
+        Candidate candidate = holdEmpty
+                              ? Candidate{freeze, 0, -1, maxLine, 0}
+                              : Candidate{freeze, 1, 0, maxLine, 0};
+
+        if (search(configure, candidate, solution)) {
+            return solution;
         } else {
-            Candidate candidate = Candidate{freeze, 1, 0, maxLine, 0};
-            return search(configure, candidate);
+            return kNoSolution;
         }
     }
 }

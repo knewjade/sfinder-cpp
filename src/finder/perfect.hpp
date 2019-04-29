@@ -19,8 +19,17 @@ namespace finder {
         const std::vector<std::vector<core::Move>> &movePool;
         const int maxDepth;
         const int pieceSize;
-        int moveCounter;
     };
+
+    struct Operation {
+        core::PieceType pieceType;
+        core::RotateType rotateType;
+        int x;
+        int y;
+    };
+
+    using Solution = std::vector<Operation>;
+    inline const Solution kNoSolution = std::vector<Operation>();
 
     // T: srs::MoveGenerator
     template<class T>
@@ -30,12 +39,12 @@ namespace finder {
                 : factory(factory), moveGenerator(moveGenerator) {
         }
 
-        bool run(
+        Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         );
 
-        bool search(Configure &configure, Candidate &candidate);
+        bool search(Configure &configure, const Candidate &candidate, Solution &solution);
 
     private:
         const core::Factory &factory;
