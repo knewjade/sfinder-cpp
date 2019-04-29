@@ -1,0 +1,8 @@
+# Build & execute main program
+
+```
+cd sfinder-cpp/build
+cmake ..
+make main
+./bin/main
+```
