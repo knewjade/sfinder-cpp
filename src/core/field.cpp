@@ -83,7 +83,7 @@ namespace core {
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
 
         if (index <= 2) {
-            return (boards[index] & mask.low) == 0 && (boards[index + 1] && mask.high) == 0;
+            return (boards[index] & mask.low) == 0 && (boards[index + 1] & mask.high) == 0;
         }
 
         return (boards[index] & mask.low) == 0;

@@ -57,4 +57,33 @@ namespace core {
             EXPECT_FALSE(result);
         }
     }
+
+    TEST_F(FieldTest, canPut) {
+        auto field = createField(
+                std::string("______X___") +
+                std::string("_____X____") +
+                std::string("____X_____") +
+                std::string("___X______") +
+                std::string("__X_______") +
+                std::string("_X________") +
+                std::string("X_________")
+        );
+        auto factory = Factory::create();
+
+        const auto &blocks = factory.get(PieceType::S, RotateType::Spawn);
+        EXPECT_TRUE(field.canPut(blocks, 8, 0));
+        EXPECT_TRUE(field.canPut(blocks, 8, 1));
+        EXPECT_TRUE(field.canPut(blocks, 8, 2));
+        EXPECT_TRUE(field.canPut(blocks, 8, 3));
+        EXPECT_TRUE(field.canPut(blocks, 8, 4));
+        EXPECT_TRUE(field.canPut(blocks, 8, 5));
+        EXPECT_TRUE(field.canPut(blocks, 8, 6));
+
+        EXPECT_FALSE(field.canPut(blocks, 1, 0));
+        EXPECT_FALSE(field.canPut(blocks, 2, 1));
+        EXPECT_FALSE(field.canPut(blocks, 3, 2));
+        EXPECT_FALSE(field.canPut(blocks, 4, 3));
+        EXPECT_FALSE(field.canPut(blocks, 5, 4));
+        EXPECT_FALSE(field.canPut(blocks, 6, 5));
+    }
 }
