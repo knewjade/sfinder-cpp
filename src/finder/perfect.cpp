@@ -140,7 +140,7 @@ namespace finder {
             assert(nextIndex < pieces.size() + 1);
 
             if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
-                assert(pieces.at(nextIndex));
+                assert(nextIndex < pieces.size());
                 auto &next = pieces[nextIndex];
 
                 moves.clear();
