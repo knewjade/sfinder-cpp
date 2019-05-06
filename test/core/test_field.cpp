@@ -3,6 +3,8 @@
 #include "core/piece.hpp"
 
 namespace core {
+    using namespace std::literals::string_literals;
+
     class FieldTest : public ::testing::Test {
     };
 
@@ -39,7 +41,7 @@ namespace core {
         EXPECT_TRUE(field1 == field2);
     }
 
-    TEST_F(FieldTest, canReachOnHarddrop) {
+    TEST_F(FieldTest, canReachOnHarddrop1) {
         auto field = createField(
                 std::string("_________X") +
                 std::string("__________")
@@ -54,6 +56,22 @@ namespace core {
 
         {
             auto result = field.canReachOnHarddrop(factory.get(PieceType::T, RotateType::Spawn), 8, 0);
+            EXPECT_FALSE(result);
+        }
+    }
+
+    TEST_F(FieldTest, canReachOnHarddrop2) {
+        auto field = createField(
+                "_XXXXXXXXX"s +
+                "__XXXXXXXX"s +
+                "X_XXXXXXXX"s +
+                ""
+        );
+
+        auto factory = Factory::create();
+
+        {
+            auto result = field.canReachOnHarddrop(factory.get(PieceType::T, RotateType::Right), 0, 1);
             EXPECT_FALSE(result);
         }
     }

@@ -87,4 +87,23 @@ namespace core {
             EXPECT_EQ(moves.size(), 0);
         }
     }
+
+    TEST_F(MovesTest, case4) {
+        auto field = createField(
+                "_XXXXXXXXX"s +
+                "__XXXXXXXX"s +
+                "X_XXXXXXXX"s +
+                ""
+        );
+
+        auto factory = Factory::create();
+        auto generator = srs::MoveGenerator(factory);
+
+        {
+            auto moves = std::vector<Move>();
+            generator.search(moves, field, PieceType::S, 3);
+
+            EXPECT_EQ(moves.size(), 0);
+        }
+    }
 }

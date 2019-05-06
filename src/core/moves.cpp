@@ -155,7 +155,7 @@ namespace core {
                     field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
                     int fromX = toX - offset.x;
                     int fromY = toY - offset.y;
-                    int index = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                    int index = srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
                     if (index == -1) {
                         continue;
                     }
