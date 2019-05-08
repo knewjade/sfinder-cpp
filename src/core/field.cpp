@@ -131,27 +131,27 @@ namespace core {
             LineKey deleteKeyLow, LineKey deleteKeyMidLow, LineKey deleteKeyMidHigh, LineKey deleteKeyHigh
     ) {
         // 下半分
-        long newXBoardLow = deleteLine(xBoardLow, deleteKeyLow);
+        Bitboard newXBoardLow = deleteLine(xBoardLow, deleteKeyLow);
 
-        long newXBoardMidLow = deleteLine(xBoardMidLow, deleteKeyMidLow);
+        Bitboard newXBoardMidLow = deleteLine(xBoardMidLow, deleteKeyMidLow);
 
         int deleteLineLow = bitCount(deleteKeyLow);
 
-        long low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10)) & VALID_BOARD_RANGE;
-        long midLow = newXBoardMidLow >> deleteLineLow * 10;
+        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10)) & VALID_BOARD_RANGE;
+        Bitboard midLow = newXBoardMidLow >> deleteLineLow * 10;
 
         int deleteLineMidLow = bitCount(deleteKeyMidLow);
         int deleteLineBottom = deleteLineLow + deleteLineMidLow;
 
         // 上半分
-        long newXBoardMidHigh = deleteLine(xBoardMidHigh, deleteKeyMidHigh);
+        Bitboard newXBoardMidHigh = deleteLine(xBoardMidHigh, deleteKeyMidHigh);
 
-        long newXBoardHigh = deleteLine(xBoardHigh, deleteKeyHigh);
+        Bitboard newXBoardHigh = deleteLine(xBoardHigh, deleteKeyHigh);
 
         int deleteLineMidHigh = bitCount(deleteKeyMidHigh);
 
-        long midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10)) & VALID_BOARD_RANGE;
-        long high = newXBoardHigh >> deleteLineMidHigh * 10;
+        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10)) & VALID_BOARD_RANGE;
+        Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10;
 
         // 上半分と下半分をマージ
         if (deleteLineBottom < 6) {
@@ -194,24 +194,24 @@ namespace core {
 
         if (maxY < 12) {
             if (maxY < 6) {
-                long mask = getColumnOneLineBelowY(maxY) << x;
+                Bitboard mask = getColumnOneLineBelowY(maxY) << x;
                 return bitCount(xBoardLow & mask);
             } else {
-                long fullMask = getColumnOneLineBelowY(6) << x;
-                long mask = getColumnOneLineBelowY(maxY - 6) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 6) << x;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & mask);
             }
         } else {
             if (maxY < 18) {
-                long fullMask = getColumnOneLineBelowY(6) << x;
-                long mask = getColumnOneLineBelowY(maxY - 12) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 12) << x;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & fullMask) +
                        bitCount(xBoardMidHigh & mask);
             } else {
-                long fullMask = getColumnOneLineBelowY(6) << x;
-                long mask = getColumnOneLineBelowY(maxY - 18) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 18) << x;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & fullMask)
                        + bitCount(xBoardMidHigh & fullMask)
@@ -300,7 +300,7 @@ namespace core {
         assert(marks.length() < 240);
         assert(marks.length() % 10 == 0);
 
-        int maxY = marks.length() / 10;
+        int maxY = static_cast<int>(marks.length() / 10);
         Field field = Field();
         for (int y = 0; y < maxY; y++) {
             for (int x = 0; x < 10; x++) {

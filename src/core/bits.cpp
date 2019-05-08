@@ -456,6 +456,6 @@ namespace core {
         b -= (b >> 1) & 0x5555555555555555ULL;
         b = ((b >> 2) & 0x3333333333333333ULL) + (b & 0x3333333333333333ULL);
         b = ((b >> 4) + b) & 0x0F0F0F0F0F0F0F0FULL;
-        return (b * 0x0101010101010101ULL) >> 56;
+        return static_cast<int>((b * 0x0101010101010101ULL) >> 56);
     }
 }
