@@ -20,6 +20,17 @@ namespace finder {
     }
 
     template<>
+    bool PerfectFinder<core::srs::MoveGenerator>::move(
+            Configure &configure,
+            const Candidate &candidate,
+            Solution &solution,
+            std::vector<core::Move> &moves,
+            core::PieceType pieceType,
+            int nextIndex,
+            int nextHoldIndex
+    );
+
+    template<>
     bool PerfectFinder<core::srs::MoveGenerator>::search(
             Configure &configure,
             const Candidate &candidate,
@@ -27,18 +38,13 @@ namespace finder {
     ) {
         auto depth = candidate.depth;
 
-        auto maxDepth = configure.maxDepth;
         auto pieces = configure.pieces;
         auto moves = configure.movePool[depth];
 
-        auto leftLine = candidate.leftLine;
-        assert(0 < leftLine);
         auto currentIndex = candidate.currentIndex;
         assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
         auto holdIndex = candidate.holdIndex;
         assert(-1 <= holdIndex && holdIndex < configure.pieceSize);
-
-        auto &field = candidate.field;
 
         bool canUseCurrent = currentIndex < configure.pieceSize;
         if (canUseCurrent) {
@@ -46,42 +52,8 @@ namespace finder {
             auto &current = pieces[currentIndex];
 
             moves.clear();
-            moveGenerator.search(moves, field, current, leftLine);
-
-            for (const auto &move : moves) {
-                auto &blocks = factory.get(current, move.rotateType);
-
-                auto freeze = core::Field(field);
-                freeze.put(blocks, move.x, move.y);
-
-                int numCleared = freeze.clearLineReturnNum();
-
-                int nextLeftLine = leftLine - numCleared;
-                if (nextLeftLine == 0) {
-                    solution[depth].pieceType = current;
-                    solution[depth].rotateType = move.rotateType;
-                    solution[depth].x = move.x;
-                    solution[depth].y = move.y;
-                    return true;
-                }
-
-                auto nextDepth = depth + 1;
-                if (maxDepth <= nextDepth) {
-                    continue;
-                }
-
-                if (!validate(freeze, nextLeftLine)) {
-                    continue;
-                }
-
-                Candidate nextCandidate = Candidate{freeze, currentIndex + 1, holdIndex, nextLeftLine, nextDepth};
-                if (search(configure, nextCandidate, solution)) {
-                    solution[depth].pieceType = current;
-                    solution[depth].rotateType = move.rotateType;
-                    solution[depth].x = move.x;
-                    solution[depth].y = move.y;
-                    return true;
-                }
+            if (move(configure, candidate, solution, moves, current, currentIndex + 1, holdIndex)) {
+                return true;
             }
         }
 
@@ -93,43 +65,8 @@ namespace finder {
                 auto &hold = pieces[holdIndex];
 
                 moves.clear();
-                moveGenerator.search(moves, field, hold, leftLine);
-
-                for (const auto &move : moves) {
-                    auto &blocks = factory.get(hold, move.rotateType);
-
-                    auto freeze = core::Field(field);
-                    freeze.put(blocks, move.x, move.y);
-
-                    int numCleared = freeze.clearLineReturnNum();
-
-                    int nextLeftLine = leftLine - numCleared;
-                    if (nextLeftLine == 0) {
-                        solution[depth].pieceType = hold;
-                        solution[depth].rotateType = move.rotateType;
-                        solution[depth].x = move.x;
-                        solution[depth].y = move.y;
-                        return true;
-                    }
-
-                    auto nextDepth = depth + 1;
-                    if (maxDepth <= nextDepth) {
-                        continue;
-                    }
-
-                    if (!validate(freeze, nextLeftLine)) {
-                        continue;
-                    }
-
-                    Candidate nextCandidate = Candidate{freeze, currentIndex + 1, currentIndex, nextLeftLine,
-                                                        nextDepth};
-                    if (search(configure, nextCandidate, solution)) {
-                        solution[depth].pieceType = hold;
-                        solution[depth].rotateType = move.rotateType;
-                        solution[depth].x = move.x;
-                        solution[depth].y = move.y;
-                        return true;
-                    }
+                if (move(configure, candidate, solution, moves, hold, currentIndex + 1, currentIndex)) {
+                    return true;
                 }
             }
         } else {
@@ -144,43 +81,67 @@ namespace finder {
                 auto &next = pieces[nextIndex];
 
                 moves.clear();
-                moveGenerator.search(moves, field, next, leftLine);
-
-                for (const auto &move : moves) {
-                    auto &blocks = factory.get(next, move.rotateType);
-
-                    auto freeze = core::Field(field);
-                    freeze.put(blocks, move.x, move.y);
-
-                    int numCleared = freeze.clearLineReturnNum();
-
-                    int nextLeftLine = leftLine - numCleared;
-                    if (nextLeftLine == 0) {
-                        solution[depth].pieceType = next;
-                        solution[depth].rotateType = move.rotateType;
-                        solution[depth].x = move.x;
-                        solution[depth].y = move.y;
-                        return true;
-                    }
-
-                    auto nextDepth = depth + 1;
-                    if (maxDepth <= nextDepth) {
-                        continue;
-                    }
-
-                    if (!validate(freeze, nextLeftLine)) {
-                        continue;
-                    }
-
-                    Candidate nextCandidate = Candidate{freeze, nextIndex + 1, currentIndex, nextLeftLine, nextDepth};
-                    if (search(configure, nextCandidate, solution)) {
-                        solution[depth].pieceType = next;
-                        solution[depth].rotateType = move.rotateType;
-                        solution[depth].x = move.x;
-                        solution[depth].y = move.y;
-                        return true;
-                    }
+                if (move(configure, candidate, solution, moves, next, nextIndex + 1, currentIndex)) {
+                    return true;
                 }
+            }
+        }
+
+        return false;
+    }
+
+    template<>
+    bool PerfectFinder<core::srs::MoveGenerator>::move(
+            Configure &configure,
+            const Candidate &candidate,
+            Solution &solution,
+            std::vector<core::Move> &moves,
+            core::PieceType pieceType,
+            int nextIndex,
+            int nextHoldIndex
+    ) {
+        auto depth = candidate.depth;
+        auto maxDepth = configure.maxDepth;
+        auto &field = candidate.field;
+
+        auto leftLine = candidate.leftLine;
+        assert(0 < leftLine);
+
+        moveGenerator.search(moves, field, pieceType, leftLine);
+
+        for (const auto &move : moves) {
+            auto &blocks = factory.get(pieceType, move.rotateType);
+
+            auto freeze = core::Field(field);
+            freeze.put(blocks, move.x, move.y);
+
+            int numCleared = freeze.clearLineReturnNum();
+
+            int nextLeftLine = leftLine - numCleared;
+            if (nextLeftLine == 0) {
+                solution[depth].pieceType = pieceType;
+                solution[depth].rotateType = move.rotateType;
+                solution[depth].x = move.x;
+                solution[depth].y = move.y;
+                return true;
+            }
+
+            auto nextDepth = depth + 1;
+            if (maxDepth <= nextDepth) {
+                continue;
+            }
+
+            if (!validate(freeze, nextLeftLine)) {
+                continue;
+            }
+
+            Candidate nextCandidate = Candidate{freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth};
+            if (search(configure, nextCandidate, solution)) {
+                solution[depth].pieceType = pieceType;
+                solution[depth].rotateType = move.rotateType;
+                solution[depth].x = move.x;
+                solution[depth].y = move.y;
+                return true;
             }
         }
 

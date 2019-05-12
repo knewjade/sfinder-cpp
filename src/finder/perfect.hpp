@@ -44,11 +44,21 @@ namespace finder {
                 int maxDepth, int maxLine, bool holdEmpty
         );
 
-        bool search(Configure &configure, const Candidate &candidate, Solution &solution);
-
     private:
         const core::Factory &factory;
         T &moveGenerator;
+
+        bool search(Configure &configure, const Candidate &candidate, Solution &solution);
+
+        bool move(
+                Configure &configure,
+                const Candidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex
+        );
     };
 }
 
