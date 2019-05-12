@@ -31,12 +31,12 @@ namespace core {
             generator.search(moves, field, PieceType::T, 4);
 
             EXPECT_EQ(moves.size(), 7);
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 0}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 4, 1}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 5, 2}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 2}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 6, 3}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 0, false}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 4, 1, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 5, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 6, 3, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1, true}));
         }
 
         {
@@ -44,9 +44,44 @@ namespace core {
             generator.search(moves, field, PieceType::S, 4);
 
             EXPECT_EQ(moves.size(), 3);
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 1}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 2}));
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 1, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1, true}));
+        }
+    }
+
+    TEST_F(MovesTest, harddrop1) {
+        auto field = createField(
+                "XXXX____XX"s +
+                "XXXX___XXX"s +
+                "XXXX__XXXX"s +
+                "XXXX___XXX"s +
+                ""
+        );
+
+        auto factory = Factory::create();
+        auto generator = harddrop::MoveGenerator(factory);
+
+        {
+            auto moves = std::vector<Move>();
+            generator.search(moves, field, PieceType::T, 4);
+
+            EXPECT_EQ(moves.size(), 6);
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 4, 1, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 5, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 6, 3, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1, true}));
+        }
+
+        {
+            auto moves = std::vector<Move>();
+            generator.search(moves, field, PieceType::S, 4);
+
+            EXPECT_EQ(moves.size(), 3);
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 5, 1, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 2, true}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1, true}));
         }
     }
 
@@ -65,7 +100,7 @@ namespace core {
             generator.search(moves, field, PieceType::S, 2);
 
             EXPECT_EQ(moves.size(), 1);
-            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 0}));
+            EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 6, 0, false}));
         }
     }
 
