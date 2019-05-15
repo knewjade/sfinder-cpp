@@ -140,11 +140,11 @@ namespace core {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
-            // 左回転前の方向
+            // Direction before left rotation
             RotateType fromRotate = static_cast<RotateType>((toBlocks.rotateType + 1) % 4);
             auto &fromBlocks = piece.blocks[fromRotate];
 
-            // 方向だけfromにする
+            // Change the direction to `from`
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
@@ -182,11 +182,11 @@ namespace core {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
-            // 右回転前の方向
+            // Direction before right rotation
             RotateType fromRotate = static_cast<RotateType>((toBlocks.rotateType + 3) % 4);
             auto &fromBlocks = piece.blocks[fromRotate];
 
-            // 方向だけfromにする
+            // Change the direction to `from`
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
@@ -223,27 +223,27 @@ namespace core {
         ) {
             auto field = targetObject.field;
 
-            // harddropでたどりつけるとき
+            // When reach by harddrop
             if (field.canReachOnHarddrop(blocks, x, y)) {
                 return isFirstCall ? MoveResults::Harddrop : MoveResults::Softdrop;
             }
 
-            // 一番上までたどり着いたとき
+            // When reach the top
             if (appearY <= y) {
                 return MoveResults::Softdrop;
             }
 
             RotateType rotate = blocks.rotateType;
 
-            // すでに訪問済みのとき
+            // Visited already
             if (cache.isVisit(x, y, rotate)) {
-                // その時の結果を返却。訪問済みだが結果が出てないときは他の探索でカバーできるためfalseを返却
+                // Return no when it has been visited and not found because it can be covered by other path
                 return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
             }
 
             cache.visit(x, y, rotate);
 
-            // 上に移動
+            // Move up
             int upY = y + 1;
             if (upY < appearY && field.canPut(blocks, x, upY)) {
                 auto result = check(targetObject, blocks, x, upY, From::None, false);
@@ -252,7 +252,7 @@ namespace core {
                 }
             }
 
-            // 左に移動
+            // Move left
             int leftX = x - 1;
             if (from != From::Left && -blocks.minX <= leftX && field.canPut(blocks, leftX, y)) {
                 auto result = check(targetObject, blocks, leftX, y, From::Right, false);
@@ -261,7 +261,7 @@ namespace core {
                 }
             }
 
-            // 右に移動
+            // Move right
             int rightX = x + 1;
             if (from != From::Right && rightX < FIELD_WIDTH - blocks.maxX && field.canPut(blocks, rightX, y)) {
                 auto result = check(targetObject, blocks, rightX, y, From::Left, false);
@@ -270,7 +270,7 @@ namespace core {
                 }
             }
 
-            // 右回転でくる可能性がある場所を移動
+            // Move the place where there is a possibility of rotating right
             {
                 auto result = checkRightRotation(targetObject, blocks, x, y);
                 if (result != MoveResults::No) {
@@ -278,7 +278,7 @@ namespace core {
                 }
             }
 
-            // 左回転でくる可能性がある場所を移動
+            // Move the place where there is a possibility of rotating left
             {
 
                 auto result = checkLeftRotation(targetObject, blocks, x, y);
