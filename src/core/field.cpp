@@ -130,7 +130,7 @@ namespace core {
     void Field::deleteLine_(
             LineKey deleteKeyLow, LineKey deleteKeyMidLow, LineKey deleteKeyMidHigh, LineKey deleteKeyHigh
     ) {
-        // 下半分
+        // Lower half
         Bitboard newXBoardLow = deleteLine(xBoardLow, deleteKeyLow);
 
         Bitboard newXBoardMidLow = deleteLine(xBoardMidLow, deleteKeyMidLow);
@@ -143,7 +143,7 @@ namespace core {
         int deleteLineMidLow = bitCount(deleteKeyMidLow);
         int deleteLineBottom = deleteLineLow + deleteLineMidLow;
 
-        // 上半分
+        // Upper half
         Bitboard newXBoardMidHigh = deleteLine(xBoardMidHigh, deleteKeyMidHigh);
 
         Bitboard newXBoardHigh = deleteLine(xBoardHigh, deleteKeyHigh);
@@ -153,7 +153,7 @@ namespace core {
         Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10)) & VALID_BOARD_RANGE;
         Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10;
 
-        // 上半分と下半分をマージ
+        // Merge the upper and lower halves
         if (deleteLineBottom < 6) {
             xBoardLow = low;
             xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10)) & VALID_BOARD_RANGE;
@@ -229,42 +229,42 @@ namespace core {
 
         if (maxY < 12) {
             if (maxY < 6) {
-                // Lowのチェック
+                // Check Low
                 return isWallBetweenLeft(x, maxY, xBoardLow);
             } else {
-                // Lowのチェック
+                // Check Low
                 if (!isWallBetweenLeft(x, 6, xBoardLow))
                     return false;
 
-                // MidLowのチェック
+                // Check MidLow
                 return isWallBetweenLeft(x, maxY - 6, xBoardMidLow);
             }
         } else {
             if (maxY < 18) {
-                // Lowのチェック
+                // Check Low
                 if (!isWallBetweenLeft(x, 6, xBoardLow))
                     return false;
 
-                // MidLowのチェック
+                // Check MidLow
                 if (!isWallBetweenLeft(x, 6, xBoardMidLow))
                     return false;
 
-                // MidHighのチェック
+                // Check MidHigh
                 return isWallBetweenLeft(x, maxY - 12, xBoardMidHigh);
             } else {
-                // Lowのチェック
+                // Check Low
                 if (!isWallBetweenLeft(x, 6, xBoardLow))
                     return false;
 
-                // MidLowのチェック
+                // Check MidLow
                 if (!isWallBetweenLeft(x, 6, xBoardMidLow))
                     return false;
 
-                // MidHighのチェック
+                // Check MidHigh
                 if (!isWallBetweenLeft(x, 6, xBoardMidHigh))
                     return false;
 
-                // Highのチェック
+                // Check High
                 return isWallBetweenLeft(x, maxY - 18, xBoardHigh);
             }
         }

@@ -440,7 +440,7 @@ namespace core {
         return kColumnOneLineBelowY[maxY];
     }
 
-    // x列とその左の列の間が壁（隙間がない）とき true を返却。1 <= xであること
+    // Returns true if there is no wall (no gap) between the x column and its left column
     bool isWallBetweenLeft(int x, int maxY, Bitboard board) {
         assert(1 <= x && x < 10);
 

@@ -45,11 +45,11 @@ namespace core {
             int index = lowerY / 6;
             int localY = lowerY - 6 * index;
             if (6 < localY + height) {
-                // 上にはみ出る
+                // Over
                 collider.boards[index] |= (mask << (localY * FIELD_WIDTH)) & VALID_BOARD_RANGE;
                 collider.boards[index + 1] |= mask >> ((6 - localY) * FIELD_WIDTH);
             } else {
-                // 下6段で収まる
+                // Fit in the lower 6
                 collider.boards[index] |= mask << (localY * FIELD_WIDTH);
             }
 
@@ -61,7 +61,7 @@ namespace core {
         MinMax minmaxX = std::minmax({points[0].x, points[1].x, points[2].x, points[3].x});
         MinMax minmaxY = std::minmax({points[0].y, points[1].y, points[2].y, points[3].y});
 
-        // 左下揃えになるように移動
+        // Left align
         Bitboard mask = 0;
         for (const auto &point : points) {
             mask |= getXMask(point.x - minmaxX.first, point.y - minmaxY.first);
@@ -142,13 +142,13 @@ namespace core {
         assert(0 <= lowerY && lowerY < 6);
 
         if (6 < lowerY + height) {
-            // 上にはみ出る
+            // Over
             const auto slide = mask_ << leftX;
             return {
                     (slide << (lowerY * FIELD_WIDTH)) & VALID_BOARD_RANGE, slide >> ((6 - lowerY) * FIELD_WIDTH)
             };
         } else {
-            // 下6段で収まる
+            // Fit in the lower 6
             return {
                     mask_ << (lowerY * FIELD_WIDTH + leftX), 0
             };

@@ -62,7 +62,7 @@ namespace core {
                   width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1), mask_(mask) {
         };
 
-        const Bitboard mask_;  // 左下揃えになるように移動
+        const Bitboard mask_;  // Left align
     };
 
     class Piece {
