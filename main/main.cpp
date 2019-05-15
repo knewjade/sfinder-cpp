@@ -75,7 +75,7 @@ void benchmark() {
 
         auto start2 = std::chrono::system_clock::now();
 
-        auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+        auto result = finder.run(field, pieces, maxDepth, maxLine, false, true);
 
         if (!result.empty()) {
             success += 1;
@@ -110,25 +110,22 @@ void sample() {
     auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
     auto field = core::createField(
-            "__________"s +
-            "_XX_______"s +
-            "XXXXX____X"s +
-            "XXXXXXX__X"s +
-            "XXXXXX___X"s +
-            "XXXXXXX_XX"s +
+            "_XXXXXX___"s +
+            "_XXXXXXXXX"s +
+            "XXXXXX_XXX"s +
             ""
     );
 
     auto pieces = std::vector{
-            core::PieceType::S, core::PieceType::I, core::PieceType::T, core::PieceType::Z,
-            core::PieceType::J, core::PieceType::O, core::PieceType::L
+            core::PieceType::J, core::PieceType::J, core::PieceType::S, core::PieceType::O, core::PieceType::I,
+            core::PieceType::L, core::PieceType::Z, core::PieceType::T, core::PieceType::I, core::PieceType::Z
     };
 
-    const int maxDepth = 7;
+    const int maxDepth = 9;
     const int maxLine = 6;
     const bool holdEmpty = false;  // If true, hold is empty at start
 
-    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty);
+    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty, false);
 
     if (!result.empty()) {
         std::cout << "PC: success" << std::endl;
@@ -139,6 +136,11 @@ void sample() {
                       << item.x << ","
                       << item.y << " "
                       << std::endl;
+
+            field.put(factory.get(item.pieceType, item.rotateType), item.x, item.y);
+            field.clearLine();
+
+            std::cout << field.toString(maxLine) << std::endl;
         }
     } else {
         std::cout << "PC: failed" << std::endl;
