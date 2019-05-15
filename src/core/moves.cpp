@@ -1,5 +1,4 @@
 #include "moves.hpp"
-#include <iostream>
 
 namespace core {
     namespace {
