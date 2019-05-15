@@ -274,7 +274,7 @@ namespace finder {
         return pieces;
     }
 
-    TEST_F(PerfectTest, percent1) {
+    TEST_F(PerfectTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
@@ -314,5 +314,46 @@ namespace finder {
         std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
 
         EXPECT_EQ(success, 5038);
+    }
+
+    TEST_F(PerfectTest, longtest2) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        auto field = core::createField(
+                "__________"s +
+                "_XX_______"s +
+                "XXXXX____X"s +
+                "XXXXXXX__X"s +
+                "XXXXXX___X"s +
+                "XXXXXXX_XX"s +
+                ""
+        );
+        const int maxDepth = 7;
+        const int maxLine = 6;
+
+        int success = 0;
+        long long int totalTime = 0L;
+        int max = 5040;
+        for (int value = 0; value < max; ++value) {
+            auto arr = toPieces<maxDepth>(value);
+            auto pieces = std::vector(arr.begin(), arr.end());
+
+            auto start = std::chrono::system_clock::now();
+
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+
+            if (!result.empty()) {
+                success += 1;
+            }
+
+            auto elapsed = std::chrono::system_clock::now() - start;
+            totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        }
+
+        std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
+
+        EXPECT_EQ(success, 3248);
     }
 }
