@@ -89,7 +89,7 @@ namespace core {
                 for (int x = -blocks.minX, maxX = FIELD_WIDTH - blocks.maxX; x < maxX; ++x) {
                     int harddropY = field.getYOnHarddrop(blocks, x, y);
                     if (harddropY < maxY) {
-                        moves.push_back(Move{rotateType, x, harddropY});
+                        moves.push_back(Move{rotateType, x, harddropY, true});
                     }
                 }
 
@@ -106,8 +106,8 @@ namespace core {
 
             cache.clear();
 
-            auto &piece2 = factory.get(pieceType);
-            auto target = TargetObject{field, piece2};
+            auto &piece = factory.get(pieceType);
+            auto target = TargetObject{field, piece};
 
             for (int rotate = 0; rotate < 4; ++rotate) {
                 RotateType rotateType = static_cast<RotateType >(rotate);
@@ -116,14 +116,15 @@ namespace core {
                 for (int x = -blocks.minX, maxX = FIELD_WIDTH - blocks.maxX; x < maxX; ++x) {
                     for (int y = validHeight - blocks.maxY - 1; -blocks.minY <= y; --y) {
                         if (field.canPut(blocks, x, y) && field.isOnGround(blocks, x, y)) {
-                            if (check(target, blocks, x, y, From::None)) {
-                                auto &transform = piece2.transforms[rotateType];
+                            auto result = check(target, blocks, x, y, From::None, true);
+                            if (result != MoveResults::No) {
+                                auto &transform = piece.transforms[rotateType];
                                 RotateType newRotate = transform.toRotate;
                                 int newX = x + transform.offset.x;
                                 int newY = y + transform.offset.y;
                                 if (!cache.isFound(newX, newY, newRotate)) {
                                     cache.found(newX, newY, newRotate);
-                                    moves.push_back(Move{newRotate, newX, newY});
+                                    moves.push_back(Move{newRotate, newX, newY, result == MoveResults::Harddrop});
                                 }
                             }
                             cache.resetTrail();
@@ -133,7 +134,9 @@ namespace core {
             }
         }
 
-        bool MoveGenerator::checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+        MoveResults MoveGenerator::checkLeftRotation(
+                const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
+        ) {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
@@ -162,17 +165,20 @@ namespace core {
 
                     auto &kicks = piece.leftOffsets[srsResult];
                     if (offset.x == kicks.x && offset.y == kicks.y) {
-                        if (check(targetObject, fromBlocks, fromX, fromY, From::None)) {
-                            return true;
+                        auto result = check(targetObject, fromBlocks, fromX, fromY, From::None, false);
+                        if (result != MoveResults::No) {
+                            return result;
                         }
                     }
                 }
             }
 
-            return false;
+            return MoveResults::No;
         }
 
-        bool MoveGenerator::checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+        MoveResults MoveGenerator::checkRightRotation(
+                const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
+        ) {
             auto piece = targetObject.piece;
             auto field = targetObject.field;
 
@@ -201,71 +207,87 @@ namespace core {
 
                     auto &kicks = piece.rightOffsets[srsResult];
                     if (offset.x == kicks.x && offset.y == kicks.y) {
-                        if (check(targetObject, fromBlocks, fromX, fromY, From::None)) {
-                            return true;
+                        auto result = check(targetObject, fromBlocks, fromX, fromY, From::None, false);
+                        if (result != MoveResults::No) {
+                            return result;
                         }
                     }
                 }
             }
 
-            return false;
+            return MoveResults::No;
         }
 
-        bool MoveGenerator::check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
-            // 一番上までたどり着いたとき
-            if (appearY <= y)
-                return true;
-
-            RotateType rotate = blocks.rotateType;
-
-            // すでに訪問済みのとき
-            if (cache.isVisit(x, y, rotate))
-                return cache.isFound(x, y, rotate);  // その時の結果を返却。訪問済みだが結果が出てないときは他の探索でカバーできるためfalseを返却
-
-            cache.visit(x, y, rotate);
-
+        MoveResults MoveGenerator::check(
+                const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from, bool isFirstCall
+        ) {
             auto field = targetObject.field;
 
             // harddropでたどりつけるとき
             if (field.canReachOnHarddrop(blocks, x, y)) {
-                return true;
+                return isFirstCall ? MoveResults::Harddrop : MoveResults::Softdrop;
             }
+
+            // 一番上までたどり着いたとき
+            if (appearY <= y) {
+                return MoveResults::Softdrop;
+            }
+
+            RotateType rotate = blocks.rotateType;
+
+            // すでに訪問済みのとき
+            if (cache.isVisit(x, y, rotate)) {
+                // その時の結果を返却。訪問済みだが結果が出てないときは他の探索でカバーできるためfalseを返却
+                return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+            }
+
+            cache.visit(x, y, rotate);
 
             // 上に移動
             int upY = y + 1;
             if (upY < appearY && field.canPut(blocks, x, upY)) {
-                if (check(targetObject, blocks, x, upY, From::None)) {
-                    return true;
+                auto result = check(targetObject, blocks, x, upY, From::None, false);
+                if (result != MoveResults::No) {
+                    return result;
                 }
             }
 
             // 左に移動
             int leftX = x - 1;
             if (from != From::Left && -blocks.minX <= leftX && field.canPut(blocks, leftX, y)) {
-                if (check(targetObject, blocks, leftX, y, From::Right)) {
-                    return true;
+                auto result = check(targetObject, blocks, leftX, y, From::Right, false);
+                if (result != MoveResults::No) {
+                    return result;
                 }
             }
 
             // 右に移動
             int rightX = x + 1;
             if (from != From::Right && rightX < FIELD_WIDTH - blocks.maxX && field.canPut(blocks, rightX, y)) {
-                if (check(targetObject, blocks, rightX, y, From::Left)) {
-                    return true;
+                auto result = check(targetObject, blocks, rightX, y, From::Left, false);
+                if (result != MoveResults::No) {
+                    return result;
                 }
             }
 
             // 右回転でくる可能性がある場所を移動
-            if (checkRightRotation(targetObject, blocks, x, y)) {
-                return true;
+            {
+                auto result = checkRightRotation(targetObject, blocks, x, y);
+                if (result != MoveResults::No) {
+                    return result;
+                }
             }
 
             // 左回転でくる可能性がある場所を移動
-            if (checkLeftRotation(targetObject, blocks, x, y)) {
-                return true;
+            {
+
+                auto result = checkLeftRotation(targetObject, blocks, x, y);
+                if (result != MoveResults::No) {
+                    return result;
+                }
             }
 
-            return false;
+            return MoveResults::No;
         }
     }
 }

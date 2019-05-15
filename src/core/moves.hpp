@@ -12,10 +12,17 @@ namespace core {
         RotateType rotateType;
         int x;
         int y;
+        bool harddrop;
+    };
+
+    enum MoveResults {
+        No = 0,
+        Harddrop = 1,
+        Softdrop = 2,
     };
 
     inline bool operator==(const Move &lhs, const Move &rhs) {
-        return lhs.rotateType == rhs.rotateType && lhs.x == rhs.x && lhs.y == rhs.y;
+        return lhs.rotateType == rhs.rotateType && lhs.x == rhs.x && lhs.y == rhs.y && lhs.harddrop == rhs.harddrop;
     }
 
     inline bool operator!=(const Move &lhs, const Move &rhs) {
@@ -79,11 +86,13 @@ namespace core {
             Cache cache;
             int appearY;
 
-            bool checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
+            MoveResults checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
 
-            bool checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
+            MoveResults checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
 
-            bool check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from);
+            MoveResults check(
+                    const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from, bool isFirstCall
+            );
         };
     }
 }

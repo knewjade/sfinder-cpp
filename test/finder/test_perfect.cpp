@@ -176,7 +176,7 @@ namespace finder {
     }
 
     // depth = 3 && piece = 4 && first hold exists
-    TEST_F(PerfectTest, block6) {
+    TEST_F(PerfectTest, case6) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
@@ -248,7 +248,33 @@ namespace finder {
         }
     }
 
-    TEST_F(PerfectTest, measure1) {
+    template<int N>
+    std::array<core::PieceType, N> toPieces(int value) {
+        int arr[N];
+
+        for (int index = N - 1; 0 <= index; --index) {
+            int scale = 7 - index;
+            arr[index] = value % scale;
+            value /= scale;
+        }
+
+        for (int select = N - 2; 0 <= select; --select) {
+            for (int adjust = select + 1; adjust < N; ++adjust) {
+                if (arr[select] <= arr[adjust]) {
+                    arr[adjust] += 1;
+                }
+            }
+        }
+
+        std::array<core::PieceType, N> pieces = {};
+        for (int index = 0; index < N; ++index) {
+            pieces[index] = static_cast<core::PieceType>(arr[index]);
+        }
+
+        return pieces;
+    }
+
+    TEST_F(PerfectTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
@@ -262,66 +288,72 @@ namespace finder {
                 "XXXXXXX_XX"s +
                 ""
         );
-        auto maxDepth = 7;
-        auto maxLine = 6;
+        const int maxDepth = 7;
+        const int maxLine = 6;
 
-        long long int sum = 0;
-        for (int count = 0; count < 100; ++count) {
+        int success = 0;
+        long long int totalTime = 0L;
+        int max = 5040;
+        for (int value = 0; value < max; ++value) {
+            auto arr = toPieces<maxDepth>(value);
+            auto pieces = std::vector(arr.begin(), arr.end());
+
             auto start = std::chrono::system_clock::now();
 
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::I, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
-            auto end = std::chrono::system_clock::now();
+            // Failed: 975, 2295
+            if (!result.empty()) {
+                success += 1;
+            }
 
-            auto diff = end - start;
-            sum += std::chrono::duration_cast<std::chrono::milliseconds>(diff).count();
-
-            EXPECT_FALSE(!result.empty());
+            auto elapsed = std::chrono::system_clock::now() - start;
+            totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         }
 
-        std::cout << "elapsed time = " << (sum / 100.0) << " msec." << std::endl;
+        std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
+
+        EXPECT_EQ(success, 5038);
     }
 
-    TEST_F(PerfectTest, measure2) {
+    TEST_F(PerfectTest, longtest2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
-                "XXXXX_____"s +
-                "XXXXX_____"s +
+                "__________"s +
+                "_XX_______"s +
                 "XXXXX____X"s +
                 "XXXXXXX__X"s +
                 "XXXXXX___X"s +
                 "XXXXXXX_XX"s +
                 ""
         );
-        auto maxDepth = 5;
-        auto maxLine = 6;
+        const int maxDepth = 7;
+        const int maxLine = 6;
 
-        long long int sum = 0;
-        int max = 100;
-        for (int count = 0; count < max; ++count) {
+        int success = 0;
+        long long int totalTime = 0L;
+        int max = 5040;
+        for (int value = 0; value < max; ++value) {
+            auto arr = toPieces<maxDepth>(value);
+            auto pieces = std::vector(arr.begin(), arr.end());
+
             auto start = std::chrono::system_clock::now();
 
-            auto pieces = std::vector{
-                    core::PieceType::I, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::L
-            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
-            auto end = std::chrono::system_clock::now();
+            if (!result.empty()) {
+                success += 1;
+            }
 
-            auto diff = end - start;
-            sum += std::chrono::duration_cast<std::chrono::microseconds>(diff).count();
-
-            EXPECT_TRUE(!result.empty());
+            auto elapsed = std::chrono::system_clock::now() - start;
+            totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         }
 
-        std::cout << "elapsed time = " << (sum / static_cast<double>(max)) << " microsec." << std::endl;
+        std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
+
+        EXPECT_EQ(success, 3248);
     }
 }
