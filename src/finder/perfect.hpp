@@ -6,6 +6,11 @@
 #include "../core/types.hpp"
 
 namespace finder {
+    enum PriorityTypes {
+        LeastSoftdrop_LeastLineClear_LeastHold,
+        LeastSoftdrop_MostLineClear_LeastHold,
+    };
+
     struct Candidate {
         const core::Field &field;
         const int currentIndex;
@@ -22,6 +27,7 @@ namespace finder {
         const std::vector<std::vector<core::Move>> &movePool;
         const int maxDepth;
         const int pieceSize;
+        const bool leastLineClears;
     };
 
     struct Operation {
@@ -50,7 +56,7 @@ namespace finder {
 
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty
+                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears
         );
 
     private:
@@ -71,7 +77,7 @@ namespace finder {
                 int nextHoldCount
         );
 
-        void accept(const Record &record);
+        void accept(const Configure &configure, const Record &record);
     };
 }
 

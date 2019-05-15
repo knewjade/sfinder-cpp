@@ -2,6 +2,12 @@
 
 namespace finder {
     namespace {
+        template<PriorityTypes T>
+        bool shouldUpdate(const Record &oldRecord, const Record &newRecord);
+
+        template<PriorityTypes T>
+        bool isWorseThanBest(const Record &best, const Candidate &current);
+
         bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
             for (int x = 1; x < core::FIELD_WIDTH; x++) {
@@ -18,7 +24,10 @@ namespace finder {
             return sum % 4 == 0;
         }
 
-        bool shouldUpdate(const Record &oldRecord, const Record &newRecord) {
+        template<>
+        bool shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
+                const Record &oldRecord, const Record &newRecord
+        ) {
             if (newRecord.softdropCount != oldRecord.softdropCount) {
                 return newRecord.softdropCount < oldRecord.softdropCount;
             }
@@ -30,8 +39,50 @@ namespace finder {
             return newRecord.holdCount < oldRecord.holdCount;
         }
 
-        bool isWorseThanBest(const Record &best, const Candidate &current) {
-            return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            // return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
+            return best.softdropCount < current.softdropCount;
+        }
+
+        template<>
+        bool shouldUpdate<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(
+                const Record &oldRecord, const Record &newRecord
+        ) {
+            if (newRecord.softdropCount != oldRecord.softdropCount) {
+                return newRecord.softdropCount < oldRecord.softdropCount;
+            }
+
+            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                return oldRecord.lineClearCount < newRecord.lineClearCount;
+            }
+
+            return newRecord.holdCount < oldRecord.holdCount;
+        }
+
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            return best.softdropCount < current.softdropCount;
+        }
+
+        bool shouldUpdate(const bool leastLineClears, const Record &oldRecord, const Record &newRecord) {
+            if (leastLineClears) {
+                return shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(oldRecord, newRecord);
+            } else {
+                return shouldUpdate<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(oldRecord, newRecord);
+            }
+        }
+
+        bool isWorseThanBest(const bool leastLineClears, const Record &best, const Candidate &current) {
+            if (leastLineClears) {
+                return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
+            } else {
+                return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(best, current);
+            }
         }
     }
 
@@ -53,7 +104,7 @@ namespace finder {
             const Candidate &candidate,
             Solution &solution
     ) {
-        if (isWorseThanBest(best, candidate)) {
+        if (isWorseThanBest(configure.leastLineClears, best, candidate)) {
             return;
         }
 
@@ -106,17 +157,17 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::accept(const Record& record) {
+    void PerfectFinder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
         assert(1 <= best.solution.size());
 
-        if (best.solution[0].x == -1 || shouldUpdate(best, record)) {
+        if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
             best.solution = record.solution;
             best.softdropCount = record.softdropCount;
             best.holdCount = record.holdCount;
             best.lineClearCount = record.lineClearCount;
         }
     }
-    
+
     template<>
     void PerfectFinder<core::srs::MoveGenerator>::move(
             const Configure &configure,
@@ -159,7 +210,7 @@ namespace finder {
             int nextLeftLine = leftLine - numCleared;
             if (nextLeftLine == 0) {
                 auto record = Record{solution, nextSoftdropCount, nextHoldCount, nextLineClearCount};
-                accept(record);
+                accept(configure, record);
                 return;
             }
 
@@ -183,7 +234,7 @@ namespace finder {
     template<>
     Solution PerfectFinder<core::srs::MoveGenerator>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
-            int maxDepth, int maxLine, bool holdEmpty
+            int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears
     ) {
         assert(1 <= maxDepth);
 
@@ -210,6 +261,7 @@ namespace finder {
                 movePool,
                 maxDepth,
                 static_cast<int>(pieces.size()),
+                leastLineClears,
         };
 
         // Create candidate
