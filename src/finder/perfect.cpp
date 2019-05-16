@@ -48,11 +48,15 @@ namespace finder {
         }
 
         template<>
-        bool shouldUpdate<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(
+        bool shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
                 const Record &oldRecord, const Record &newRecord
         ) {
             if (newRecord.softdropCount != oldRecord.softdropCount) {
                 return newRecord.softdropCount < oldRecord.softdropCount;
+            }
+
+            if (newRecord.maxCombo != oldRecord.maxCombo) {
+                return oldRecord.maxCombo < newRecord.maxCombo;
             }
 
             if (newRecord.lineClearCount != oldRecord.lineClearCount) {
@@ -63,7 +67,7 @@ namespace finder {
         }
 
         template<>
-        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
                 const Record &best, const Candidate &current
         ) {
             return best.softdropCount < current.softdropCount;
@@ -73,7 +77,8 @@ namespace finder {
             if (leastLineClears) {
                 return shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(oldRecord, newRecord);
             } else {
-                return shouldUpdate<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(oldRecord, newRecord);
+                return shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(oldRecord,
+                                                                                                    newRecord);
             }
         }
 
@@ -81,7 +86,7 @@ namespace finder {
             if (leastLineClears) {
                 return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
             } else {
-                return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostLineClear_LeastHold>(best, current);
+                return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(best, current);
             }
         }
     }
@@ -161,10 +166,7 @@ namespace finder {
         assert(1 <= best.solution.size());
 
         if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
-            best.solution = record.solution;
-            best.softdropCount = record.softdropCount;
-            best.holdCount = record.holdCount;
-            best.lineClearCount = record.lineClearCount;
+            best = Record(record);
         }
     }
 
@@ -189,6 +191,9 @@ namespace finder {
         auto softdropCount = candidate.softdropCount;
         auto lineClearCount = candidate.lineClearCount;
 
+        auto currentCombo = candidate.currentCombo;
+        auto maxCombo = candidate.maxCombo;
+
         moveGenerator.search(moves, field, pieceType, leftLine);
 
         for (const auto &move : moves) {
@@ -206,10 +211,14 @@ namespace finder {
 
             int nextSoftdropCount = move.harddrop ? softdropCount : softdropCount + 1;
             int nextLineClearCount = 0 < numCleared ? lineClearCount + 1 : lineClearCount;
+            int nextCurrentCombo = 0 < numCleared ? currentCombo + 1 : 0;
+            int nextMaxCombo = maxCombo < nextCurrentCombo ? nextCurrentCombo : maxCombo;
 
             int nextLeftLine = leftLine - numCleared;
             if (nextLeftLine == 0) {
-                auto record = Record{solution, nextSoftdropCount, nextHoldCount, nextLineClearCount};
+                auto record = Record{
+                        solution, nextSoftdropCount, nextHoldCount, nextLineClearCount, nextMaxCombo
+                };
                 accept(configure, record);
                 return;
             }
@@ -223,9 +232,9 @@ namespace finder {
                 continue;
             }
 
-            Candidate nextCandidate = Candidate{
+            auto nextCandidate = Candidate{
                     freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                    nextSoftdropCount, nextHoldCount, nextLineClearCount
+                    nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo
             };
             search(configure, nextCandidate, solution);
         }
@@ -234,7 +243,7 @@ namespace finder {
     template<>
     Solution PerfectFinder<core::srs::MoveGenerator>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
-            int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears
+            int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
     ) {
         assert(1 <= maxDepth);
 
@@ -266,8 +275,8 @@ namespace finder {
 
         // Create candidate
         Candidate candidate = holdEmpty
-                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0}
-                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0};
+                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo}
+                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo};
 
         // Create current record & best record
         best = Record{
@@ -275,11 +284,20 @@ namespace finder {
                 INT_MAX,
                 INT_MAX,
                 INT_MAX,
+                0,
         };
 
         // Execute
         search(configure, candidate, solution);
 
         return best.solution[0].x == -1 ? kNoSolution : std::vector<Operation>(best.solution);
+    }
+
+    template<>
+    Solution PerfectFinder<core::srs::MoveGenerator>::run(
+            const core::Field &field, const std::vector<core::PieceType> &pieces,
+            int maxDepth, int maxLine, bool holdEmpty
+    ) {
+        return run(field, pieces, maxDepth, maxLine, holdEmpty, false, 0);
     }
 }
