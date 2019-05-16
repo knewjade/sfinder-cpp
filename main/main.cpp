@@ -75,7 +75,7 @@ void benchmark() {
 
         auto start2 = std::chrono::system_clock::now();
 
-        auto result = finder.run(field, pieces, maxDepth, maxLine, false, true);
+        auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
         if (!result.empty()) {
             success += 1;
@@ -117,7 +117,7 @@ void sample() {
     );
 
     auto pieces = std::vector{
-            core::PieceType::J, core::PieceType::J, core::PieceType::S, core::PieceType::O, core::PieceType::I,
+            core::PieceType::I, core::PieceType::J, core::PieceType::J, core::PieceType::S, core::PieceType::O,
             core::PieceType::L, core::PieceType::Z, core::PieceType::T, core::PieceType::I, core::PieceType::Z
     };
 
@@ -125,7 +125,7 @@ void sample() {
     const int maxLine = 6;
     const bool holdEmpty = false;  // If true, hold is empty at start
 
-    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty, false);
+    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty, false, 0);
 
     if (!result.empty()) {
         std::cout << "PC: success" << std::endl;

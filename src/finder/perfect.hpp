@@ -8,7 +8,7 @@
 namespace finder {
     enum PriorityTypes {
         LeastSoftdrop_LeastLineClear_LeastHold,
-        LeastSoftdrop_MostLineClear_LeastHold,
+        LeastSoftdrop_MostCombo_MostLineClear_LeastHold,
     };
 
     struct Candidate {
@@ -20,6 +20,8 @@ namespace finder {
         const int softdropCount;
         const int holdCount;
         const int lineClearCount;
+        const int currentCombo;
+        const int maxCombo;
     };
 
     struct Configure {
@@ -45,6 +47,7 @@ namespace finder {
         int softdropCount;
         int holdCount;
         int lineClearCount;
+        int maxCombo;
     };
 
     template<class T = core::srs::MoveGenerator>
@@ -56,7 +59,12 @@ namespace finder {
 
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears
+                int maxDepth, int maxLine, bool holdEmpty
+        );
+
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
+                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
         );
 
     private:
