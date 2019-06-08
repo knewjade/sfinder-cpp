@@ -74,4 +74,64 @@ namespace core {
             EXPECT_EQ(blocks.maxY, 0);
         }
     }
+
+    TEST_F(FactoryTest, case1) {
+        auto factory = Factory::create();
+
+        {
+            const Piece &piece = factory.get(PieceType::T);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0001);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b0010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0100);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1000);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::L);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0001);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b0010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0100);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1000);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::J);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0001);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b0010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0100);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1000);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::I);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b1010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1010);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::S);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b1010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1010);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::Z);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b1010);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b0101);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1010);
+        }
+
+        {
+            const Piece &piece = factory.get(PieceType::O);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Spawn], 0b1111);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Right], 0b1111);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Reverse], 0b1111);
+            EXPECT_EQ(piece.sameShapeRotates[RotateType::Left], 0b1111);
+        }
+    }
 }

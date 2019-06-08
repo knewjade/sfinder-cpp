@@ -84,6 +84,7 @@ namespace core {
         const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
         const int32_t uniqueRotateBit;
+        const std::array<int32_t, 4> sameShapeRotates;
 
     private:
         Piece(
@@ -94,10 +95,10 @@ namespace core {
                 const std::array<Offset, 20> leftOffsets,
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
-                const int32_t uniqueRotate
+                const int32_t uniqueRotate,
+                const std::array<int32_t, 4> sameShapeRotates
         ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
-            offsetsSize(offsetsSize),
-            transforms(transforms), uniqueRotateBit(uniqueRotate) {
+            offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
 
