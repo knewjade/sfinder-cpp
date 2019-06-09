@@ -26,8 +26,6 @@ namespace core {
         const Piece &piece;
     };
 
-    constexpr auto kUnreachable = static_cast<RotateType>(-1);
-
     inline bool operator==(const Move &lhs, const Move &rhs) {
         return lhs.rotateType == rhs.rotateType && lhs.x == rhs.x && lhs.y == rhs.y && lhs.harddrop == rhs.harddrop;
     }
@@ -110,8 +108,7 @@ namespace core {
             Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
-            // @return  RotateType or kUnreachable
-            RotateType checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);
+            bool checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);
 
         private:
             const Factory &factory;

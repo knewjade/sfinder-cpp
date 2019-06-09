@@ -137,8 +137,8 @@ namespace core {
         MoveResults MoveGenerator::checkLeftRotation(
                 const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
         ) {
-            auto piece = targetObject.piece;
-            auto field = targetObject.field;
+            auto &piece = targetObject.piece;
+            auto &field = targetObject.field;
 
             // Direction before left rotation
             auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 1) % 4);
@@ -179,8 +179,8 @@ namespace core {
         MoveResults MoveGenerator::checkRightRotation(
                 const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
         ) {
-            auto piece = targetObject.piece;
-            auto field = targetObject.field;
+            auto &piece = targetObject.piece;
+            auto &field = targetObject.field;
 
             // Direction before right rotation
             auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 3) % 4);
@@ -221,7 +221,7 @@ namespace core {
         MoveResults MoveGenerator::check(
                 const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from, bool isFirstCall
         ) {
-            auto field = targetObject.field;
+            auto &field = targetObject.field;
 
             // When reach by harddrop
             if (field.canReachOnHarddrop(blocks, x, y)) {
@@ -292,7 +292,7 @@ namespace core {
     }
 
     namespace srs_rotate_end {
-        RotateType Reachable::checks(
+        bool Reachable::checks(
                 const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight
         ) {
             assert(field.canPut(factory.get(pieceType, rotateType), x, y));
@@ -301,7 +301,7 @@ namespace core {
 
             cache.clear();
 
-            auto piece = factory.get(pieceType);
+            auto &piece = factory.get(pieceType);
 
             auto &transform = piece.transforms[rotateType];
             auto currentRotateType = transform.toRotate;
@@ -317,7 +317,7 @@ namespace core {
                 auto next = bit & (bit - 1);
                 RotateType nextRotateType = rotateBitToVal[bit & ~next];
 
-                auto blocks = factory.get(pieceType, nextRotateType);
+                auto &blocks = factory.get(pieceType, nextRotateType);
 
                 auto &nextTransform = piece.transforms[nextRotateType];
 
@@ -327,20 +327,20 @@ namespace core {
                 auto nextY = currentY - nextTransform.offset.y;
 
                 if (firstCheck(target, blocks, nextX, nextY)) {
-                    return nextRotateType;
+                    return true;
                 }
 
                 bit = next;
             } while (bit != 0);
 
-            return kUnreachable;
+            return false;
         }
 
         MoveResults Reachable::checkLeftRotation(
                 const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
         ) {
-            auto piece = targetObject.piece;
-            auto field = targetObject.field;
+            auto &piece = targetObject.piece;
+            auto &field = targetObject.field;
 
             // Direction before left rotation
             auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 1) % 4);
@@ -381,8 +381,8 @@ namespace core {
         MoveResults Reachable::checkRightRotation(
                 const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY
         ) {
-            auto piece = targetObject.piece;
-            auto field = targetObject.field;
+            auto &piece = targetObject.piece;
+            auto &field = targetObject.field;
 
             // Direction before right rotation
             auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 3) % 4);
@@ -444,7 +444,7 @@ namespace core {
         }
 
         MoveResults Reachable::check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
-            auto field = targetObject.field;
+            auto &field = targetObject.field;
 
             // When reach by harddrop
             if (field.canReachOnHarddrop(blocks, x, y)) {

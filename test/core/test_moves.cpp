@@ -165,8 +165,8 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::Z, RotateType::Spawn, 5, 0, 24), RotateType::Reverse);
-                EXPECT_EQ(reachable.checks(field, PieceType::Z, RotateType::Reverse, 5, 1, 24), RotateType::Reverse);
+                EXPECT_TRUE(reachable.checks(field, PieceType::Z, RotateType::Spawn, 5, 0, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::Z, RotateType::Reverse, 5, 1, 24));
             }
 
             {
@@ -179,8 +179,8 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Left, 1, 1, 24), RotateType::Right);
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Right, 1, 2, 24), RotateType::Right);
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Left, 1, 1, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Right, 1, 2, 24));
             }
 
             {
@@ -193,8 +193,8 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Left, 1, 1, 24), kUnreachable);
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Right, 1, 2, 24), kUnreachable);
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Left, 1, 1, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Right, 1, 2, 24));
             }
 
             {
@@ -206,8 +206,8 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Reverse, 5, 0, 24), RotateType::Reverse);
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Spawn, 4, 0, 24), RotateType::Reverse);
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Reverse, 5, 0, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Spawn, 4, 0, 24));
             }
 
             {
@@ -219,11 +219,11 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Reverse, 3, 1, 24), RotateType::Reverse);
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Spawn, 2, 1, 24), RotateType::Reverse);
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Reverse, 3, 1, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Spawn, 2, 1, 24));
 
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Reverse, 5, 0, 24), kUnreachable);
-                EXPECT_EQ(reachable.checks(field, PieceType::I, RotateType::Spawn, 4, 0, 24), kUnreachable);
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Reverse, 5, 0, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Spawn, 4, 0, 24));
             }
 
             {
@@ -234,12 +234,12 @@ namespace core {
                         ""
                 );
 
-                EXPECT_EQ(reachable.checks(field, PieceType::O, RotateType::Spawn, 1, 1, 24), RotateType::Spawn);
+                EXPECT_TRUE(reachable.checks(field, PieceType::O, RotateType::Spawn, 1, 1, 24));
 
-                EXPECT_EQ(reachable.checks(field, PieceType::O, RotateType::Spawn, 2, 0, 24), kUnreachable);
-                EXPECT_EQ(reachable.checks(field, PieceType::O, RotateType::Right, 2, 1, 24), kUnreachable);
-                EXPECT_EQ(reachable.checks(field, PieceType::O, RotateType::Reverse, 3, 1, 24), kUnreachable);
-                EXPECT_EQ(reachable.checks(field, PieceType::O, RotateType::Left, 3, 0, 24), kUnreachable);
+                EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Spawn, 2, 0, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Right, 2, 1, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Reverse, 3, 1, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Left, 3, 0, 24));
             }
         }
     }

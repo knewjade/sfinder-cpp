@@ -1,12 +1,11 @@
 #include "perfect.hpp"
 
+#include <type_traits>
+
 namespace finder {
     namespace {
         template<PriorityTypes T>
         bool shouldUpdate(const Record &oldRecord, const Record &newRecord);
-
-        template<PriorityTypes T>
-        bool isWorseThanBest(const Record &best, const Candidate &current);
 
         bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
@@ -28,6 +27,10 @@ namespace finder {
         bool shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
                 const Record &oldRecord, const Record &newRecord
         ) {
+            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+            }
+
             if (newRecord.softdropCount != oldRecord.softdropCount) {
                 return newRecord.softdropCount < oldRecord.softdropCount;
             }
@@ -40,17 +43,13 @@ namespace finder {
         }
 
         template<>
-        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
-                const Record &best, const Candidate &current
-        ) {
-            // return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
-            return best.softdropCount < current.softdropCount;
-        }
-
-        template<>
         bool shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
                 const Record &oldRecord, const Record &newRecord
         ) {
+            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+            }
+
             if (newRecord.softdropCount != oldRecord.softdropCount) {
                 return newRecord.softdropCount < oldRecord.softdropCount;
             }
@@ -66,13 +65,6 @@ namespace finder {
             return newRecord.holdCount < oldRecord.holdCount;
         }
 
-        template<>
-        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
-                const Record &best, const Candidate &current
-        ) {
-            return best.softdropCount < current.softdropCount;
-        }
-
         bool shouldUpdate(const bool leastLineClears, const Record &oldRecord, const Record &newRecord) {
             if (leastLineClears) {
                 return shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(oldRecord, newRecord);
@@ -82,12 +74,150 @@ namespace finder {
             }
         }
 
-        bool isWorseThanBest(const bool leastLineClears, const Record &best, const Candidate &current) {
-            if (leastLineClears) {
-                return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
-            } else {
-                return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(best, current);
+        constexpr int FIELD_WIDTH = 10;
+        constexpr int FIELD_HEIGHT = 24;
+
+        bool isBlock(const core::Field &field, int x, int y) {
+            if (x < 0 || FIELD_WIDTH <= x || y < 0) {
+                return true;
             }
+            return !field.isEmpty(x, y);
+        }
+
+        enum TSpinShapes {
+            NoShape,
+            RegularShape,
+            MiniShape,
+        };
+
+        bool checkTSpinShape(const core::Field &field, int x, int y, core::RotateType rotateType) {
+            assert(0 <= x && x < FIELD_WIDTH);
+            assert(0 <= y);
+
+            auto b1 = isBlock(field, x - 1, y - 1);
+            auto b2 = isBlock(field, x - 1, y + 1);
+            auto b3 = isBlock(field, x + 1, y - 1);
+            auto b4 = isBlock(field, x + 1, y + 1);
+
+            auto shape = (b1 || b2) && (b1 || b3) && (b1 || b4) && (b2 || b3) && (b2 || b4) && (b3 || b4);
+            if (!shape) {
+                return TSpinShapes::NoShape;
+            }
+
+            switch (rotateType) {
+                case core::RotateType::Spawn:
+                    return b1 && b3 ? TSpinShapes::MiniShape : TSpinShapes::RegularShape;
+                case core::RotateType::Right:
+                    return b1 && b2 ? TSpinShapes::MiniShape : TSpinShapes::RegularShape;
+                case core::RotateType::Reverse:
+                    return b2 && b4 ? TSpinShapes::MiniShape : TSpinShapes::RegularShape;
+                case core::RotateType::Left:
+                    return b3 && b4 ? TSpinShapes::MiniShape : TSpinShapes::RegularShape;
+            }
+
+            assert(false);
+        }
+
+        int getAttackIfTSpin(
+                core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+                core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
+        ) {
+            if (pieceType != core::PieceType::T) {
+                return 0;
+            }
+
+            if (numCleared == 0) {
+                return 0;
+            }
+
+            auto rotateType = move.rotateType;
+            auto shapes = checkTSpinShape(field, move.x, move.y, rotateType);
+            if (shapes == TSpinShapes::NoShape) {
+                return 0;
+            }
+
+            if (!reachable.checks(field, pieceType, rotateType, move.x, move.y, FIELD_HEIGHT)) {
+                return 0;
+            }
+
+            if (shapes == TSpinShapes::RegularShape) {
+                int baseAttack = numCleared * 2;
+                return b2b ? baseAttack + 1 : baseAttack;
+            }
+
+            // Checks mini or regular (Last SRS test pattern)
+
+            auto &piece = factory.get(pieceType);
+            auto &toBlocks = factory.get(pieceType, rotateType);
+
+            auto toX = move.x;
+            auto toY = move.y;
+
+            // Rotate right
+            {
+                // Direction before right rotation
+                auto fromRotate = static_cast<core::RotateType>((rotateType + 3) % 4);
+                auto &fromBlocks = factory.get(pieceType, fromRotate);
+
+                // Change the direction to `from`
+                int toLeftX = toX + fromBlocks.minX;
+                int toLowerY = toY + fromBlocks.minY;
+
+                auto head = fromRotate * 5;
+                int width = FIELD_WIDTH - fromBlocks.width;
+                for (int index = head; index < head + piece.offsetsSize; ++index) {
+                    auto &offset = piece.rightOffsets[index];
+                    int fromLeftX = toLeftX - offset.x;
+                    int fromLowerY = toLowerY - offset.y;
+                    if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                        field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                        int fromX = toX - offset.x;
+                        int fromY = toY - offset.y;
+                        int srsResult = core::srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        if (0 <= srsResult && srsResult % 5 == 4) {
+                            // T-Spin Regular
+                            int baseAttack = numCleared * 2;
+                            return b2b ? baseAttack + 1 : baseAttack;
+                        }
+
+                        // Mini or No T-Spin
+                    }
+                }
+            }
+
+            // Rotate left
+            {
+                // Direction before left rotation
+                auto fromRotate = static_cast<core::RotateType>((rotateType + 1) % 4);
+                auto &fromBlocks = factory.get(pieceType, fromRotate);
+
+                // Change the direction to `from`
+                int toLeftX = toX + fromBlocks.minX;
+                int toLowerY = toY + fromBlocks.minY;
+
+                auto head = fromRotate * 5;
+                int width = FIELD_WIDTH - fromBlocks.width;
+                for (int index = head; index < head + piece.offsetsSize; ++index) {
+                    auto &offset = piece.leftOffsets[index];
+                    int fromLeftX = toLeftX - offset.x;
+                    int fromLowerY = toLowerY - offset.y;
+                    if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                        field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                        int fromX = toX - offset.x;
+                        int fromY = toY - offset.y;
+                        int srsResult = core::srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        if (0 <= srsResult && srsResult % 5 == 4) {
+                            // T-Spin Regular
+                            int baseAttack = numCleared * 2;
+                            return b2b ? baseAttack + 1 : baseAttack;
+                        }
+
+                        // Mini or No T-Spin
+                    }
+                }
+            }
+
+            return 0;
         }
     }
 
@@ -109,14 +239,10 @@ namespace finder {
             const Candidate &candidate,
             Solution &solution
     ) {
-        if (isWorseThanBest(configure.leastLineClears, best, candidate)) {
-            return;
-        }
-
         auto depth = candidate.depth;
 
-        auto pieces = configure.pieces;
-        auto moves = configure.movePool[depth];
+        auto &pieces = configure.pieces;
+        auto &moves = configure.movePool[depth];
 
         auto currentIndex = candidate.currentIndex;
         assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
@@ -163,7 +289,7 @@ namespace finder {
 
     template<>
     void PerfectFinder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
-        assert(1 <= best.solution.size());
+        assert(!best.solution.empty());
 
         if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
             best = Record(record);
@@ -194,7 +320,11 @@ namespace finder {
         auto currentCombo = candidate.currentCombo;
         auto maxCombo = candidate.maxCombo;
 
+        auto currentTSpinAttack = candidate.tSpinAttack;
+        auto currentB2b = candidate.b2b;
+
         moveGenerator.search(moves, field, pieceType, leftLine);
+        std::sort(moves.begin(), moves.end(), MoveComparator::cmp);
 
         for (const auto &move : moves) {
             auto &blocks = factory.get(pieceType, move.rotateType);
@@ -209,15 +339,19 @@ namespace finder {
             solution[depth].x = move.x;
             solution[depth].y = move.y;
 
+            int tSpinAttack = getAttackIfTSpin(reachable, factory, field, pieceType, move, numCleared, currentB2b);
+
             int nextSoftdropCount = move.harddrop ? softdropCount : softdropCount + 1;
             int nextLineClearCount = 0 < numCleared ? lineClearCount + 1 : lineClearCount;
             int nextCurrentCombo = 0 < numCleared ? currentCombo + 1 : 0;
             int nextMaxCombo = maxCombo < nextCurrentCombo ? nextCurrentCombo : maxCombo;
+            int nextTSpinAttack = currentTSpinAttack + tSpinAttack;
+            bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : currentB2b;
 
             int nextLeftLine = leftLine - numCleared;
             if (nextLeftLine == 0) {
                 auto record = Record{
-                        solution, nextSoftdropCount, nextHoldCount, nextLineClearCount, nextMaxCombo
+                        solution, nextSoftdropCount, nextHoldCount, nextLineClearCount, nextMaxCombo, nextTSpinAttack
                 };
                 accept(configure, record);
                 return;
@@ -234,7 +368,8 @@ namespace finder {
 
             auto nextCandidate = Candidate{
                     freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                    nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo
+                    nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                    nextTSpinAttack, nextB2b,
             };
             search(configure, nextCandidate, solution);
         }
@@ -275,8 +410,8 @@ namespace finder {
 
         // Create candidate
         Candidate candidate = holdEmpty
-                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo}
-                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo};
+                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true}
+                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true};
 
         // Create current record & best record
         best = Record{
@@ -298,6 +433,6 @@ namespace finder {
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty
     ) {
-        return run(field, pieces, maxDepth, maxLine, holdEmpty, false, 0);
+        return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0);
     }
 }

@@ -37,7 +37,7 @@ namespace core {
 
     class Blocks {
     public:
-        static Blocks create(const RotateType rotateType, const std::array<Point, 4> &points);
+        static Blocks create(RotateType rotateType, const std::array<Point, 4> &points);
 
         const RotateType rotateType;
         const std::array<Point, 4> points;
@@ -69,7 +69,7 @@ namespace core {
     public:
         template<size_t N>
         static Piece create(
-                const PieceType pieceType,
+                PieceType pieceType,
                 const std::string &name,
                 const std::array<Point, 4> &points,
                 const std::array<std::array<Offset, N>, 4> &offsets,
