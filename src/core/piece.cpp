@@ -132,9 +132,29 @@ namespace core {
             uniqueRotate |= 1 << transform.toRotate;
         }
 
+        // Find same shape rotate
+        std::array<int32_t, 4> sameShapeRotates{};
+        for (int rotate = 0; rotate < 4; ++rotate) {
+            int32_t sameRotate = 0;
+            for (int target = 0; target < 4; ++target) {
+                if (rotate == transforms[target].toRotate) {
+                    sameRotate |= 1 << target;
+                }
+            }
+            sameShapeRotates[rotate] = sameRotate;
+        }
+
+        // Update all rotates that have the same shape
+        for (int rotate = 0; rotate < 4; ++rotate) {
+            RotateType afterRotate = transforms[rotate].toRotate;
+            if (rotate != afterRotate) {
+                sameShapeRotates[rotate] = sameShapeRotates[afterRotate];
+            }
+        }
+
         return Piece(pieceType, name, std::array<Blocks, 4>{
                 spawn, right, reverse, left
-        }, rightOffsets, leftOffsets, N, transforms, uniqueRotate);
+        }, rightOffsets, leftOffsets, N, transforms, uniqueRotate, sameShapeRotates);
     }
 
     BlocksMask Blocks::mask(int leftX, int lowerY) const {

@@ -37,7 +37,7 @@ namespace core {
 
     class Blocks {
     public:
-        static Blocks create(const RotateType rotateType, const std::array<Point, 4> &points);
+        static Blocks create(RotateType rotateType, const std::array<Point, 4> &points);
 
         const RotateType rotateType;
         const std::array<Point, 4> points;
@@ -69,7 +69,7 @@ namespace core {
     public:
         template<size_t N>
         static Piece create(
-                const PieceType pieceType,
+                PieceType pieceType,
                 const std::string &name,
                 const std::array<Point, 4> &points,
                 const std::array<std::array<Offset, N>, 4> &offsets,
@@ -84,6 +84,7 @@ namespace core {
         const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
         const int32_t uniqueRotateBit;
+        const std::array<int32_t, 4> sameShapeRotates;
 
     private:
         Piece(
@@ -94,10 +95,10 @@ namespace core {
                 const std::array<Offset, 20> leftOffsets,
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
-                const int32_t uniqueRotate
+                const int32_t uniqueRotate,
+                const std::array<int32_t, 4> sameShapeRotates
         ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
-            offsetsSize(offsetsSize),
-            transforms(transforms), uniqueRotateBit(uniqueRotate) {
+            offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
 
