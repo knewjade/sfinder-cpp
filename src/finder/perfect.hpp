@@ -11,6 +11,12 @@ namespace finder {
         LeastSoftdrop_MostCombo_MostLineClear_LeastHold,
     };
 
+    enum TSpinShapes {
+        NoShape,
+        RegularShape,
+        MiniOrTSTShape,
+    };
+
     struct Candidate {
         const core::Field &field;
         const int currentIndex;
@@ -55,19 +61,22 @@ namespace finder {
 
     struct MoveComparator {
         static inline bool cmp(const core::Move &lhs, const core::Move &rhs) {
-            if (lhs.harddrop == rhs.harddrop) {
-                return rhs.y < lhs.y;
-            }
-
-            return !lhs.harddrop && rhs.harddrop;
+            return lhs.y < rhs.y;
         }
     };
+
+    TSpinShapes getTSpinShape(const core::Field &field, int x, int y, core::RotateType rotateType);
+
+    int getAttackIfTSpin(
+            core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+            core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
+    );
 
     template<class T = core::srs::MoveGenerator>
     class PerfectFinder {
     public:
         PerfectFinder<T>(const core::Factory &factory, T &moveGenerator)
-                : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory))  {
+                : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
         Solution run(
