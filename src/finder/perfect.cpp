@@ -5,6 +5,9 @@ namespace finder {
         template<PriorityTypes T>
         bool shouldUpdate(const Record &oldRecord, const Record &newRecord);
 
+        template<PriorityTypes T>
+        bool isWorseThanBest(const Record &best, const Candidate &current);
+
         bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
             for (int x = 1; x < core::FIELD_WIDTH; x++) {
@@ -19,6 +22,14 @@ namespace finder {
             }
 
             return sum % 4 == 0;
+        }
+
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            // return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
+            return best.softdropCount < current.softdropCount;
         }
 
         template<>
@@ -38,6 +49,13 @@ namespace finder {
             }
 
             return newRecord.holdCount < oldRecord.holdCount;
+        }
+
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            return best.softdropCount < current.softdropCount;
         }
 
         template<>
@@ -70,6 +88,22 @@ namespace finder {
                 return shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(oldRecord,
                                                                                                     newRecord);
             }
+        }
+
+        bool isWorseThanBest(const bool leastLineClears, const Record &best, const Candidate &current) {
+            if (current.leftNumOfT == 0) {
+                if (current.tSpinAttack != best.tSpinAttack) {
+                    return current.tSpinAttack < best.tSpinAttack;
+                }
+
+                if (leastLineClears) {
+                    return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
+                } else {
+                    return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(best, current);
+                }
+            }
+
+            return false;
         }
 
         constexpr int FIELD_WIDTH = 10;
@@ -231,6 +265,10 @@ namespace finder {
             const Candidate &candidate,
             Solution &solution
     ) {
+        if (isWorseThanBest(configure.leastLineClears, best, candidate))  {
+            return;
+        }
+
         auto depth = candidate.depth;
 
         auto &pieces = configure.pieces;
@@ -315,8 +353,9 @@ namespace finder {
         auto currentTSpinAttack = candidate.tSpinAttack;
         auto currentB2b = candidate.b2b;
 
+        auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
+
         moveGenerator.search(moves, field, pieceType, leftLine);
-//        std::sort(moves.begin(), moves.end(), MoveComparator::cmp);
 
         for (const auto &move : moves) {
             auto &blocks = factory.get(pieceType, move.rotateType);
@@ -361,7 +400,7 @@ namespace finder {
             auto nextCandidate = Candidate{
                     freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                     nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
-                    nextTSpinAttack, nextB2b,
+                    nextTSpinAttack, nextB2b, nextLeftNumOfT,
             };
             search(configure, nextCandidate, solution);
         }
@@ -400,10 +439,13 @@ namespace finder {
                 leastLineClears,
         };
 
+        // Count up T
+        int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
+
         // Create candidate
         Candidate candidate = holdEmpty
-                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true}
-                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true};
+                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT}
+                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT};
 
         // Create current record & best record
         best = Record{
