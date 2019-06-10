@@ -30,6 +30,7 @@ namespace finder {
         const int maxCombo;
         const int tSpinAttack;
         const bool b2b;
+        const int leftNumOfT;
     };
 
     struct Configure {

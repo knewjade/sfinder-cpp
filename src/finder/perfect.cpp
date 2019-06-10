@@ -72,6 +72,10 @@ namespace finder {
             }
         }
 
+        bool isWorseThanBest(const Record &best, const Candidate &current) {
+            return current.leftNumOfT == 0 && current.tSpinAttack < best.tSpinAttack;
+        }
+
         constexpr int FIELD_WIDTH = 10;
         constexpr int FIELD_HEIGHT = 24;
 
@@ -231,6 +235,10 @@ namespace finder {
             const Candidate &candidate,
             Solution &solution
     ) {
+        if (isWorseThanBest(best, candidate)) {
+            return;
+        }
+
         auto depth = candidate.depth;
 
         auto &pieces = configure.pieces;
@@ -315,6 +323,8 @@ namespace finder {
         auto currentTSpinAttack = candidate.tSpinAttack;
         auto currentB2b = candidate.b2b;
 
+        auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
+
         moveGenerator.search(moves, field, pieceType, leftLine);
 
         for (const auto &move : moves) {
@@ -360,7 +370,7 @@ namespace finder {
             auto nextCandidate = Candidate{
                     freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                     nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
-                    nextTSpinAttack, nextB2b,
+                    nextTSpinAttack, nextB2b, nextLeftNumOfT,
             };
             search(configure, nextCandidate, solution);
         }
@@ -399,10 +409,13 @@ namespace finder {
                 leastLineClears,
         };
 
+        // Count up T
+        int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
+
         // Create candidate
         Candidate candidate = holdEmpty
-                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true}
-                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true};
+                              ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT}
+                              : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT};
 
         // Create current record & best record
         best = Record{
