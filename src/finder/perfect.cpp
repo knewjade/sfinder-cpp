@@ -5,6 +5,9 @@ namespace finder {
         template<PriorityTypes T>
         bool shouldUpdate(const Record &oldRecord, const Record &newRecord);
 
+        template<PriorityTypes T>
+        bool isWorseThanBest(const Record &best, const Candidate &current);
+
         bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
             for (int x = 1; x < core::FIELD_WIDTH; x++) {
@@ -19,6 +22,14 @@ namespace finder {
             }
 
             return sum % 4 == 0;
+        }
+
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            // return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
+            return best.softdropCount < current.softdropCount;
         }
 
         template<>
@@ -38,6 +49,13 @@ namespace finder {
             }
 
             return newRecord.holdCount < oldRecord.holdCount;
+        }
+
+        template<>
+        bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
+                const Record &best, const Candidate &current
+        ) {
+            return best.softdropCount < current.softdropCount;
         }
 
         template<>
@@ -72,8 +90,20 @@ namespace finder {
             }
         }
 
-        bool isWorseThanBest(const Record &best, const Candidate &current) {
-            return current.leftNumOfT == 0 && current.tSpinAttack < best.tSpinAttack;
+        bool isWorseThanBest(const bool leastLineClears, const Record &best, const Candidate &current) {
+            if (current.leftNumOfT == 0) {
+                if (current.tSpinAttack != best.tSpinAttack) {
+                    return current.tSpinAttack < best.tSpinAttack;
+                }
+
+                if (leastLineClears) {
+                    return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
+                } else {
+                    return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(best, current);
+                }
+            }
+
+            return false;
         }
 
         constexpr int FIELD_WIDTH = 10;
@@ -235,7 +265,7 @@ namespace finder {
             const Candidate &candidate,
             Solution &solution
     ) {
-        if (isWorseThanBest(best, candidate)) {
+        if (isWorseThanBest(configure.leastLineClears, best, candidate))  {
             return;
         }
 
