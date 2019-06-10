@@ -59,12 +59,6 @@ namespace finder {
         int tSpinAttack;
     };
 
-    struct MoveComparator {
-        static inline bool cmp(const core::Move &lhs, const core::Move &rhs) {
-            return lhs.y < rhs.y;
-        }
-    };
-
     TSpinShapes getTSpinShape(const core::Field &field, int x, int y, core::RotateType rotateType);
 
     int getAttackIfTSpin(

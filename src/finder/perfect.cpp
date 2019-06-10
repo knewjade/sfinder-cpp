@@ -316,7 +316,6 @@ namespace finder {
         auto currentB2b = candidate.b2b;
 
         moveGenerator.search(moves, field, pieceType, leftLine);
-//        std::sort(moves.begin(), moves.end(), MoveComparator::cmp);
 
         for (const auto &move : moves) {
             auto &blocks = factory.get(pieceType, move.rotateType);
