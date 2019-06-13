@@ -50,7 +50,7 @@ namespace core {
 
         LineKey clearLineReturnKey();
 
-        int getBlockOnX(int x, int maxY) const;
+        int getBlockOnX(int ux, int maxY) const;
 
         bool isWallBetween(int x, int maxY) const;
 

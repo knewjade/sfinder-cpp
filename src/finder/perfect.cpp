@@ -143,6 +143,7 @@ namespace finder {
         }
 
         assert(false);
+        return TSpinShapes::NoShape;
     }
 
     int getAttackIfTSpin(
@@ -192,7 +193,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -224,7 +225,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -277,13 +278,13 @@ namespace finder {
         auto currentIndex = candidate.currentIndex;
         assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
         auto holdIndex = candidate.holdIndex;
-        assert(-1 <= holdIndex && holdIndex < configure.pieceSize);
+        assert(-1 <= holdIndex && holdIndex < static_cast<long long int>(configure.pieceSize));
 
         auto holdCount = candidate.holdCount;
 
         bool canUseCurrent = currentIndex < configure.pieceSize;
         if (canUseCurrent) {
-            assert(currentIndex < pieces.size());
+            assert(static_cast<unsigned int>(currentIndex) < pieces.size());
             auto &current = pieces[currentIndex];
 
             moves.clear();
@@ -291,7 +292,7 @@ namespace finder {
         }
 
         if (0 <= holdIndex) {
-            assert(holdIndex < pieces.size());
+            assert(static_cast<unsigned int>(holdIndex) < pieces.size());
 
             // Hold exists
             if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
@@ -304,11 +305,11 @@ namespace finder {
             assert(canUseCurrent);
 
             // Empty hold
-            int nextIndex = currentIndex + 1;
-            assert(nextIndex < pieces.size() + 1);
+            auto nextIndex = currentIndex + 1;
+            assert(static_cast<unsigned int>(nextIndex) < pieces.size() + 1);
 
             if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
-                assert(nextIndex < pieces.size());
+                assert(static_cast<unsigned int>(nextIndex) < pieces.size());
                 auto &next = pieces[nextIndex];
 
                 moves.clear();
@@ -440,7 +441,7 @@ namespace finder {
         };
 
         // Count up T
-        int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
+        int leftNumOfT = static_cast<int>(std::count(pieces.begin(), pieces.end(), core::PieceType::T));
 
         // Create candidate
         Candidate candidate = holdEmpty
