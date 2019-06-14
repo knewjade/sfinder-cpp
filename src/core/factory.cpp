@@ -82,7 +82,7 @@ namespace core {
         return Blocks(rotateType, minmaxX, minmaxY, harddropColliders, mask);
     }
 
-    template <size_t N>
+    template<size_t N>
     Piece Piece::create(
             const PieceType pieceType,
             const std::string &name,
@@ -103,7 +103,7 @@ namespace core {
             assert(from.size() == to.size());
 
             auto size = from.size();
-            for (unsigned int index = 0; index < 5; ++index) {
+            for (int index = 0; index < 5; ++index) {
                 if (index < size) {
                     rightOffsets[rotate * 5 + index] = {from[index].x - to[index].x, from[index].y - to[index].y};
                 } else {
@@ -120,7 +120,7 @@ namespace core {
             assert(from.size() == to.size());
 
             auto size = from.size();
-            for (unsigned int index = 0; index < 5; ++index) {
+            for (int index = 0; index < 5; ++index) {
                 if (index < size) {
                     leftOffsets[rotate * 5 + index] = {from[index].x - to[index].x, from[index].y - to[index].y};
                 } else {
@@ -314,7 +314,7 @@ namespace core {
     }
 
     const Blocks &Factory::get(PieceType piece, RotateType rotate) const {
-        unsigned int index = piece * 4 + rotate;
+        int index = piece * 4 + rotate;
         assert(0 <= index && index < blocks.size());
         return blocks[index];
     }

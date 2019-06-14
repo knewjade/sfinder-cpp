@@ -4,13 +4,14 @@
 
 namespace core {
     namespace {
-        const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
+        constexpr uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
+        constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
 
         uint64_t getXMask(int x, int y) {
             assert(0 <= x && x < kFieldWidth);
             assert(0 <= y && y < kMaxFieldHeight);
 
-            return 1LLU << static_cast<unsigned int>(x + y * kFieldWidth);
+            return 1LLU << (x + y * kFieldWidthUnsigned);
         }
     }
 

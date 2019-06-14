@@ -154,7 +154,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = kFieldWidth - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
+            for (int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -196,7 +196,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = kFieldWidth - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
+            for (int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -356,7 +356,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = kFieldWidth - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
+            for (int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -398,7 +398,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = kFieldWidth - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
+            for (int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;

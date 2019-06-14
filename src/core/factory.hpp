@@ -66,9 +66,9 @@ namespace core {
 
     class Piece {
     public:
-        static constexpr size_t kAllOffsetsSize = 20;
+        static constexpr int kOffsetsSize = 5;
 
-        template <size_t N>
+        template<size_t N>
         static Piece create(
                 PieceType pieceType,
                 const std::string &name,
