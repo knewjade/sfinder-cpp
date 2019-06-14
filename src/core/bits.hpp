@@ -1,8 +1,6 @@
 #ifndef CORE_BITS_HPP
 #define CORE_BITS_HPP
 
-#include <cassert>
-
 #include "types.hpp"
 
 namespace core {

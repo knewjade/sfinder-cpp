@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "moves.hpp"
 
 namespace core {

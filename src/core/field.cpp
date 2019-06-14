@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "field.hpp"
 
 namespace core {

@@ -1,11 +1,9 @@
 #ifndef CORE_FIELD_HPP
 #define CORE_FIELD_HPP
 
-#include <cassert>
-
 #include "types.hpp"
 #include "bits.hpp"
-#include "piece.hpp"
+#include "factory.hpp"
 
 namespace core {
     union Field {

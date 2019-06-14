@@ -1,16 +1,9 @@
-#include <utility>
-
-#include <utility>
-
-#include <utility>
-
 #ifndef CORE_PIECE_HPP
 #define CORE_PIECE_HPP
 
-#include <string>
 #include <algorithm>
 #include <array>
-#include <cassert>
+#include <string>
 
 #include "types.hpp"
 

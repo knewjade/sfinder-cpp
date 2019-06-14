@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "core/types.hpp"
-#include "core/piece.hpp"
+#include "core/factory.hpp"
 
 namespace core {
     using namespace std::literals::string_literals;

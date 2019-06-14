@@ -1,4 +1,6 @@
-#include "piece.hpp"
+#include <cassert>
+
+#include "factory.hpp"
 
 namespace core {
     namespace {
