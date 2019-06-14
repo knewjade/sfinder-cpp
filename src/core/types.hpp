@@ -32,9 +32,8 @@ namespace core {
                                         RotateType::Left,
     };
 
-    constexpr auto FIELD_WIDTH = 10;
-    constexpr auto kuFieldWidth = static_cast<unsigned int>(FIELD_WIDTH);
-    constexpr auto MAX_FIELD_HEIGHT = 24;
+    constexpr auto kFieldWidth = 10;
+    constexpr auto kMaxFieldHeight = 24;
 }
 
 #endif //CORE_TYPES_HPP

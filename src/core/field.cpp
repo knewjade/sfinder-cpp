@@ -7,32 +7,32 @@ namespace core {
         const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
         uint64_t getXMask(int x, int y) {
-            assert(0 <= x && x < FIELD_WIDTH);
-            assert(0 <= y && y < MAX_FIELD_HEIGHT);
+            assert(0 <= x && x < kFieldWidth);
+            assert(0 <= y && y < kMaxFieldHeight);
 
-            return 1LLU << static_cast<unsigned int>(x + y * FIELD_WIDTH);
+            return 1LLU << static_cast<unsigned int>(x + y * kFieldWidth);
         }
     }
 
     void Field::setBlock(int x, int y) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         boards[index] |= getXMask(x, y - 6 * index);
     }
 
     void Field::removeBlock(int x, int y) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         boards[index] &= ~getXMask(x, y - 6 * index);
     }
 
     bool Field::isEmpty(int x, int y) const {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -44,8 +44,8 @@ namespace core {
     }
 
     void Field::putAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -61,8 +61,8 @@ namespace core {
     }
 
     void Field::removeAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -78,8 +78,8 @@ namespace core {
     }
 
     bool Field::canPutAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) const {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -107,8 +107,8 @@ namespace core {
         const int leftX = x + blocks.minX;
         const int lowerY = y + blocks.minY;
 
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         Collider collider = blocks.harddrop(leftX, lowerY);
 
@@ -192,7 +192,7 @@ namespace core {
     }
 
     int Field::getBlockOnX(int x, int maxY) const {
-        assert(0 <= maxY && maxY <= MAX_FIELD_HEIGHT);
+        assert(0 <= maxY && maxY <= kMaxFieldHeight);
 
         auto ux = static_cast<unsigned int>(x);
         if (maxY < 12) {
@@ -224,7 +224,7 @@ namespace core {
     }
 
     bool Field::isWallBetween(int x, int maxY) const {
-        assert(0 <= maxY && maxY <= MAX_FIELD_HEIGHT);
+        assert(0 <= maxY && maxY <= kMaxFieldHeight);
 
         if (maxY == 0) {
             return true;

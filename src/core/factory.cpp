@@ -5,6 +5,7 @@
 namespace core {
     namespace {
         constexpr uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
+        constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
 
         std::array<Point, 4> rotateRight_(std::array<Point, 4> points) {
             return std::array<Point, 4>{
@@ -34,25 +35,25 @@ namespace core {
         }
 
         uint64_t getXMask(int x, int y) {
-            assert(0 <= x && x < FIELD_WIDTH);
-            assert(0 <= y && y < MAX_FIELD_HEIGHT);
+            assert(0 <= x && x < kFieldWidth);
+            assert(0 <= y && y < kMaxFieldHeight);
 
-            return 1LLU << (x + y * kuFieldWidth);
+            return 1LLU << (x + y * kFieldWidthUnsigned);
         }
 
         Collider mergeCollider(const Collider &prev, const Bitboard mask, int height, int lowerY) {
             auto collider = Collider{prev};
-            assert(0 <= lowerY && lowerY + height <= MAX_FIELD_HEIGHT);
+            assert(0 <= lowerY && lowerY + height <= kMaxFieldHeight);
 
             int index = lowerY / 6;
             int localY = lowerY - 6 * index;
             if (6 < localY + height) {
                 // Over
-                collider.boards[index] |= (mask << (localY * kuFieldWidth)) & VALID_BOARD_RANGE;
-                collider.boards[index + 1] |= mask >> ((6 - localY) * kuFieldWidth);
+                collider.boards[index] |= (mask << (localY * kFieldWidthUnsigned)) & VALID_BOARD_RANGE;
+                collider.boards[index + 1] |= mask >> ((6 - localY) * kFieldWidthUnsigned);
             } else {
                 // Fit in the lower 6
-                collider.boards[index] |= mask << (localY * kuFieldWidth);
+                collider.boards[index] |= mask << (localY * kFieldWidthUnsigned);
             }
 
             return collider;
@@ -70,9 +71,9 @@ namespace core {
         }
 
         // Create colliders for harddrop
-        std::array<Collider, MAX_FIELD_HEIGHT> harddropColliders{};
+        std::array<Collider, kMaxFieldHeight> harddropColliders{};
         int height = minmaxY.second - minmaxY.first + 1;
-        int max = MAX_FIELD_HEIGHT - height;
+        int max = kMaxFieldHeight - height;
         harddropColliders[max] = mergeCollider(Collider{}, mask, height, max);
         for (int index = max - 1; 0 <= index; --index) {
             harddropColliders[index] = mergeCollider(harddropColliders[index + 1], mask, height, index);
@@ -160,26 +161,27 @@ namespace core {
     }
 
     BlocksMask Blocks::mask(int leftX, int lowerY) const {
-        assert(0 <= leftX && leftX <= FIELD_WIDTH - width);
+        assert(0 <= leftX && leftX <= kFieldWidth - width);
         assert(0 <= lowerY && lowerY < 6);
 
         if (6 < lowerY + height) {
             // Over
             const auto slide = mask_ << static_cast<unsigned int>(leftX);
             return {
-                    (slide << (lowerY * kuFieldWidth)) & VALID_BOARD_RANGE, slide >> ((6 - lowerY) * kuFieldWidth)
+                    (slide << (lowerY * kFieldWidthUnsigned)) & VALID_BOARD_RANGE,
+                    slide >> ((6 - lowerY) * kFieldWidthUnsigned)
             };
         } else {
             // Fit in the lower 6
             return {
-                    mask_ << (lowerY * kuFieldWidth + leftX), 0
+                    mask_ << (lowerY * kFieldWidthUnsigned + leftX), 0
             };
         }
     }
 
     Collider Blocks::harddrop(int leftX, int lowerY) const {
-        assert(0 <= leftX && leftX <= FIELD_WIDTH - width);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX <= kFieldWidth - width);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         auto uLeftX = static_cast<unsigned int>(leftX);
         auto &collider = harddropColliders[lowerY];

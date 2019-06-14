@@ -4,17 +4,19 @@
 
 namespace core {
     namespace {
-        uint64_t getXMask(int x, int y) {
-            assert(0 <= x && x < FIELD_WIDTH);
-            assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
 
-            return 1LLU << (x + y * kuFieldWidth);
+        uint64_t getXMask(int x, int y) {
+            assert(0 <= x && x < kFieldWidth);
+            assert(0 <= y && y < kMaxFieldHeight);
+
+            return 1LLU << (x + y * kFieldWidthUnsigned);
         }
     }
 
     void Cache::visit(int x, int y, RotateType rotateType) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -24,8 +26,8 @@ namespace core {
     }
 
     bool Cache::isVisit(int x, int y, core::RotateType rotateType) const {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -35,8 +37,8 @@ namespace core {
     }
 
     void Cache::found(int x, int y, RotateType rotateType) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -46,8 +48,8 @@ namespace core {
     }
 
     bool Cache::isFound(int x, int y, core::RotateType rotateType) const {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         auto mask = getXMask(x, y - 6 * index);
@@ -88,7 +90,7 @@ namespace core {
 
                 int y = validHeight - blocks.minY;
                 int maxY = validHeight - blocks.maxY;
-                for (int x = -blocks.minX, maxX = FIELD_WIDTH - blocks.maxX; x < maxX; ++x) {
+                for (int x = -blocks.minX, maxX = kFieldWidth - blocks.maxX; x < maxX; ++x) {
                     int harddropY = field.getYOnHarddrop(blocks, x, y);
                     if (harddropY < maxY) {
                         moves.push_back(Move{rotateType, x, harddropY, true});
@@ -115,7 +117,7 @@ namespace core {
                 auto rotateType = static_cast<RotateType >(rotate);
 
                 auto &blocks = factory.get(pieceType, rotateType);
-                for (int x = -blocks.minX, maxX = FIELD_WIDTH - blocks.maxX; x < maxX; ++x) {
+                for (int x = -blocks.minX, maxX = kFieldWidth - blocks.maxX; x < maxX; ++x) {
                     for (int y = validHeight - blocks.maxY - 1; -blocks.minY <= y; --y) {
                         if (field.canPut(blocks, x, y) && field.isOnGround(blocks, x, y)) {
                             auto result = check(target, blocks, x, y, From::None, true);
@@ -151,7 +153,7 @@ namespace core {
             int toLowerY = toY + fromBlocks.minY;
 
             auto head = fromRotate * 5;
-            int width = FIELD_WIDTH - fromBlocks.width;
+            int width = kFieldWidth - fromBlocks.width;
             for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
@@ -193,7 +195,7 @@ namespace core {
             int toLowerY = toY + fromBlocks.minY;
 
             auto head = fromRotate * 5;
-            int width = FIELD_WIDTH - fromBlocks.width;
+            int width = kFieldWidth - fromBlocks.width;
             for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
@@ -265,7 +267,7 @@ namespace core {
 
             // Move right
             int rightX = x + 1;
-            if (from != From::Right && rightX < FIELD_WIDTH - blocks.maxX && field.canPut(blocks, rightX, y)) {
+            if (from != From::Right && rightX < kFieldWidth - blocks.maxX && field.canPut(blocks, rightX, y)) {
                 auto result = check(targetObject, blocks, rightX, y, From::Left, false);
                 if (result != MoveResults::No) {
                     return result;
@@ -353,7 +355,7 @@ namespace core {
             int toLowerY = toY + fromBlocks.minY;
 
             auto head = fromRotate * 5;
-            int width = FIELD_WIDTH - fromBlocks.width;
+            int width = kFieldWidth - fromBlocks.width;
             for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
@@ -395,7 +397,7 @@ namespace core {
             int toLowerY = toY + fromBlocks.minY;
 
             auto head = fromRotate * 5;
-            int width = FIELD_WIDTH - fromBlocks.width;
+            int width = kFieldWidth - fromBlocks.width;
             for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
@@ -488,7 +490,7 @@ namespace core {
 
             // Move right
             int rightX = x + 1;
-            if (from != From::Right && rightX < FIELD_WIDTH - blocks.maxX && field.canPut(blocks, rightX, y)) {
+            if (from != From::Right && rightX < kFieldWidth - blocks.maxX && field.canPut(blocks, rightX, y)) {
                 auto result = check(targetObject, blocks, rightX, y, From::Left);
                 if (result != MoveResults::No) {
                     return result;
