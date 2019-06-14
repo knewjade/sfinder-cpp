@@ -6,7 +6,7 @@ namespace core {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
-            return 1LLU << (x + y * FIELD_WIDTH);
+            return 1LLU << (x + y * kuFieldWidth);
         }
     }
 
@@ -48,7 +48,7 @@ namespace core {
         assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
         int index = y / 6;
-        uint64_t mask = getXMask(x, y - 6 * index);
+        auto mask = getXMask(x, y - 6 * index);
 
         int boardIndex = index + 4 * rotateType;
         return (foundBoard[boardIndex] & mask) != 0;
@@ -79,7 +79,7 @@ namespace core {
             assert(bit != 0);
 
             do {
-                auto next = bit & (bit - 1);
+                auto next = bit & (bit - 1U);
                 RotateType rotateType = rotateBitToVal[bit & ~next];
 
                 auto &blocks = factory.get(pieceType, rotateType);
@@ -150,7 +150,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -192,7 +192,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -314,7 +314,7 @@ namespace core {
             auto target = TargetObject{field, piece};
 
             do {
-                auto next = bit & (bit - 1);
+                auto next = bit & (bit - 1U);
                 RotateType nextRotateType = rotateBitToVal[bit & ~next];
 
                 auto &blocks = factory.get(pieceType, nextRotateType);
@@ -352,7 +352,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -394,7 +394,7 @@ namespace core {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;

@@ -1,3 +1,9 @@
+#include <utility>
+
+#include <utility>
+
+#include <utility>
+
 #ifndef CORE_PIECE_HPP
 #define CORE_PIECE_HPP
 
@@ -83,21 +89,21 @@ namespace core {
         const std::array<Offset, 20> leftOffsets;
         const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
-        const int32_t uniqueRotateBit;
-        const std::array<int32_t, 4> sameShapeRotates;
+        const uint8_t uniqueRotateBit;
+        const std::array<uint8_t, 4> sameShapeRotates;
 
     private:
         Piece(
                 const PieceType pieceType,
-                const std::string name,
+                std::string  name,
                 const std::array<Blocks, 4> blocks,
                 const std::array<Offset, 20> rightOffsets,
                 const std::array<Offset, 20> leftOffsets,
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
-                const int32_t uniqueRotate,
-                const std::array<int32_t, 4> sameShapeRotates
-        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
+                const uint8_t uniqueRotate,
+                const std::array<uint8_t, 4> sameShapeRotates
+        ) : pieceType(pieceType), name(std::move(name)), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
             offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
@@ -111,8 +117,8 @@ namespace core {
         const Blocks &get(PieceType piece, RotateType rotate) const;
 
     private:
-        Factory(const std::array<Piece, 7> pieces, const std::array<Blocks, 28> blocks)
-                : pieces(pieces), blocks(blocks) {
+        Factory(std::array<Piece, 7> pieces, const std::array<Blocks, 28> &blocks)
+                : pieces(std::move(pieces)), blocks(blocks) {
         };
 
         const std::array<Piece, 7> pieces;
