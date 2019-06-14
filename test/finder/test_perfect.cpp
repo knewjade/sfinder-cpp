@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <chrono>
+
 #include "core/field.hpp"
 #include "core/moves.hpp"
 #include "finder/perfect.hpp"
