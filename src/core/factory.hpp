@@ -39,8 +39,6 @@ namespace core {
         static Blocks create(RotateType rotateType, const std::array<Point, 4> &points);
 
         const RotateType rotateType;
-        const std::array<Point, 4> points;
-        const std::array<Collider, kMaxFieldHeight> harddropColliders;
         const int minX;
         const int maxX;
         const int minY;
@@ -53,20 +51,24 @@ namespace core {
         Collider harddrop(int leftX, int lowerY) const;
 
     private:
-        Blocks(const RotateType rotateType, const std::array<Point, 4> points, const Bitboard mask,
-               const std::array<Collider, kMaxFieldHeight> harddropColliders,
-               const MinMax &minMaxX, const MinMax &minMaxY)
-                : rotateType(rotateType), points(points), harddropColliders(harddropColliders),
-                  minX(minMaxX.first), maxX(minMaxX.second), minY(minMaxY.first), maxY(minMaxY.second),
-                  width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1), mask_(mask) {
+        Blocks(const RotateType rotateType, const MinMax &minMaxX, const MinMax &minMaxY,
+               const std::array<Collider, kMaxFieldHeight> harddropColliders, const Bitboard mask)
+                : rotateType(rotateType),
+                  minX(minMaxX.first), maxX(minMaxX.second),
+                  minY(minMaxY.first), maxY(minMaxY.second),
+                  width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1),
+                  harddropColliders_(harddropColliders), mask_(mask) {
         };
 
+        const std::array<Collider, kMaxFieldHeight> harddropColliders_;
         const Bitboard mask_;  // Left align
     };
 
     class Piece {
     public:
-        template<size_t N>
+        static constexpr size_t kAllOffsetsSize = 20;
+
+        template <size_t N>
         static Piece create(
                 PieceType pieceType,
                 const std::string &name,
@@ -80,7 +82,6 @@ namespace core {
         const std::array<Blocks, 4> blocks;
         const std::array<Offset, 20> rightOffsets;
         const std::array<Offset, 20> leftOffsets;
-        const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
         const uint8_t uniqueRotateBit;
         const std::array<uint8_t, 4> sameShapeRotates;
@@ -92,14 +93,12 @@ namespace core {
                 const std::array<Blocks, 4> blocks,
                 const std::array<Offset, 20> rightOffsets,
                 const std::array<Offset, 20> leftOffsets,
-                const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
                 const uint8_t uniqueRotate,
                 const std::array<uint8_t, 4> sameShapeRotates
-        ) : pieceType(pieceType), name(std::move(name)), blocks(blocks), rightOffsets(rightOffsets),
-            leftOffsets(leftOffsets),
-            offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate),
-            sameShapeRotates(sameShapeRotates) {
+        ) : pieceType(pieceType), name(std::move(name)), blocks(blocks),
+            rightOffsets(rightOffsets), leftOffsets(leftOffsets), transforms(transforms),
+            uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
 

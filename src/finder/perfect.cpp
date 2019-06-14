@@ -193,7 +193,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -225,7 +225,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.kAllOffsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;

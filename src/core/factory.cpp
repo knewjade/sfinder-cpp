@@ -79,10 +79,10 @@ namespace core {
             harddropColliders[index] = mergeCollider(harddropColliders[index + 1], mask, height, index);
         }
 
-        return Blocks(rotateType, points, mask, harddropColliders, minmaxX, minmaxY);
+        return Blocks(rotateType, minmaxX, minmaxY, harddropColliders, mask);
     }
 
-    template<size_t N>
+    template <size_t N>
     Piece Piece::create(
             const PieceType pieceType,
             const std::string &name,
@@ -157,7 +157,7 @@ namespace core {
 
         return Piece(pieceType, name, std::array<Blocks, 4>{
                 spawn, right, reverse, left
-        }, rightOffsets, leftOffsets, N, transforms, uniqueRotate, sameShapeRotates);
+        }, rightOffsets, leftOffsets, transforms, uniqueRotate, sameShapeRotates);
     }
 
     BlocksMask Blocks::mask(int leftX, int lowerY) const {
@@ -184,7 +184,7 @@ namespace core {
         assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         auto uLeftX = static_cast<unsigned int>(leftX);
-        auto &collider = harddropColliders[lowerY];
+        auto &collider = harddropColliders_[lowerY];
         return Collider{
                 collider.boards[0] << uLeftX,
                 collider.boards[1] << uLeftX,
