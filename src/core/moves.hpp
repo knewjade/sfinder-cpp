@@ -56,10 +56,10 @@ namespace core {
     namespace harddrop {
         class MoveGenerator {
         public:
-            MoveGenerator(const Factory &factory) : factory(factory) {
+            explicit MoveGenerator(const Factory &factory) : factory(factory) {
             }
 
-            void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);
+            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight);
 
         private:
             const Factory &factory;
@@ -75,10 +75,10 @@ namespace core {
 
         class MoveGenerator {
         public:
-            MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
+            explicit MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
-            void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);
+            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight);
 
         private:
             const Factory &factory;
@@ -105,7 +105,7 @@ namespace core {
 
         class Reachable {
         public:
-            Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
+            explicit Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
             bool checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);

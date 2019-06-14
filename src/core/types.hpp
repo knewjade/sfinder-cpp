@@ -24,16 +24,17 @@ namespace core {
         Left = 3,
     };
 
-    const auto dummyRotate = RotateType::Spawn;
-    const RotateType rotateBitToVal[16] {dummyRotate,
+    constexpr auto dummyRotate = RotateType::Spawn;
+    const RotateType rotateBitToVal[16]{dummyRotate,
                                         RotateType::Spawn,
                                         RotateType::Right, dummyRotate,
                                         RotateType::Reverse, dummyRotate, dummyRotate, dummyRotate,
                                         RotateType::Left,
     };
 
-    const int FIELD_WIDTH = 10;
-    const int MAX_FIELD_HEIGHT = 24;
+    constexpr auto FIELD_WIDTH = 10;
+    constexpr auto kuFieldWidth = static_cast<unsigned int>(FIELD_WIDTH);
+    constexpr auto MAX_FIELD_HEIGHT = 24;
 }
 
 #endif //CORE_TYPES_HPP

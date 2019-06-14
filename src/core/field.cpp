@@ -8,7 +8,7 @@ namespace core {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
-            return 1LLU << (x + y * FIELD_WIDTH);
+            return 1LLU << static_cast<unsigned int>(x + y * FIELD_WIDTH);
         }
     }
 
@@ -117,14 +117,14 @@ namespace core {
     }
 
     LineKey getDeleteKey(Bitboard board) {
-        uint64_t a1010101010 = 768614336404564650L;
-        auto b1 = (board & a1010101010) >> 1 & board;
-        uint64_t a0101010000 = 378672165735973200L;
-        auto b2 = (b1 & a0101010000) >> 4 & b1;
-        uint64_t a0000010100 = 22540009865236500L;
-        auto b3 = (b2 & a0000010100) >> 2 & b2;
-        uint64_t a0000000100 = 4508001973047300L;
-        return (b3 & a0000000100) >> 2 & b3;
+        uint64_t a1010101010 = 768614336404564650LLU;
+        auto b1 = (board & a1010101010) >> 1U & board;
+        uint64_t a0101010000 = 378672165735973200LLU;
+        auto b2 = (b1 & a0101010000) >> 4U & b1;
+        uint64_t a0000010100 = 22540009865236500LLU;
+        auto b3 = (b2 & a0000010100) >> 2U & b2;
+        uint64_t a0000000100 = 4508001973047300LLU;
+        return (b3 & a0000000100) >> 2U & b3;
     }
 
     void Field::deleteLine_(
@@ -137,8 +137,8 @@ namespace core {
 
         int deleteLineLow = bitCount(deleteKeyLow);
 
-        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10)) & VALID_BOARD_RANGE;
-        Bitboard midLow = newXBoardMidLow >> deleteLineLow * 10;
+        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard midLow = newXBoardMidLow >> deleteLineLow * 10U;
 
         int deleteLineMidLow = bitCount(deleteKeyMidLow);
         int deleteLineBottom = deleteLineLow + deleteLineMidLow;
@@ -150,21 +150,21 @@ namespace core {
 
         int deleteLineMidHigh = bitCount(deleteKeyMidHigh);
 
-        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10)) & VALID_BOARD_RANGE;
-        Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10;
+        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10U;
 
         // Merge the upper and lower halves
         if (deleteLineBottom < 6) {
             xBoardLow = low;
-            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10)) & VALID_BOARD_RANGE;
+            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
             xBoardMidHigh =
-                    ((midHigh >> deleteLineBottom * 10) | (high << (6 - deleteLineBottom) * 10)) & VALID_BOARD_RANGE;
-            xBoardHigh = high >> deleteLineBottom * 10;
+                    ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
+            xBoardHigh = high >> deleteLineBottom * 10U;
         } else {
             int slide = deleteLineBottom - 6;
-            xBoardLow = (low | (midHigh << (6 - slide) * 10)) & VALID_BOARD_RANGE;
-            xBoardMidLow = ((midHigh >> slide * 10) | (high << (6 - slide) * 10)) & VALID_BOARD_RANGE;
-            xBoardMidHigh = high >> slide * 10;
+            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
+            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
+            xBoardMidHigh = high >> slide * 10U;
             xBoardHigh = 0L;
         }
     }
@@ -186,32 +186,33 @@ namespace core {
 
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
 
-        return deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3);
+        return deleteKeyLow | (deleteKeyMidLow << 1U) | (deleteKeyMidHigh << 2U) | (deleteKeyHigh << 3U);
     }
 
     int Field::getBlockOnX(int x, int maxY) const {
         assert(0 <= maxY && maxY <= MAX_FIELD_HEIGHT);
 
+        auto ux = static_cast<unsigned int>(x);
         if (maxY < 12) {
             if (maxY < 6) {
-                Bitboard mask = getColumnOneLineBelowY(maxY) << x;
+                Bitboard mask = getColumnOneLineBelowY(maxY) << ux;
                 return bitCount(xBoardLow & mask);
             } else {
-                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
-                Bitboard mask = getColumnOneLineBelowY(maxY - 6) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 6) << ux;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & mask);
             }
         } else {
             if (maxY < 18) {
-                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
-                Bitboard mask = getColumnOneLineBelowY(maxY - 12) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 12) << ux;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & fullMask) +
                        bitCount(xBoardMidHigh & mask);
             } else {
-                Bitboard fullMask = getColumnOneLineBelowY(6) << x;
-                Bitboard mask = getColumnOneLineBelowY(maxY - 18) << x;
+                Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
+                Bitboard mask = getColumnOneLineBelowY(maxY - 18) << ux;
                 return bitCount(xBoardLow & fullMask)
                        + bitCount(xBoardMidLow & fullMask)
                        + bitCount(xBoardMidHigh & fullMask)
@@ -278,7 +279,7 @@ namespace core {
 
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
 
-        return bitCount(deleteKeyLow | (deleteKeyMidLow << 1) | (deleteKeyMidHigh << 2) | (deleteKeyHigh << 3));
+        return bitCount(deleteKeyLow | (deleteKeyMidLow << 1U) | (deleteKeyMidHigh << 2U) | (deleteKeyHigh << 3U));
     }
 
     std::string Field::toString(int height) const {
@@ -304,7 +305,7 @@ namespace core {
         Field field = Field();
         for (int y = 0; y < maxY; y++) {
             for (int x = 0; x < 10; x++) {
-                char mark = marks.at((maxY - y - 1) * 10 + x);
+                char mark = marks.at((maxY - y - 1U) * 10 + x);
                 if (mark != ' ' && mark != '_') {
                     field.setBlock(x, y);
                 }

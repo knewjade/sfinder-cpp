@@ -2,7 +2,7 @@
 
 namespace core {
     namespace {
-        const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
+        constexpr uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
 
         std::array<Point, 4> rotateRight_(std::array<Point, 4> points) {
             return std::array<Point, 4>{
@@ -35,7 +35,7 @@ namespace core {
             assert(0 <= x && x < FIELD_WIDTH);
             assert(0 <= y && y < MAX_FIELD_HEIGHT);
 
-            return 1LLU << (x + y * FIELD_WIDTH);
+            return 1LLU << (x + y * kuFieldWidth);
         }
 
         Collider mergeCollider(const Collider &prev, const Bitboard mask, int height, int lowerY) {
@@ -46,11 +46,11 @@ namespace core {
             int localY = lowerY - 6 * index;
             if (6 < localY + height) {
                 // Over
-                collider.boards[index] |= (mask << (localY * FIELD_WIDTH)) & VALID_BOARD_RANGE;
-                collider.boards[index + 1] |= mask >> ((6 - localY) * FIELD_WIDTH);
+                collider.boards[index] |= (mask << (localY * kuFieldWidth)) & VALID_BOARD_RANGE;
+                collider.boards[index + 1] |= mask >> ((6 - localY) * kuFieldWidth);
             } else {
                 // Fit in the lower 6
-                collider.boards[index] |= mask << (localY * FIELD_WIDTH);
+                collider.boards[index] |= mask << (localY * kuFieldWidth);
             }
 
             return collider;
@@ -100,7 +100,7 @@ namespace core {
             assert(from.size() == to.size());
 
             auto size = from.size();
-            for (int index = 0; index < 5; ++index) {
+            for (unsigned int index = 0; index < 5; ++index) {
                 if (index < size) {
                     rightOffsets[rotate * 5 + index] = {from[index].x - to[index].x, from[index].y - to[index].y};
                 } else {
@@ -117,7 +117,7 @@ namespace core {
             assert(from.size() == to.size());
 
             auto size = from.size();
-            for (int index = 0; index < 5; ++index) {
+            for (unsigned int index = 0; index < 5; ++index) {
                 if (index < size) {
                     leftOffsets[rotate * 5 + index] = {from[index].x - to[index].x, from[index].y - to[index].y};
                 } else {
@@ -126,19 +126,19 @@ namespace core {
             }
         }
 
-        int32_t uniqueRotate = 0;
+        uint8_t uniqueRotate = 0;
         for (int rotate = 0; rotate < 4; ++rotate) {
             const auto &transform = transforms[rotate];
-            uniqueRotate |= 1 << transform.toRotate;
+            uniqueRotate |= 1U << transform.toRotate;
         }
 
         // Find same shape rotate
-        std::array<int32_t, 4> sameShapeRotates{};
+        std::array<uint8_t, 4> sameShapeRotates{};
         for (int rotate = 0; rotate < 4; ++rotate) {
-            int32_t sameRotate = 0;
-            for (int target = 0; target < 4; ++target) {
+            uint8_t sameRotate = 0;
+            for (unsigned int target = 0; target < 4; ++target) {
                 if (rotate == transforms[target].toRotate) {
-                    sameRotate |= 1 << target;
+                    sameRotate |= 1U << target;
                 }
             }
             sameShapeRotates[rotate] = sameRotate;
@@ -163,14 +163,14 @@ namespace core {
 
         if (6 < lowerY + height) {
             // Over
-            const auto slide = mask_ << leftX;
+            const auto slide = mask_ << static_cast<unsigned int>(leftX);
             return {
-                    (slide << (lowerY * FIELD_WIDTH)) & VALID_BOARD_RANGE, slide >> ((6 - lowerY) * FIELD_WIDTH)
+                    (slide << (lowerY * kuFieldWidth)) & VALID_BOARD_RANGE, slide >> ((6 - lowerY) * kuFieldWidth)
             };
         } else {
             // Fit in the lower 6
             return {
-                    mask_ << (lowerY * FIELD_WIDTH + leftX), 0
+                    mask_ << (lowerY * kuFieldWidth + leftX), 0
             };
         }
     }
@@ -179,12 +179,13 @@ namespace core {
         assert(0 <= leftX && leftX <= FIELD_WIDTH - width);
         assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
 
+        auto uLeftX = static_cast<unsigned int>(leftX);
         auto &collider = harddropColliders[lowerY];
         return Collider{
-                collider.boards[0] << leftX,
-                collider.boards[1] << leftX,
-                collider.boards[2] << leftX,
-                collider.boards[3] << leftX,
+                collider.boards[0] << uLeftX,
+                collider.boards[1] << uLeftX,
+                collider.boards[2] << uLeftX,
+                collider.boards[3] << uLeftX,
         };
     }
 
@@ -309,7 +310,7 @@ namespace core {
     }
 
     const Blocks &Factory::get(PieceType piece, RotateType rotate) const {
-        int index = piece * 4 + rotate;
+        unsigned int index = piece * 4 + rotate;
         assert(0 <= index && index < blocks.size());
         return blocks[index];
     }
