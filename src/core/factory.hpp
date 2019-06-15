@@ -6,37 +6,25 @@
 #include <string>
 
 #include "types.hpp"
+#include "templates.hpp"
 
 namespace core {
     using MinMax = std::pair<int, int>;
-
-    struct Point {
-        int x;
-        int y;
-    };
-
-    struct Offset {
-        int x;
-        int y;
-    };
-
-    struct Collider {
-        Bitboard boards[4];
-    };
 
     struct BlocksMask {
         Bitboard low;
         Bitboard high;
     };
 
-    struct Transform {
-        Offset offset;
-        RotateType toRotate;
-    };
-
     class Blocks {
     public:
-        static Blocks create(RotateType rotateType, const std::array<Point, 4> &points);
+        template<PieceType P, RotateType R>
+        static Blocks create() {
+            using base = BlocksBase<P, R>;
+            return Blocks(
+                    R, base::minX, base::maxX, base::minY, base::maxY, base::harddropColliders(), base::mask()
+            );
+        }
 
         const RotateType rotateType;
         const int minX;
@@ -51,13 +39,12 @@ namespace core {
         Collider harddrop(int leftX, int lowerY) const;
 
     private:
-        Blocks(const RotateType rotateType, const MinMax &minMaxX, const MinMax &minMaxY,
-               const std::array<Collider, kMaxFieldHeight> harddropColliders, const Bitboard mask)
-                : rotateType(rotateType),
-                  minX(minMaxX.first), maxX(minMaxX.second),
-                  minY(minMaxY.first), maxY(minMaxY.second),
-                  width(minMaxX.second - minMaxX.first + 1), height(minMaxY.second - minMaxY.first + 1),
-                  harddropColliders_(harddropColliders), mask_(mask) {
+        Blocks(
+                const RotateType rotateType, const int minX, const int maxX, const int minY, const int maxY,
+                const std::array<Collider, kMaxFieldHeight> harddropColliders, const Bitboard mask
+        ) : rotateType(rotateType),
+            minX(minX), maxX(maxX), minY(minY), maxY(maxY), width(maxX - minX + 1), height(maxY - minY + 1),
+            harddropColliders_(harddropColliders), mask_(mask) {
         };
 
         const std::array<Collider, kMaxFieldHeight> harddropColliders_;
@@ -68,14 +55,21 @@ namespace core {
     public:
         static constexpr int kOffsetsSize = 5;
 
-        template<size_t N>
-        static Piece create(
-                PieceType pieceType,
-                const std::string &name,
-                const std::array<Point, 4> &points,
-                const std::array<std::array<Offset, N>, 4> &offsets,
-                const std::array<Transform, 4> &transforms
-        );
+        template<PieceType P>
+        static Piece create() {
+            const auto &spawn = Blocks::create<P, RotateType::Spawn>();
+            const auto &right = Blocks::create<P, RotateType::Right>();
+            const auto &reverse = Blocks::create<P, RotateType::Reverse>();
+            const auto &left = Blocks::create<P, RotateType::Left>();
+
+            using base = PieceBase<P>;
+            return Piece(
+                    P, base::name(),
+                    std::array<Blocks, 4>{spawn, right, reverse, left},
+                    base::rightOffsets(), base::leftOffsets(), base::transforms,
+                    base::uniqueRotate(), base::sameShapeRotates()
+            );
+        }
 
         const PieceType pieceType;
         const std::string name;

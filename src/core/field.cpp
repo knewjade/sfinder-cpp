@@ -4,9 +4,6 @@
 
 namespace core {
     namespace {
-        constexpr uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
-        constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
-
         uint64_t getXMask(int x, int y) {
             assert(0 <= x && x < kFieldWidth);
             assert(0 <= y && y < kMaxFieldHeight);
@@ -140,7 +137,7 @@ namespace core {
 
         int deleteLineLow = bitCount(deleteKeyLow);
 
-        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10U)) & kValidBoardRange;
         Bitboard midLow = newXBoardMidLow >> deleteLineLow * 10U;
 
         int deleteLineMidLow = bitCount(deleteKeyMidLow);
@@ -153,20 +150,20 @@ namespace core {
 
         int deleteLineMidHigh = bitCount(deleteKeyMidHigh);
 
-        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10U)) & kValidBoardRange;
         Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10U;
 
         // Merge the upper and lower halves
         if (deleteLineBottom < 6) {
             xBoardLow = low;
-            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
+            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
             xBoardMidHigh =
-                    ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
+                    ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
             xBoardHigh = high >> deleteLineBottom * 10U;
         } else {
             int slide = deleteLineBottom - 6;
-            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
-            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
+            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & kValidBoardRange;
+            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & kValidBoardRange;
             xBoardMidHigh = high >> slide * 10U;
             xBoardHigh = 0L;
         }

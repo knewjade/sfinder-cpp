@@ -4,8 +4,6 @@
 
 namespace core {
     namespace {
-        constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
-
         uint64_t getXMask(int x, int y) {
             assert(0 <= x && x < kFieldWidth);
             assert(0 <= y && y < kMaxFieldHeight);
