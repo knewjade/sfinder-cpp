@@ -2,6 +2,7 @@
 #define CORE_TYPES_HPP
 
 #include <cstdint>
+#include <string>
 
 namespace core {
     using Bitboard = uint64_t;
@@ -15,6 +16,16 @@ namespace core {
         S = 4,
         Z = 5,
         O = 6,
+    };
+
+    const std::string pieceNames[7]{
+            std::string("T"),
+            std::string("I"),
+            std::string("L"),
+            std::string("J"),
+            std::string("S"),
+            std::string("Z"),
+            std::string("O"),
     };
 
     enum RotateType {
@@ -32,9 +43,11 @@ namespace core {
                                         RotateType::Left,
     };
 
-    constexpr auto FIELD_WIDTH = 10;
-    constexpr auto kuFieldWidth = static_cast<unsigned int>(FIELD_WIDTH);
-    constexpr auto MAX_FIELD_HEIGHT = 24;
+    constexpr auto kFieldWidth = 10;
+    constexpr unsigned int kFieldWidthUnsigned = kFieldWidth;
+
+    constexpr auto kMaxFieldHeight = 24;
+    constexpr uint64_t kValidBoardRange = 0xfffffffffffffffULL;
 }
 
 #endif //CORE_TYPES_HPP

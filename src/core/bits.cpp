@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "bits.hpp"
 
 namespace core {

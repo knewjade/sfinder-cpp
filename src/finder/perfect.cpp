@@ -10,7 +10,7 @@ namespace finder {
 
         bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
-            for (int x = 1; x < core::FIELD_WIDTH; x++) {
+            for (int x = 1; x < core::kFieldWidth; x++) {
                 int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
                 if (field.isWallBetween(x, maxLine)) {
                     if (sum % 4 != 0)
@@ -193,7 +193,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;
@@ -225,7 +225,7 @@ namespace finder {
 
             auto head = fromRotate * 5;
             int width = FIELD_WIDTH - fromBlocks.width;
-            for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+            for (unsigned int index = head; index < head + piece.kOffsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
                 int fromLeftX = toLeftX - offset.x;
                 int fromLowerY = toLowerY - offset.y;

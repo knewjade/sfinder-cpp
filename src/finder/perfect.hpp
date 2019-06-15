@@ -1,7 +1,7 @@
 #ifndef CORE_PERFECT_HPP
 #define CORE_PERFECT_HPP
 
-#include "../core/piece.hpp"
+#include "../core/factory.hpp"
 #include "../core/moves.hpp"
 #include "../core/types.hpp"
 

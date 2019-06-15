@@ -2,7 +2,6 @@
 #define CORE_MOVE_HPP
 
 #include <vector>
-#include <cassert>
 
 #include "field.hpp"
 #include "srs.hpp"

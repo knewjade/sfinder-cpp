@@ -15,8 +15,8 @@ namespace core::srs {
         int fromLowerY = fromY + toBlocks.minY;
 
         auto head = fromRotate * 5;
-        int width = FIELD_WIDTH - toBlocks.width;
-        for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+        int width = kFieldWidth - toBlocks.width;
+        for (int index = head; index < head + piece.kOffsetsSize; ++index) {
             auto &offset = piece.rightOffsets[index];
             int toX = fromLeftX + offset.x;
             int toY = fromLowerY + offset.y;
@@ -42,8 +42,8 @@ namespace core::srs {
         int fromLowerY = fromY + toBlocks.minY;
 
         auto head = fromRotate * 5;
-        int width = FIELD_WIDTH - toBlocks.width;
-        for (unsigned int index = head; index < head + piece.offsetsSize; ++index) {
+        int width = kFieldWidth - toBlocks.width;
+        for (int index = head; index < head + piece.kOffsetsSize; ++index) {
             auto &offset = piece.leftOffsets[index];
             int toX = fromLeftX + offset.x;
             int toY = fromLowerY + offset.y;

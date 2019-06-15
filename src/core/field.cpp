@@ -1,36 +1,36 @@
+#include <cassert>
+
 #include "field.hpp"
 
 namespace core {
     namespace {
-        const uint64_t VALID_BOARD_RANGE = 0xfffffffffffffffL;
-
         uint64_t getXMask(int x, int y) {
-            assert(0 <= x && x < FIELD_WIDTH);
-            assert(0 <= y && y < MAX_FIELD_HEIGHT);
+            assert(0 <= x && x < kFieldWidth);
+            assert(0 <= y && y < kMaxFieldHeight);
 
-            return 1LLU << static_cast<unsigned int>(x + y * FIELD_WIDTH);
+            return 1LLU << (x + y * kFieldWidthUnsigned);
         }
     }
 
     void Field::setBlock(int x, int y) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         boards[index] |= getXMask(x, y - 6 * index);
     }
 
     void Field::removeBlock(int x, int y) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         boards[index] &= ~getXMask(x, y - 6 * index);
     }
 
     bool Field::isEmpty(int x, int y) const {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -42,8 +42,8 @@ namespace core {
     }
 
     void Field::putAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -59,8 +59,8 @@ namespace core {
     }
 
     void Field::removeAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -76,8 +76,8 @@ namespace core {
     }
 
     bool Field::canPutAtMaskIndex(const Blocks &blocks, int leftX, int lowerY) const {
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
@@ -105,8 +105,8 @@ namespace core {
         const int leftX = x + blocks.minX;
         const int lowerY = y + blocks.minY;
 
-        assert(0 <= leftX && leftX < FIELD_WIDTH);
-        assert(0 <= lowerY && lowerY < MAX_FIELD_HEIGHT);
+        assert(0 <= leftX && leftX < kFieldWidth);
+        assert(0 <= lowerY && lowerY < kMaxFieldHeight);
 
         Collider collider = blocks.harddrop(leftX, lowerY);
 
@@ -137,7 +137,7 @@ namespace core {
 
         int deleteLineLow = bitCount(deleteKeyLow);
 
-        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard low = (newXBoardLow | (newXBoardMidLow << (6 - deleteLineLow) * 10U)) & kValidBoardRange;
         Bitboard midLow = newXBoardMidLow >> deleteLineLow * 10U;
 
         int deleteLineMidLow = bitCount(deleteKeyMidLow);
@@ -150,20 +150,20 @@ namespace core {
 
         int deleteLineMidHigh = bitCount(deleteKeyMidHigh);
 
-        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10U)) & VALID_BOARD_RANGE;
+        Bitboard midHigh = (newXBoardMidHigh | (newXBoardHigh << (6 - deleteLineMidHigh) * 10U)) & kValidBoardRange;
         Bitboard high = newXBoardHigh >> deleteLineMidHigh * 10U;
 
         // Merge the upper and lower halves
         if (deleteLineBottom < 6) {
             xBoardLow = low;
-            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
+            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
             xBoardMidHigh =
-                    ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & VALID_BOARD_RANGE;
+                    ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
             xBoardHigh = high >> deleteLineBottom * 10U;
         } else {
             int slide = deleteLineBottom - 6;
-            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
-            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & VALID_BOARD_RANGE;
+            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & kValidBoardRange;
+            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & kValidBoardRange;
             xBoardMidHigh = high >> slide * 10U;
             xBoardHigh = 0L;
         }
@@ -190,7 +190,7 @@ namespace core {
     }
 
     int Field::getBlockOnX(int x, int maxY) const {
-        assert(0 <= maxY && maxY <= MAX_FIELD_HEIGHT);
+        assert(0 <= maxY && maxY <= kMaxFieldHeight);
 
         auto ux = static_cast<unsigned int>(x);
         if (maxY < 12) {
@@ -222,7 +222,7 @@ namespace core {
     }
 
     bool Field::isWallBetween(int x, int maxY) const {
-        assert(0 <= maxY && maxY <= MAX_FIELD_HEIGHT);
+        assert(0 <= maxY && maxY <= kMaxFieldHeight);
 
         if (maxY == 0) {
             return true;
