@@ -3,8 +3,6 @@
 #include "core/factory.hpp"
 
 namespace core {
-    using namespace std::literals::string_literals;
-
     class FactoryTest : public ::testing::Test {
     };
 
@@ -13,37 +11,37 @@ namespace core {
 
         {
             const Piece &piece = factory.get(PieceType::T);
-            EXPECT_EQ(piece.name, "T"s);
+            EXPECT_EQ(piece.name, std::string("T"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::I);
-            EXPECT_EQ(piece.name, "I"s);
+            EXPECT_EQ(piece.name, std::string("I"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::L);
-            EXPECT_EQ(piece.name, "L"s);
+            EXPECT_EQ(piece.name, std::string("L"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::J);
-            EXPECT_EQ(piece.name, "J"s);
+            EXPECT_EQ(piece.name, std::string("J"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::S);
-            EXPECT_EQ(piece.name, "S"s);
+            EXPECT_EQ(piece.name, std::string("S"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::Z);
-            EXPECT_EQ(piece.name, "Z"s);
+            EXPECT_EQ(piece.name, std::string("Z"));
         }
 
         {
             const Piece &piece = factory.get(PieceType::O);
-            EXPECT_EQ(piece.name, "O"s);
+            EXPECT_EQ(piece.name, std::string("O"));
         }
     }
 
