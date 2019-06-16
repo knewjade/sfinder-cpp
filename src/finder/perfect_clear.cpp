@@ -1,4 +1,4 @@
-#include "perfect.hpp"
+#include "perfect_clear.hpp"
 
 namespace finder {
     namespace {
@@ -249,7 +249,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::move(
+    void PerfectClearFinder<core::srs::MoveGenerator>::move(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution,
@@ -261,7 +261,7 @@ namespace finder {
     );
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::search(
+    void PerfectClearFinder<core::srs::MoveGenerator>::search(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution
@@ -319,7 +319,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
+    void PerfectClearFinder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
         assert(!best.solution.empty());
 
         if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
@@ -328,7 +328,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::move(
+    void PerfectClearFinder<core::srs::MoveGenerator>::move(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution,
@@ -408,7 +408,7 @@ namespace finder {
     }
 
     template<>
-    Solution PerfectFinder<core::srs::MoveGenerator>::run(
+    Solution PerfectClearFinder<core::srs::MoveGenerator>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
     ) {
@@ -464,7 +464,7 @@ namespace finder {
     }
 
     template<>
-    Solution PerfectFinder<core::srs::MoveGenerator>::run(
+    Solution PerfectClearFinder<core::srs::MoveGenerator>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty
     ) {

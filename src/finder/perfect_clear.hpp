@@ -68,9 +68,9 @@ namespace finder {
     );
 
     template<class T = core::srs::MoveGenerator>
-    class PerfectFinder {
+    class PerfectClearFinder {
     public:
-        PerfectFinder<T>(const core::Factory &factory, T &moveGenerator)
+        PerfectClearFinder<T>(const core::Factory &factory, T &moveGenerator)
                 : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
