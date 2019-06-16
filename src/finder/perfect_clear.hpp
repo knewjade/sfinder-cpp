@@ -1,5 +1,5 @@
-#ifndef CORE_PERFECT_HPP
-#define CORE_PERFECT_HPP
+#ifndef CORE_PERFECT_CLEAR_HPP
+#define CORE_PERFECT_CLEAR_HPP
 
 #include "../core/factory.hpp"
 #include "../core/moves.hpp"
@@ -107,4 +107,4 @@ namespace finder {
     };
 }
 
-#endif //CORE_PERFECT_HPP
+#endif //CORE_PERFECT_CLEAR_HPP
