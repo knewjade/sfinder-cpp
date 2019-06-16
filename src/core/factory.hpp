@@ -6,7 +6,7 @@
 #include <string>
 
 #include "types.hpp"
-#include "templates.hpp"
+#include "piece.hpp"
 
 namespace core {
     using MinMax = std::pair<int, int>;
@@ -67,7 +67,7 @@ namespace core {
                     P, base::name(),
                     std::array<Blocks, 4>{spawn, right, reverse, left},
                     base::rightOffsets(), base::leftOffsets(), base::transforms,
-                    base::uniqueRotate(), base::sameShapeRotates()
+                    base::uniqueShapeRotate(), base::sameShapeRotates()
             );
         }
 
@@ -77,7 +77,7 @@ namespace core {
         const std::array<Offset, 20> rightOffsets;
         const std::array<Offset, 20> leftOffsets;
         const std::array<Transform, 4> transforms;
-        const uint8_t uniqueRotateBit;
+        const uint8_t uniqueShapeRotate;
         const std::array<uint8_t, 4> sameShapeRotates;
 
     private:
@@ -88,11 +88,11 @@ namespace core {
                 const std::array<Offset, 20> rightOffsets,
                 const std::array<Offset, 20> leftOffsets,
                 const std::array<Transform, 4> transforms,
-                const uint8_t uniqueRotate,
+                const uint8_t uniqueShapeRotate,
                 const std::array<uint8_t, 4> sameShapeRotates
         ) : pieceType(pieceType), name(std::move(name)), blocks(blocks),
             rightOffsets(rightOffsets), leftOffsets(leftOffsets), transforms(transforms),
-            uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
+            uniqueShapeRotate(uniqueShapeRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
 

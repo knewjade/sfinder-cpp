@@ -249,7 +249,7 @@ namespace core {
             return leftOffsets;
         }
 
-        static constexpr uint8_t uniqueRotate() {
+        static constexpr uint8_t uniqueShapeRotate() {
             uint8_t uniqueRotate = 0;
             for (int rotate = 0; rotate < 4; ++rotate) {
                 const auto &transform = transforms[rotate];

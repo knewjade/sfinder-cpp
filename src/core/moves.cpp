@@ -77,7 +77,7 @@ namespace core {
         ) {
             auto &piece = factory.get(pieceType);
 
-            auto bit = piece.uniqueRotateBit;
+            auto bit = piece.uniqueShapeRotate;
             assert(bit != 0);
 
             do {
