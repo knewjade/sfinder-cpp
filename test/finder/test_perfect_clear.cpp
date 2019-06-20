@@ -442,6 +442,8 @@ namespace finder {
 
     template<int N>
     std::array<core::PieceType, N> toPieces(int value) {
+        static_assert(0 < N && N <= 7);
+
         int arr[N];
 
         for (int index = N - 1; 0 <= index; --index) {

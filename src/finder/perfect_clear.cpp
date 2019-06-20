@@ -41,7 +41,7 @@ namespace finder {
 
     int getAttackIfTSpin(
             core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
-            core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
+            core::PieceType pieceType, core::RotateType rotateType, int toX, int toY, int numCleared, bool b2b
     ) {
         if (pieceType != core::PieceType::T) {
             return 0;
@@ -51,13 +51,12 @@ namespace finder {
             return 0;
         }
 
-        auto rotateType = move.rotateType;
-        auto shapes = getTSpinShape(field, move.x, move.y, rotateType);
+        auto shapes = getTSpinShape(field, toX, toY, rotateType);
         if (shapes == TSpinShapes::NoShape) {
             return 0;
         }
 
-        if (!reachable.checks(field, pieceType, rotateType, move.x, move.y, core::kMaxFieldHeight)) {
+        if (!reachable.checks(field, pieceType, rotateType, toX, toY, core::kMaxFieldHeight)) {
             return 0;
         }
 
@@ -70,9 +69,6 @@ namespace finder {
 
         auto &piece = factory.get(pieceType);
         auto &toBlocks = factory.get(pieceType, rotateType);
-
-        auto toX = move.x;
-        auto toY = move.y;
 
         // Rotate right
         {
@@ -139,6 +135,13 @@ namespace finder {
         }
 
         return 0;
+    }
+
+    int getAttackIfTSpin(
+            core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+            core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
+    ) {
+        return getAttackIfTSpin(reachable, factory, field, pieceType, move.rotateType, move.x, move.y, numCleared, b2b);
     }
 
     namespace perfect_clear {
