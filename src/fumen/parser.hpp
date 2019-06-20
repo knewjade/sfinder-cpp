@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "../core/piece.hpp"
+#include "../core/factory.hpp"
 #include "color_field.hpp"
 
 namespace fumen {
@@ -108,7 +108,7 @@ namespace fumen {
                 const core::Factory &factory, const ColorConverter &converter
         ) : factory(factory), converter(converter) {}
 
-        std::string encode(std::vector<Element> elements);
+        std::string encode(const std::vector<Element> &elements);
 
     private:
         const core::Factory &factory;

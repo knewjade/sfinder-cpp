@@ -1,12 +1,18 @@
+#include "gtest/gtest.h"
+
 #include <iostream>
 #include <array>
 #include <random>
-#include <cmath>
 
-#include "perceptron.hpp"
-#include "activations.hpp"
+#include "nn/perceptron.hpp"
+#include "nn/activations.hpp"
 
 namespace nn {
+    using namespace std::literals::string_literals;
+
+    class NNTest : public ::testing::Test {
+    };
+
     template<int N>
     void show(const std::array<double, N> &array) {
         for (const auto &item : array) {
@@ -15,7 +21,7 @@ namespace nn {
         std::cout << std::endl;
     }
 
-    int main() {
+    TEST_F(NNTest, sample) {
         std::mt19937 mt19937{std::random_device{}()};
 
         // Defines
@@ -104,7 +110,5 @@ namespace nn {
             std::cout << "predict = ";
             show<OUTPUT>(output);
         }
-
-        return 0;
     }
 }

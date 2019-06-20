@@ -21,11 +21,11 @@ namespace fumen {
         const int ENCODE_TABLE_SIZE = ENCODE_TABLE.size();
         const int COMMENT_TABLE_SIZE = COMMENT_TABLE.size() + 1;  // Fumen specifications
 
-        const int kTETFU_FIELD_TOP = 23;
-        const int kTETFU_MAX_HEIGHT = kTETFU_FIELD_TOP + 1;
+        constexpr int kFumenFieldTop = 23;
+        constexpr int kFumenFieldMaxHeight = kFumenFieldTop + 1;
 
-        const int kTETFU_FIELD_WIDTH = 10;
-        const int kTETFU_FIELD_BLOCKS = kTETFU_MAX_HEIGHT * kTETFU_FIELD_WIDTH;
+        constexpr int kFumenFieldWidth = 10;
+        constexpr int kFumenNumOfBlocks = kFumenFieldMaxHeight * kFumenFieldWidth;
 
         // Unsupported multi-byte character set
         std::string escape(const std::string &str) {
@@ -47,6 +47,7 @@ namespace fumen {
                 }
             }
             assert(false);
+            return 0;
         }
 
         unsigned char encodeData(int value) {
@@ -67,7 +68,7 @@ namespace fumen {
             return flag ? 1 : 0;
         }
 
-        int coordinate_to_int(Element element) {
+        int coordinate_to_int(const Element &element) {
             int x = element.x;
             int y = element.y;
             ColorType type = element.color;
@@ -96,10 +97,10 @@ namespace fumen {
             else if (type == ColorType::Z && rotate == core::RotateType::Left)
                 x -= 1;
 
-            return (kTETFU_FIELD_TOP - y - 1) * kTETFU_FIELD_WIDTH + x;
+            return (kFumenFieldTop - y - 1) * kFumenFieldWidth + x;
         }
 
-        int parseRotate(Element element) {
+        int parseRotate(const Element &element) {
             ColorType type = element.color;
             core::RotateType rotate = element.rotate;
 
@@ -118,6 +119,8 @@ namespace fumen {
             }
 
             assert(false);
+
+            return 0;
         }
     }
 
@@ -126,8 +129,8 @@ namespace fumen {
         bool isChanged = false;
         int prev_diff = getDiff(0, 0);
         int counter = -1;
-        for (int yIndex = 0; yIndex < kTETFU_MAX_HEIGHT; yIndex++) {
-            for (int xIndex = 0; xIndex < kTETFU_FIELD_WIDTH; xIndex++) {
+        for (int yIndex = 0; yIndex < kFumenFieldMaxHeight; yIndex++) {
+            for (int xIndex = 0; xIndex < kFumenFieldWidth; xIndex++) {
                 int diff = getDiff(xIndex, yIndex);
                 if (diff != prev_diff) {
                     recordBlockCounts(prev_diff, counter);
@@ -147,7 +150,7 @@ namespace fumen {
     }
 
     int FieldEncoder::getDiff(int xIndex, int yIndex) {
-        int y = kTETFU_FIELD_TOP - yIndex - 1;
+        int y = kFumenFieldTop - yIndex - 1;
         if (y < 0) {
             return 8;
         }
@@ -155,7 +158,7 @@ namespace fumen {
     }
 
     void FieldEncoder::recordBlockCounts(int diff, int counter) {
-        int value = diff * kTETFU_FIELD_BLOCKS + counter;
+        int value = diff * kFumenNumOfBlocks + counter;
         pushValues(encodedValues, value, 2);
     }
 
@@ -171,7 +174,7 @@ namespace fumen {
         value += parseBool(flags.isMirror);
         value *= 2;
         value += parseBool(flags.isBlockUp);
-        value *= kTETFU_FIELD_BLOCKS;
+        value *= kFumenNumOfBlocks;
         value += coordinate_to_int(element);
         value *= 4;
         value += parseRotate(element);
@@ -238,8 +241,8 @@ namespace fumen {
         }
     }
 
-    std::string Parser::encode(std::vector<Element> elements) {
-        auto prevField = ColorField(kTETFU_MAX_HEIGHT);
+    std::string Parser::encode(const std::vector<Element> &elements) {
+        auto prevField = ColorField(kFumenFieldMaxHeight);
         std::string prevComment;
 
         for (int index = 0; index < elements.size(); index++) {
