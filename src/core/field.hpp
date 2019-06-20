@@ -24,6 +24,8 @@ namespace core {
 
         bool isEmpty(int x, int y) const;
 
+        bool isEmptyOnY(int y) const;
+
         void put(const Blocks &blocks, int x, int y);
 
         void putAtMaskIndex(const Blocks &blocks, int leftX, int lowerY);
@@ -51,6 +53,14 @@ namespace core {
         int getBlockOnX(int ux, int maxY) const;
 
         bool isWallBetween(int x, int maxY) const;
+
+        int numOfAllBlocks() const;
+
+        void insertBlackLineWithKey(LineKey deleteKey);
+
+        void insertWhiteLineWithKey(LineKey deleteKey);
+
+        bool canMerge(const Field &other) const;
 
         std::string toString(int height) const;
 
