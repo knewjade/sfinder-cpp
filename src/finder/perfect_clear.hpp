@@ -25,11 +25,6 @@ namespace finder {
     );
 
     namespace perfect_clear {
-        enum PriorityTypes {
-            LeastSoftdrop_LeastLineClear_LeastHold,
-            LeastSoftdrop_MostCombo_MostLineClear_LeastHold,
-        };
-
         struct Candidate {
             const core::Field field;
             const int currentIndex;
@@ -51,7 +46,6 @@ namespace finder {
             std::vector<std::vector<core::Move>> &movePool;
             const int maxDepth;
             const int pieceSize;
-            const bool leastLineClears;
         };
 
         struct Record {
@@ -63,12 +57,91 @@ namespace finder {
             int tSpinAttack;
         };
 
-        template<class T = core::srs::MoveGenerator>
+        struct LeastSoftdrop_LeastLineClear_LeastHold {
+            bool shouldUpdate(
+                    const Record &oldRecord, const Record &newRecord
+            ) {
+                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+                }
+
+                if (newRecord.softdropCount != oldRecord.softdropCount) {
+                    return newRecord.softdropCount < oldRecord.softdropCount;
+                }
+
+                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                    return newRecord.lineClearCount < oldRecord.lineClearCount;
+                }
+
+                return newRecord.holdCount < oldRecord.holdCount;
+            }
+
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                if (current.leftNumOfT == 0) {
+                    if (current.tSpinAttack != best.tSpinAttack) {
+                        return current.tSpinAttack < best.tSpinAttack;
+                    }
+
+                    return best.softdropCount < current.softdropCount;
+                }
+
+                return false;
+            }
+        };
+
+        struct LeastSoftdrop_MostCombo_MostLineClear_LeastHold {
+            bool shouldUpdate(
+                    const Record &oldRecord, const Record &newRecord
+            ) {
+                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+                }
+
+                if (newRecord.softdropCount != oldRecord.softdropCount) {
+                    return newRecord.softdropCount < oldRecord.softdropCount;
+                }
+
+                if (newRecord.maxCombo != oldRecord.maxCombo) {
+                    return oldRecord.maxCombo < newRecord.maxCombo;
+                }
+
+                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                    return oldRecord.lineClearCount < newRecord.lineClearCount;
+                }
+
+                return newRecord.holdCount < oldRecord.holdCount;
+            }
+
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                if (current.leftNumOfT == 0) {
+                    if (current.tSpinAttack != best.tSpinAttack) {
+                        return current.tSpinAttack < best.tSpinAttack;
+                    }
+
+                    return best.softdropCount < current.softdropCount;
+                }
+
+                return false;
+            }
+        };
+
+        struct Faster {
+            bool shouldUpdate(const Record &oldRecord, const Record &newRecord) {
+                return true;
+            }
+
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                return best.solution[0].x != -1;
+            }
+        };
+
+        template<class T = core::srs::MoveGenerator, class C = Faster>
         class Finder {
         public:
             Finder<T>(const core::Factory &factory, T &moveGenerator)
                     : factory(factory), moveGenerator(moveGenerator),
-                      reachable(core::srs_rotate_end::Reachable(factory)) {
+                      reachable(core::srs_rotate_end::Reachable(factory)),
+                      comparator(C{}) {
             }
 
             Solution run(
@@ -78,7 +151,7 @@ namespace finder {
 
             Solution run(
                     const core::Field &field, const std::vector<core::PieceType> &pieces,
-                    int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
+                    int maxDepth, int maxLine, bool holdEmpty, int initCombo
             );
 
         private:
@@ -86,6 +159,7 @@ namespace finder {
             T &moveGenerator;
             core::srs_rotate_end::Reachable reachable;
             Record best;
+            C comparator;
 
             void search(const Configure &configure, const Candidate &candidate, Solution &solution);
 

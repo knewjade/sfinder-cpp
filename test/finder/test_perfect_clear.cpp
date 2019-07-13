@@ -494,7 +494,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 3);
 
             // Failed: 975, 2295
             if (!result.empty()) {
@@ -536,7 +536,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 0);
 
             if (!result.empty()) {
                 success += 1;

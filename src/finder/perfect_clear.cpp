@@ -8,6 +8,22 @@ namespace finder {
             }
             return !field.isEmpty(x, y);
         }
+
+        bool validate(const core::Field &field, int maxLine) {
+            int sum = maxLine - field.getBlockOnX(0, maxLine);
+            for (int x = 1; x < core::kFieldWidth; x++) {
+                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
+                if (field.isWallBetween(x, maxLine)) {
+                    if (sum % 4 != 0)
+                        return false;
+                    sum = emptyCountInColumn;
+                } else {
+                    sum += emptyCountInColumn;
+                }
+            }
+
+            return sum % 4 == 0;
+        }
     }
 
     TSpinShapes getTSpinShape(const core::Field &field, int x, int y, core::RotateType rotateType) {
@@ -145,113 +161,6 @@ namespace finder {
     }
 
     namespace perfect_clear {
-        namespace {
-            template<PriorityTypes T>
-            bool shouldUpdate(const Record &oldRecord, const Record &newRecord);
-
-            template<PriorityTypes T>
-            bool isWorseThanBest(const Record &best, const Candidate &current);
-
-            bool validate(const core::Field &field, int maxLine) {
-                int sum = maxLine - field.getBlockOnX(0, maxLine);
-                for (int x = 1; x < core::kFieldWidth; x++) {
-                    int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
-                    if (field.isWallBetween(x, maxLine)) {
-                        if (sum % 4 != 0)
-                            return false;
-                        sum = emptyCountInColumn;
-                    } else {
-                        sum += emptyCountInColumn;
-                    }
-                }
-
-                return sum % 4 == 0;
-            }
-
-            template<>
-            bool isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
-                    const Record &best, const Candidate &current
-            ) {
-                // return best.softdropCount < current.softdropCount || INT_MAX < current.lineClearCount;
-                return best.softdropCount < current.softdropCount;
-            }
-
-            template<>
-            bool shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(
-                    const Record &oldRecord, const Record &newRecord
-            ) {
-                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-                }
-
-                if (newRecord.softdropCount != oldRecord.softdropCount) {
-                    return newRecord.softdropCount < oldRecord.softdropCount;
-                }
-
-                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                    return newRecord.lineClearCount < oldRecord.lineClearCount;
-                }
-
-                return newRecord.holdCount < oldRecord.holdCount;
-            }
-
-            template<>
-            bool isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
-                    const Record &best, const Candidate &current
-            ) {
-                return best.softdropCount < current.softdropCount;
-            }
-
-            template<>
-            bool shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(
-                    const Record &oldRecord, const Record &newRecord
-            ) {
-                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-                }
-
-                if (newRecord.softdropCount != oldRecord.softdropCount) {
-                    return newRecord.softdropCount < oldRecord.softdropCount;
-                }
-
-                if (newRecord.maxCombo != oldRecord.maxCombo) {
-                    return oldRecord.maxCombo < newRecord.maxCombo;
-                }
-
-                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                    return oldRecord.lineClearCount < newRecord.lineClearCount;
-                }
-
-                return newRecord.holdCount < oldRecord.holdCount;
-            }
-
-            bool shouldUpdate(const bool leastLineClears, const Record &oldRecord, const Record &newRecord) {
-                if (leastLineClears) {
-                    return shouldUpdate<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(oldRecord, newRecord);
-                } else {
-                    return shouldUpdate<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(oldRecord,
-                                                                                                        newRecord);
-                }
-            }
-
-            bool isWorseThanBest(const bool leastLineClears, const Record &best, const Candidate &current) {
-                if (current.leftNumOfT == 0) {
-                    if (current.tSpinAttack != best.tSpinAttack) {
-                        return current.tSpinAttack < best.tSpinAttack;
-                    }
-
-                    if (leastLineClears) {
-                        return isWorseThanBest<PriorityTypes::LeastSoftdrop_LeastLineClear_LeastHold>(best, current);
-                    } else {
-                        return isWorseThanBest<PriorityTypes::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(best,
-                                                                                                               current);
-                    }
-                }
-
-                return false;
-            }
-        }
-
         template<>
         void Finder<core::srs::MoveGenerator>::move(
                 const Configure &configure,
@@ -270,7 +179,7 @@ namespace finder {
                 const Candidate &candidate,
                 Solution &solution
         ) {
-            if (isWorseThanBest(configure.leastLineClears, best, candidate)) {
+            if (comparator.isWorseThanBest(best, candidate)) {
                 return;
             }
 
@@ -326,7 +235,7 @@ namespace finder {
         void Finder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
             assert(!best.solution.empty());
 
-            if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
+            if (best.solution[0].x == -1 || comparator.shouldUpdate(best, record)) {
                 best = Record(record);
             }
         }
@@ -415,7 +324,7 @@ namespace finder {
         template<>
         Solution Finder<core::srs::MoveGenerator>::run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
+                int maxDepth, int maxLine, bool holdEmpty, int initCombo
         ) {
             assert(1 <= maxDepth);
 
@@ -442,18 +351,17 @@ namespace finder {
                     movePool,
                     maxDepth,
                     static_cast<int>(pieces.size()),
-                    leastLineClears,
             };
 
             // Count up T
             int leftNumOfT = static_cast<int>(std::count(pieces.begin(), pieces.end(), core::PieceType::T));
 
             // Create candidate
-            Candidate candidate = holdEmpty
-                                  ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true,
-                                              leftNumOfT}
-                                  : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true,
-                                              leftNumOfT};
+            Candidate candidate = holdEmpty ? Candidate{
+                    freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT,
+            } : Candidate{
+                    freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT
+            };
 
             // Create current record & best record
             best = Record{
@@ -475,7 +383,7 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
-            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0);
+            return run(field, pieces, maxDepth, maxLine, holdEmpty, 0);
         }
     }
 }
