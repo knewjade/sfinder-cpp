@@ -62,6 +62,10 @@ namespace core {
 
         bool canMerge(const Field &other) const;
 
+        void merge(const Field &other);
+
+        void reduce(const Field &other);
+
         std::string toString(int height) const;
 
     private:

@@ -571,6 +571,20 @@ namespace core {
                && (xBoardHigh & other.xBoardHigh) == 0L;
     }
 
+    void Field::merge(const Field &other) {
+        xBoardLow |= other.xBoardLow;
+        xBoardMidLow |= other.xBoardMidLow;
+        xBoardMidHigh |= other.xBoardMidHigh;
+        xBoardHigh |= other.xBoardHigh;
+    }
+
+    void Field::reduce(const Field &other) {
+        xBoardLow &= ~other.xBoardLow;
+        xBoardMidLow &= ~other.xBoardMidLow;
+        xBoardMidHigh &= ~other.xBoardMidHigh;
+        xBoardHigh &= ~other.xBoardHigh;
+    }
+
     std::string Field::toString(int height) const {
         auto str = std::string("");
         for (int y = height - 1; 0 <= y; --y) {

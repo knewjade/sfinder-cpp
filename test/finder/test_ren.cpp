@@ -320,42 +320,46 @@ namespace finder {
         const int fromX;
         const int fromY;
         const int rotateIndex;
-        const core::Field notAllowed;
     };
 
     struct Candidate {
-        const core::Field field;
+        const core::Field blocks;
         const core::Field notAllowed;
     };
 
     class Searcher {
     public:
         Searcher(
-                const core::Factory &factory, core::srs_rotate_end::Reachable &reachable,
                 const core::Piece &piece, const core::Blocks &fromBlocks, const core::Blocks &toBlocks
-        ) : factory_(factory), piece_(piece), fromBlocks_(fromBlocks), toBlocks_(toBlocks), reachable_(reachable) {
+        ) : piece_(piece), fromBlocks_(fromBlocks), toBlocks_(toBlocks) {
         }
 
-        void next(std::vector<Candidate> &results, const core::Field &field, const Goal goal) {
-            if (!field.canMerge(goal.notAllowed)) {
-                return;
-            }
-            assert(field.canMerge(goal.notAllowed));
-            next(results, field, goal, -1);
+        void nextLeftRotate(std::vector<Candidate> &results, const Candidate &candidate, const Goal goal) {
+            assert(candidate.blocks.canMerge(candidate.notAllowed));
+//            std::cout << candidate.blocks.toString(15) << std::endl;
+//            std::cout << candidate.notAllowed.toString(15) << std::endl;
+            next(results, candidate, goal, piece_.leftOffsets, -1);
+        }
+
+        void nextRightRotate(std::vector<Candidate> &results, const Candidate &candidate, const Goal goal) {
+            assert(candidate.blocks.canMerge(candidate.notAllowed));
+//            std::cout << candidate.blocks.toString(15) << std::endl;
+//            std::cout << candidate.notAllowed.toString(15) << std::endl;
+            next(results, candidate, goal, piece_.rightOffsets, -1);
         }
 
     private:
-        const core::Factory &factory_;
         const core::Piece &piece_;
         const core::Blocks &fromBlocks_;
         const core::Blocks &toBlocks_;
-        core::srs_rotate_end::Reachable &reachable_;
 
-        void next(std::vector<Candidate> &results, const core::Field &field, const Goal goal,
-                  const int prevRotateIndex) {
+        void next(
+                std::vector<Candidate> &results, const Candidate &candidate, const Goal goal,
+                const std::array<core::Offset, 20> &offsets_, const int prevRotateIndex
+        ) {
             int head = 5 * fromBlocks_.rotateType;
             for (int currentRotateIndex = head; currentRotateIndex < head + 5; ++currentRotateIndex) {
-                auto &offsets = piece_.leftOffsets[currentRotateIndex];
+                auto &offsets = offsets_[currentRotateIndex];
                 int toX = goal.fromX + offsets.x;
                 int toY = goal.fromY + offsets.y;
 
@@ -364,34 +368,42 @@ namespace finder {
                         && toX + toBlocks_.maxX < core::kFieldWidth
                         && 0 <= toY + toBlocks_.minY
                         && toY + toBlocks_.maxY < core::kMaxFieldHeight
-                        && field.canPut(toBlocks_, toX, toY)) {
+                        && candidate.blocks.canPut(toBlocks_, toX, toY)) {
 
-                    if (currentRotateIndex == goal.rotateIndex
-                        // exclude T-spin mini
-                        && 0 < finder::getAttackIfTSpin(reachable_, factory_, field, piece_.pieceType,
-                                toBlocks_.rotateType, toX, toY, 1, false)
-                        && reachable_.checks(field, piece_.pieceType, toBlocks_.rotateType, toX, toY,
-                                             core::kMaxFieldHeight)) {
-                        std::cout << field.toString(15) << std::endl;
-                        std::cout << goal.notAllowed.toString(15) << std::endl;
+                    if (currentRotateIndex == goal.rotateIndex ) {
+                        auto f = core::Field{};
+                        for (int iy = toY +toBlocks_.minY; iy <= toY +toBlocks_.maxY; ++iy) {
+                            for (int ix = 0; ix < core::kFieldWidth; ++ix) {
+                                f.setBlock(ix, iy);
+                            }
+                        }
+                        f.reduce(candidate.notAllowed);
+//                        f.merge(candidate.blocks);
+                        f.put(toBlocks_, toX, toY);
+                        auto c = f.clearLineReturnNum();
 
-                        results.emplace_back(Candidate{field, goal.notAllowed});
+                        if (0 < c) {
+                            std::cout << candidate.blocks.toString(15) << std::endl;
+                            std::cout << candidate.notAllowed.toString(15) << std::endl;
+
+                            results.emplace_back(Candidate{candidate.blocks, candidate.notAllowed});
+                        }
                     } else if (prevRotateIndex < currentRotateIndex && currentRotateIndex < goal.rotateIndex) {
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, true, true, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, true, true, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, true, false, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, true, false, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, false, true, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, false, true, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, false, false, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, true, false, false, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, true, true, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, true, true, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, true, false, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, true, false, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, false, true, true);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, false, true, false);
-                        fill(results, field, goal, currentRotateIndex, toX, toY, false, false, false, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, true, true, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, true, true, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, true, false, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, true, false, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, false, true, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, false, true, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, false, false, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, true, false, false, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, true, true, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, true, true, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, true, false, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, true, false, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, false, true, true);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, false, true, false);
+                        fill(results, candidate, goal, offsets_,currentRotateIndex, toX, toY, false, false, false, true);
                     }
 
                     return;
@@ -400,175 +412,254 @@ namespace finder {
         }
 
         void fill(
-                std::vector<Candidate> &results, const core::Field &field, const Goal goal,
+                std::vector<Candidate> &results, const Candidate &candidate, const Goal goal,
+                const std::array<core::Offset, 20> &offsets,
                 int currentRotateIndex, int toX, int toY, bool b1, bool b2, bool b3, bool b4
         ) {
             assert(b1 || b2 || b3 || b4);
 
-            auto freeze = core::Field{field};
+            auto freezeBlocks = core::Field{candidate.blocks};
+            auto freezeNotAllowed = core::Field{candidate.notAllowed};
 
             auto &points = toBlocks_.points;
 
-            if (b1) {
+            {
                 auto point = points[0];
-                freeze.setBlock(toX + point.x, toY + point.y);
+                auto x = toX + point.x;
+                auto y = toY + point.y;
+
+                if (b1) {
+                    if (!freezeNotAllowed.isEmpty(x, y)) {
+                        return;
+                    }
+                    freezeBlocks.setBlock(x, y);
+                } else {
+                    freezeNotAllowed.setBlock(x, y);
+                }
             }
 
-            if (b2) {
+            {
                 auto point = points[1];
-                freeze.setBlock(toX + point.x, toY + point.y);
+                auto x = toX + point.x;
+                auto y = toY + point.y;
+
+                if (b2) {
+                    if (!freezeNotAllowed.isEmpty(x, y)) {
+                        return;
+                    }
+                    freezeBlocks.setBlock(x, y);
+                } else {
+                    freezeNotAllowed.setBlock(x, y);
+                }
             }
 
-            if (b3) {
+            {
                 auto point = points[2];
-                freeze.setBlock(toX + point.x, toY + point.y);
+                auto x = toX + point.x;
+                auto y = toY + point.y;
+
+                if (b3) {
+                    if (!freezeNotAllowed.isEmpty(x, y)) {
+                        return;
+                    }
+                    freezeBlocks.setBlock(x, y);
+                } else {
+                    freezeNotAllowed.setBlock(x, y);
+                }
             }
 
-            if (b4) {
+            {
                 auto point = points[3];
-                freeze.setBlock(toX + point.x, toY + point.y);
+                auto x = toX + point.x;
+                auto y = toY + point.y;
+
+                if (b4) {
+                    if (!freezeNotAllowed.isEmpty(x, y)) {
+                        return;
+                    }
+                    freezeBlocks.setBlock(x, y);
+                } else {
+                    freezeNotAllowed.setBlock(x, y);
+                }
             }
 
-            if (field != freeze && freeze.canMerge(goal.notAllowed)) {
-                assert(field.numOfAllBlocks() < freeze.numOfAllBlocks());
-                next(results, freeze, goal, currentRotateIndex);
+            if (candidate.blocks != freezeBlocks) {
+                assert(candidate.blocks.numOfAllBlocks() < freezeBlocks.numOfAllBlocks());
+                auto freeze = Candidate{freezeBlocks, freezeNotAllowed};
+                next(results, freeze, goal, offsets, currentRotateIndex);
             }
         }
     };
 
-    void f(
-            const core::Factory &factory, core::srs_rotate_end::Reachable &reachable,
-            const core::Field &field_, const core::Field &notAllowed, int depth
+    void createMask2(
+            const core::Factory &factory, const Candidate &candidate,
+            const core::Piece &piece, const core::Blocks &toBlocks, int toX, int toY
     ) {
-        if (2 <= depth) {
-            std::cout << field_.toString(15) << std::endl;
-            return;
-        }
-
-        int height = 0;
-        for (int y = core::kMaxFieldHeight - 1; 0 <= y; --y) {
-            if (!field_.isEmptyOnY(y)) {
-                height = y + 1;
-                break;
-            }
-        }
+        std::cout << candidate.blocks.toString(12) << std::endl;
 
         auto results = std::vector<Candidate>{};
 
-        for (int lowerY = 0; lowerY < height; ++lowerY) {
-            for (int line = 1; line <= 3; ++line) {
-                auto f1 = core::Field{field_};
-                auto not1 = core::Field{notAllowed};
+        // Rotate left
+        {
+            auto fromRotateType = static_cast<core::RotateType>((toBlocks.rotateType + 1) % 4);
+            auto &fromBlocks = factory.get(core::PieceType::T, fromRotateType);
 
-                auto lineKey = getBitLineKey(lowerY, line);
-                f1.insertBlackLineWithKey(lineKey);
-                not1.insertWhiteLineWithKey(lineKey);
+            int head = 5 * fromRotateType;
+            for (int i = head; i < head + 5; ++i) {
+                auto &offsets = piece.leftOffsets[i];
+                int fromX = toX - offsets.x;
+                int fromY = toY - offsets.y;
 
-                auto &piece = factory.get(core::PieceType::T);
+                assert(0 <= fromX + fromBlocks.minX);
+                assert(fromX + fromBlocks.maxX < core::kFieldWidth);
+                assert(0 <= fromY + fromBlocks.minY);
+                assert(fromY + fromBlocks.maxY < core::kMaxFieldHeight);
 
-                for (int toRotate = 0; toRotate < 4; ++toRotate) {
-                    auto toRotateType = static_cast<core::RotateType>(toRotate);
-                    auto &toBlocks = factory.get(core::PieceType::T, toRotateType);
+                if (candidate.blocks.canPut(fromBlocks, fromX, fromY)) {
+                    auto searcher = Searcher(piece, fromBlocks, toBlocks);
 
-                    if (toBlocks.height < line) {
-                        continue;
-                    }
+                    auto freezeNotAllowed = core::Field{candidate.notAllowed};
+                    freezeNotAllowed.put(fromBlocks, fromX, fromY);
 
-                    int minY = std::max(-toBlocks.minY, (lowerY + line - 1) - toBlocks.maxY);
-                    for (int y = minY; y <= lowerY - toBlocks.minY; ++y) {
-                        for (int x = -toBlocks.minX; x < 10 - toBlocks.maxX; ++x) {
-                            auto freeze = core::Field{f1};
-                            freeze.put(toBlocks, x, y);
+                    auto freezeCandidate = Candidate{candidate.blocks, freezeNotAllowed};
+                    auto goal = Goal{fromX, fromY, i};
+                    searcher.nextLeftRotate(results, freezeCandidate, goal);
+                }
+            }
+        }
 
-                            if (f1 != freeze) {
-                                continue;
-                            }
+        // Rotate right
+        {
+            auto fromRotateType = static_cast<core::RotateType>((toBlocks.rotateType + 3) % 4);
+            auto &fromBlocks = factory.get(core::PieceType::T, fromRotateType);
 
-                            freeze.remove(toBlocks, x, y);
+            int head = 5 * fromRotateType;
+            for (int i = head; i < head + 5; ++i) {
+                auto &offsets = piece.rightOffsets[i];
+                int fromX = toX - offsets.x;
+                int fromY = toY - offsets.y;
 
-                            auto not2 = core::Field{not1};
-                            not2.put(toBlocks, x, y);
+                assert(0 <= fromX + fromBlocks.minX);
+                assert(fromX + fromBlocks.maxX < core::kFieldWidth);
+                assert(0 <= fromY + fromBlocks.minY);
+                assert(fromY + fromBlocks.maxY < core::kMaxFieldHeight);
 
-//                    std::cout << freeze.toString(4) << std::endl;
-//                    std::cout << x << "," << y << std::endl;
+                if (candidate.blocks.canPut(fromBlocks, fromX, fromY)) {
+                    auto searcher = Searcher(piece, fromBlocks, toBlocks);
 
-                            // Rotate left
-                            {
-                                auto fromRotateType = static_cast<core::RotateType>((toRotate + 1) % 4);
-                                auto &fromBlocks = factory.get(core::PieceType::T, fromRotateType);
+                    auto freezeNotAllowed = core::Field{candidate.notAllowed};
+                    freezeNotAllowed.put(fromBlocks, fromX, fromY);
 
-                                int head = 5 * fromRotateType;
-                                for (int i = head; i < head + 5; ++i) {
-                                    auto &offsets = piece.leftOffsets[i];
-                                    int fromX = x - offsets.x;
-                                    int fromY = y - offsets.y;
-
-//                            std::cout << fromX << "," << fromY << std::endl;
-
-                                    if (
-                                            0 <= fromX + fromBlocks.minX
-                                            && fromX + fromBlocks.maxX < core::kFieldWidth
-                                            && 0 <= fromY + fromBlocks.minY
-                                            && fromY + fromBlocks.maxY < core::kMaxFieldHeight
-                                            && freeze.canPut(fromBlocks, fromX, fromY)) {
-                                        auto searcher = Searcher(factory, reachable, piece, fromBlocks, toBlocks);
-                                        auto not3 = core::Field{not2};
-                                        not3.put(fromBlocks, fromX, fromY);
-                                        auto goal = Goal{fromX, fromY, i, not3};
-                                        searcher.next(results, freeze, goal);
-                                    }
-                                }
-                            }
-
-                            // Rotate right
-                            {
-                                auto fromRotateType = static_cast<core::RotateType>((toRotate + 3) % 4);
-                                auto &fromBlocks = factory.get(core::PieceType::T, fromRotateType);
-
-                                int head = 5 * fromRotateType;
-                                for (int i = head; i < head + 5; ++i) {
-                                    auto &offsets = piece.rightOffsets[i];
-                                    int fromX = x - offsets.x;
-                                    int fromY = y - offsets.y;
-
-//                            std::cout << fromX << "," << fromY << std::endl;
-
-                                    if (
-                                            0 <= fromX + fromBlocks.minX
-                                            && fromX + fromBlocks.maxX < core::kFieldWidth
-                                            && 0 <= fromY + fromBlocks.minY
-                                            && fromY + fromBlocks.maxY < core::kMaxFieldHeight
-                                            && freeze.canPut(fromBlocks, fromX, fromY)) {
-                                        auto searcher = Searcher(factory, reachable, piece, fromBlocks, toBlocks);
-                                        auto not3 = core::Field{not2};
-                                        not3.put(fromBlocks, fromX, fromY);
-                                        auto goal = Goal{fromX, fromY, i, not3};
-                                        searcher.next(results, freeze, goal);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    auto freezeCandidate = Candidate{candidate.blocks, freezeNotAllowed};
+                    auto goal = Goal{fromX, fromY, i};
+                    searcher.nextRightRotate(results, freezeCandidate, goal);
                 }
             }
         }
 
         for (const auto &result : results) {
-            f(factory, reachable, result.field, result.notAllowed, depth + 1);
+            std::cout << result.blocks.toString(12) << std::endl;
         }
     }
 
-    TEST_F(RenTest, caseSpin) {
+    void createMask(
+            const core::Factory &factory, const Candidate &candidate
+    ) {
+        int x = 4;
+        int y = 4;
+
+        auto &piece = factory.get(core::PieceType::T);
+
+        for (int toRotate = 0; toRotate < 4; ++toRotate) {
+            auto toRotateType = static_cast<core::RotateType>(toRotate);
+            auto &toBlocks = factory.get(core::PieceType::T, toRotateType);
+
+            auto notAllowed = core::Field{candidate.notAllowed};
+            notAllowed.put(toBlocks, x, y);
+
+            {
+                auto freezeBlocks = core::Field{candidate.blocks};
+                auto freezeNotAllowed = core::Field{notAllowed};
+
+                freezeNotAllowed.setBlock(x + 1, y + 1);
+                freezeBlocks.setBlock(x - 1, y + 1);
+                freezeBlocks.setBlock(x + 1, y - 1);
+                freezeBlocks.setBlock(x - 1, y - 1);
+
+                if (freezeBlocks != candidate.blocks) {
+                    auto freeze = Candidate{freezeBlocks, freezeNotAllowed};
+                    createMask2(factory, freeze, piece, toBlocks, x, y);
+                }
+            }
+
+            {
+                auto freezeBlocks = core::Field{candidate.blocks};
+                auto freezeNotAllowed = core::Field{notAllowed};
+
+                freezeBlocks.setBlock(x + 1, y + 1);
+                freezeNotAllowed.setBlock(x - 1, y + 1);
+                freezeBlocks.setBlock(x + 1, y - 1);
+                freezeBlocks.setBlock(x - 1, y - 1);
+
+                if (freezeBlocks != candidate.blocks) {
+                    auto freeze = Candidate{freezeBlocks, freezeNotAllowed};
+                    createMask2(factory, freeze, piece, toBlocks, x, y);
+                }
+            }
+
+            {
+                auto freezeBlocks = core::Field{candidate.blocks};
+                auto freezeNotAllowed = core::Field{notAllowed};
+
+                freezeBlocks.setBlock(x + 1, y + 1);
+                freezeBlocks.setBlock(x - 1, y + 1);
+                freezeNotAllowed.setBlock(x + 1, y - 1);
+                freezeBlocks.setBlock(x - 1, y - 1);
+
+                if (freezeBlocks != candidate.blocks) {
+                    auto freeze = Candidate{freezeBlocks, freezeNotAllowed};
+                    createMask2(factory, freeze, piece, toBlocks, x, y);
+                }
+            }
+
+            {
+                auto freezeBlocks = core::Field{candidate.blocks};
+                auto freezeNotAllowed = core::Field{notAllowed};
+
+                freezeBlocks.setBlock(x + 1, y + 1);
+                freezeBlocks.setBlock(x - 1, y + 1);
+                freezeBlocks.setBlock(x + 1, y - 1);
+                freezeNotAllowed.setBlock(x - 1, y - 1);
+
+                if (freezeBlocks != candidate.blocks) {
+                    auto freeze = Candidate{freezeBlocks, freezeNotAllowed};
+                    createMask2(factory, freeze, piece, toBlocks, x, y);
+                }
+            }
+
+            {
+                auto freezeBlocks = core::Field{candidate.blocks};
+
+                freezeBlocks.setBlock(x + 1, y + 1);
+                freezeBlocks.setBlock(x - 1, y + 1);
+                freezeBlocks.setBlock(x + 1, y - 1);
+                freezeBlocks.setBlock(x - 1, y - 1);
+
+                if (freezeBlocks != candidate.blocks) {
+                    auto freeze = Candidate{freezeBlocks, notAllowed};
+                    createMask2(factory, freeze, piece, toBlocks, x, y);
+                }
+            }
+        }
+    }
+
+    TEST_F(RenTest, sample) {
         auto factory = core::Factory::create();
-        auto reachable = core::srs_rotate_end::Reachable(factory);
 
-        auto field = core::createField(
-                ""s +
-                "_____XX___"
-        );
-
+        auto blocks = core::Field{};
         auto notAllowed = core::Field{};
+        auto candidate = Candidate{blocks, notAllowed};
 
-        f(factory, reachable, field, notAllowed, 0);
+        createMask(factory, candidate);
     }
 }
