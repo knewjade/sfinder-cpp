@@ -5,6 +5,7 @@
 #include "core/field.hpp"
 #include "core/moves.hpp"
 #include "finder/perfect_clear.hpp"
+#include "finder/permutation.hpp"
 
 namespace finder {
     using namespace std::literals::string_literals;
@@ -440,34 +441,6 @@ namespace finder {
         }
     }
 
-    template<int N>
-    std::array<core::PieceType, N> toPieces(int value) {
-        static_assert(0 < N && N <= 7);
-
-        int arr[N];
-
-        for (int index = N - 1; 0 <= index; --index) {
-            int scale = 7 - index;
-            arr[index] = value % scale;
-            value /= scale;
-        }
-
-        for (int select = N - 2; 0 <= select; --select) {
-            for (int adjust = select + 1; adjust < N; ++adjust) {
-                if (arr[select] <= arr[adjust]) {
-                    arr[adjust] += 1;
-                }
-            }
-        }
-
-        std::array<core::PieceType, N> pieces = {};
-        for (int index = 0; index < N; ++index) {
-            pieces[index] = static_cast<core::PieceType>(arr[index]);
-        }
-
-        return pieces;
-    }
-
     TEST_F(PerfectClearTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
@@ -485,12 +458,13 @@ namespace finder {
         const int maxDepth = 7;
         const int maxLine = 6;
 
+        auto permutations = Permutation::create<7>(core::kAllPieceType, 7);
+        int max = permutations.size();
+
         int success = 0;
         long long int totalTime = 0L;
-        int max = 5040;
         for (int value = 0; value < max; ++value) {
-            auto arr = toPieces<maxDepth>(value);
-            auto pieces = std::vector(arr.begin(), arr.end());
+            auto pieces = permutations.pieces(value);
 
             auto start = std::chrono::system_clock::now();
 
@@ -527,12 +501,13 @@ namespace finder {
         const int maxDepth = 7;
         const int maxLine = 6;
 
+        auto permutations = Permutation::create<7>(core::kAllPieceType, 7);
+        int max = permutations.size();
+
         int success = 0;
         long long int totalTime = 0L;
-        int max = 5040;
         for (int value = 0; value < max; ++value) {
-            auto arr = toPieces<maxDepth>(value);
-            auto pieces = std::vector(arr.begin(), arr.end());
+            auto pieces = permutations.pieces(value);
 
             auto start = std::chrono::system_clock::now();
 

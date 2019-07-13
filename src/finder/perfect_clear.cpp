@@ -179,7 +179,7 @@ namespace finder {
                 const Candidate &candidate,
                 Solution &solution
         ) {
-            if (comparator.isWorseThanBest(best, candidate)) {
+            if (comparator_.isWorseThanBest(best_, candidate)) {
                 return;
             }
 
@@ -233,10 +233,10 @@ namespace finder {
 
         template<>
         void Finder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
-            assert(!best.solution.empty());
+            assert(!best_.solution.empty());
 
-            if (best.solution[0].x == -1 || comparator.shouldUpdate(best, record)) {
-                best = Record(record);
+            if (best_.solution[0].x == -1 || comparator_.shouldUpdate(best_, record)) {
+                best_ = Record(record);
             }
         }
 
@@ -269,10 +269,10 @@ namespace finder {
 
             auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
 
-            moveGenerator.search(moves, field, pieceType, leftLine);
+            moveGenerator_.search(moves, field, pieceType, leftLine);
 
             for (const auto &move : moves) {
-                auto &blocks = factory.get(pieceType, move.rotateType);
+                auto &blocks = factory_.get(pieceType, move.rotateType);
 
                 auto freeze = core::Field(field);
                 freeze.put(blocks, move.x, move.y);
@@ -284,7 +284,8 @@ namespace finder {
                 solution[depth].x = move.x;
                 solution[depth].y = move.y;
 
-                int tSpinAttack = getAttackIfTSpin(reachable, factory, field, pieceType, move, numCleared, currentB2b);
+                int tSpinAttack = getAttackIfTSpin(reachable_, factory_, field, pieceType, move, numCleared,
+                                                   currentB2b);
 
                 int nextSoftdropCount = move.harddrop ? softdropCount : softdropCount + 1;
                 int nextLineClearCount = 0 < numCleared ? lineClearCount + 1 : lineClearCount;
@@ -364,7 +365,7 @@ namespace finder {
             };
 
             // Create current record & best record
-            best = Record{
+            best_ = Record{
                     std::vector(solution),
                     INT_MAX,
                     INT_MAX,
@@ -375,7 +376,7 @@ namespace finder {
             // Execute
             search(configure, candidate, solution);
 
-            return best.solution[0].x == -1 ? kNoSolution : std::vector<Operation>(best.solution);
+            return best_.solution[0].x == -1 ? kNoSolution : std::vector<Operation>(best_.solution);
         }
 
         template<>

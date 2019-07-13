@@ -139,9 +139,9 @@ namespace finder {
         class Finder {
         public:
             Finder<T>(const core::Factory &factory, T &moveGenerator)
-                    : factory(factory), moveGenerator(moveGenerator),
-                      reachable(core::srs_rotate_end::Reachable(factory)),
-                      comparator(C{}) {
+                    : factory_(factory), moveGenerator_(moveGenerator),
+                      reachable_(core::srs_rotate_end::Reachable(factory)),
+                      comparator_(C{}) {
             }
 
             Solution run(
@@ -155,11 +155,11 @@ namespace finder {
             );
 
         private:
-            const core::Factory &factory;
-            T &moveGenerator;
-            core::srs_rotate_end::Reachable reachable;
-            Record best;
-            C comparator;
+            const core::Factory &factory_;
+            T &moveGenerator_;
+            core::srs_rotate_end::Reachable reachable_;
+            Record best_;
+            C comparator_;
 
             void search(const Configure &configure, const Candidate &candidate, Solution &solution);
 
