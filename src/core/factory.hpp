@@ -22,11 +22,14 @@ namespace core {
         static Blocks create() {
             using base = BlocksBase<P, R>;
             return Blocks(
-                    R, base::minX, base::maxX, base::minY, base::maxY, base::harddropColliders(), base::mask()
+                    P, R, base::points, base::minX, base::maxX, base::minY, base::maxY, base::harddropColliders(),
+                    base::mask()
             );
         }
 
+        const PieceType pieceType;
         const RotateType rotateType;
+        const std::array<Point, 4> points;
         const int minX;
         const int maxX;
         const int minY;
@@ -40,9 +43,16 @@ namespace core {
 
     private:
         Blocks(
-                const RotateType rotateType, const int minX, const int maxX, const int minY, const int maxY,
-                const std::array<Collider, kMaxFieldHeight> harddropColliders, const Bitboard mask
-        ) : rotateType(rotateType),
+                const PieceType pieceType,
+                const RotateType rotateType,
+                const std::array<Point, 4> &points,
+                const int minX,
+                const int maxX,
+                const int minY,
+                const int maxY,
+                const std::array<Collider, kMaxFieldHeight> &harddropColliders,
+                const Bitboard mask
+        ) : pieceType(pieceType), rotateType(rotateType), points(points),
             minX(minX), maxX(maxX), minY(minY), maxY(maxY), width(maxX - minX + 1), height(maxY - minY + 1),
             harddropColliders_(harddropColliders), mask_(mask) {
         };
@@ -84,12 +94,12 @@ namespace core {
         Piece(
                 const PieceType pieceType,
                 std::string name,
-                const std::array<Blocks, 4> blocks,
-                const std::array<Offset, 20> rightOffsets,
-                const std::array<Offset, 20> leftOffsets,
-                const std::array<Transform, 4> transforms,
+                const std::array<Blocks, 4> &blocks,
+                const std::array<Offset, 20> &rightOffsets,
+                const std::array<Offset, 20> &leftOffsets,
+                const std::array<Transform, 4> &transforms,
                 const uint8_t uniqueShapeRotate,
-                const std::array<uint8_t, 4> sameShapeRotates
+                const std::array<uint8_t, 4> &sameShapeRotates
         ) : pieceType(pieceType), name(std::move(name)), blocks(blocks),
             rightOffsets(rightOffsets), leftOffsets(leftOffsets), transforms(transforms),
             uniqueShapeRotate(uniqueShapeRotate), sameShapeRotates(sameShapeRotates) {

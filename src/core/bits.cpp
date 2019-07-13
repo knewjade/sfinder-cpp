@@ -433,7 +433,7 @@ namespace core {
         return insertWhiteLine_(x, key);
     }
 
-    const Bitboard kColumnOneLineBelowY[]{
+    constexpr Bitboard kColumnOneLineBelowY[]{
             0ULL, 0x1ULL, 0x401ULL, 0x100401ULL, 0x40100401ULL, 0x10040100401ULL, 0x4010040100401ULL
     };
 
@@ -459,5 +459,109 @@ namespace core {
         b = ((b >> 2U) & 0x3333333333333333ULL) + (b & 0x3333333333333333ULL);
         b = ((b >> 4U) + b) & 0x0F0F0F0F0F0F0F0FULL;
         return static_cast<int>((b * 0x0101010101010101ULL) >> 56U);
+    }
+
+    LineKey getBitKey(int y) {
+        switch (y) {
+            case 0:
+                return 1ULL;
+            case 1:
+                return 0x400ULL;
+            case 2:
+                return 0x100000ULL;
+            case 3:
+                return 0x40000000ULL;
+            case 4:
+                return 0x10000000000ULL;
+            case 5:
+                return 0x4000000000000ULL;
+            case 6:
+                return 0x2ULL;
+            case 7:
+                return 0x800ULL;
+            case 8:
+                return 0x200000ULL;
+            case 9:
+                return 0x80000000ULL;
+            case 10:
+                return 0x20000000000ULL;
+            case 11:
+                return 0x8000000000000ULL;
+            case 12:
+                return 0x4ULL;
+            case 13:
+                return 0x1000ULL;
+            case 14:
+                return 0x400000ULL;
+            case 15:
+                return 0x100000000ULL;
+            case 16:
+                return 0x40000000000ULL;
+            case 17:
+                return 0x10000000000000ULL;
+            case 18:
+                return 0x8ULL;
+            case 19:
+                return 0x2000ULL;
+            case 20:
+                return 0x800000ULL;
+            case 21:
+                return 0x200000000ULL;
+            case 22:
+                return 0x80000000000ULL;
+            case 23:
+                return 0x20000000000000ULL;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
+    Bitboard getRowMaskBelowY(int excludeY) {
+        assert(0 <= excludeY && excludeY <= 6);
+
+        switch (excludeY) {
+            case 0:
+                return 0ULL;
+            case 1:
+                return 0x3ffULL;
+            case 2:
+                return 0xfffffULL;
+            case 3:
+                return 0x3fffffffULL;
+            case 4:
+                return 0xffffffffffULL;
+            case 5:
+                return 0x3ffffffffffffULL;
+            case 6:
+                return 0xfffffffffffffffULL;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
+    Bitboard getRowMaskAboveY(int includeY) {
+        assert(0 <= includeY && includeY <= 6);
+
+        switch (includeY) {
+            case 0:
+                return 0xfffffffffffffffULL;
+            case 1:
+                return 0xffffffffffffc00ULL;
+            case 2:
+                return 0xffffffffff00000ULL;
+            case 3:
+                return 0xfffffffc0000000ULL;
+            case 4:
+                return 0xfffff0000000000ULL;
+            case 5:
+                return 0xffc000000000000ULL;
+            case 6:
+                return 0L;
+            default:
+                assert(false);
+                return 0ULL;
+        }
     }
 }

@@ -1,18 +1,11 @@
 #ifndef CORE_PERFECT_CLEAR_HPP
 #define CORE_PERFECT_CLEAR_HPP
 
+#include "./types.hpp"
 #include "../core/factory.hpp"
 #include "../core/moves.hpp"
-#include "../core/types.hpp"
 
 namespace finder {
-    struct Operation {
-        core::PieceType pieceType;
-        core::RotateType rotateType;
-        int x;
-        int y;
-    };
-
     enum TSpinShapes {
         NoShape,
         RegularShape,
@@ -26,6 +19,11 @@ namespace finder {
             core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
     );
 
+    int getAttackIfTSpin(
+            core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+            core::PieceType pieceType, core::RotateType rotateType, int x, int y, int numCleared, bool b2b
+    );
+
     namespace perfect_clear {
         enum PriorityTypes {
             LeastSoftdrop_LeastLineClear_LeastHold,
@@ -33,7 +31,7 @@ namespace finder {
         };
 
         struct Candidate {
-            const core::Field &field;
+            const core::Field field;
             const int currentIndex;
             const int holdIndex;
             const int leftLine;
@@ -56,9 +54,6 @@ namespace finder {
             const bool leastLineClears;
         };
 
-        using Solution = std::vector<Operation>;
-        inline const Solution kNoSolution = std::vector<Operation>();
-
         struct Record {
             Solution solution;
             int softdropCount;
@@ -72,7 +67,8 @@ namespace finder {
         class Finder {
         public:
             Finder<T>(const core::Factory &factory, T &moveGenerator)
-                    : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
+                    : factory(factory), moveGenerator(moveGenerator),
+                      reachable(core::srs_rotate_end::Reachable(factory)) {
             }
 
             Solution run(
