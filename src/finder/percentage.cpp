@@ -2,6 +2,20 @@
 #include "marker.hpp"
 
 namespace finder {
+    namespace {
+        inline void clearAndPushToQueue(
+                std::queue<core::PieceType, std::deque<core::PieceType>> &queue,
+                const std::vector<core::PieceType> &pieces
+        ) {
+            while (!queue.empty()) {
+                queue.pop();
+            }
+            for (const auto &piece : pieces) {
+                queue.push(piece);
+            }
+        }
+    }
+
     template<>
     int Percentage<>::run(const core::Field &field, int maxDepth, int maxLine) {
         assert(permutations_.depth() == reverseLookup_.fromDepth);
@@ -9,6 +23,10 @@ namespace finder {
 
         int max = permutations_.size();
         auto marker = Marker::create(max);
+
+        // Initialize  // Create containers only once because optimize
+        auto deque = std::deque<core::PieceType>(permutations_.depth());
+        auto pieceQueue = std::queue<core::PieceType, std::deque<core::PieceType>>(deque);
 
         for (int value = 0; value < max; ++value) {
             if (marker.calculated(value)) {
@@ -42,7 +60,9 @@ namespace finder {
                             assert(pieces.size() == fromPieces.size());
 
                             fromPieces[wildcardIndex] = pieceType;
-                            int number = permutations_.numberify(fromPieces);
+                            clearAndPushToQueue(pieceQueue, fromPieces);
+
+                            int number = permutations_.numberifyAndPop(pieceQueue);
                             if (0 <= number) {
                                 marker.set(number, true);
                             }
@@ -55,7 +75,9 @@ namespace finder {
                     for (auto &fromPieces : fromPiecesList) {
                         assert(pieces.size() == fromPieces.size());
 
-                        int number = permutations_.numberify(fromPieces);
+                        clearAndPushToQueue(pieceQueue, fromPieces);
+
+                        int number = permutations_.numberifyAndPop(pieceQueue);
                         if (0 <= number) {
                             marker.set(number, true);
                         }

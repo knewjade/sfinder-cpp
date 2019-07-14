@@ -95,6 +95,8 @@ namespace finder {
 
         int numberify(const std::vector<core::PieceType> &pieces) const;
 
+        int numberifyAndPop(std::queue<core::PieceType, std::deque<core::PieceType>> &queue) const;
+
         int size() const;
 
         int depth() const;

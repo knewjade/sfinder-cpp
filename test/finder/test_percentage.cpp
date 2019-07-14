@@ -38,10 +38,18 @@ namespace finder {
                 "XXXXXXX_XX"s +
                 ""
         );
+
+        auto start = std::chrono::system_clock::now();
+
         int success = percentage.run(field, maxDepth, maxLine);
+
+        auto elapsed = std::chrono::system_clock::now() - start;
+        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        std::cout << time << " milli seconds" << std::endl;
 
         EXPECT_EQ(success, 3248);
     }
+
     TEST_F(PercentageTest, case2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);

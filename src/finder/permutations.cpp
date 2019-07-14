@@ -90,7 +90,10 @@ namespace finder {
     int Permutations::numberify(const std::vector<core::PieceType> &pieces) const {
         auto deque = std::deque<core::PieceType>(pieces.begin(), pieces.end());
         auto queue = std::queue<core::PieceType, std::deque<core::PieceType>>(deque);
+        return numberifyAndPop(queue);
+    }
 
+    int Permutations::numberifyAndPop(std::queue<core::PieceType, std::deque<core::PieceType>> &queue) const {
         int value = 0;
         for (int index = 0; index < permutations_.size(); index++) {
             auto &permutation = permutations_[index];
@@ -98,9 +101,10 @@ namespace finder {
             if (number < 0) {
                 return -1;
             }
-            
+
             value += scales_[index] * number;
         }
+
         return value;
     }
 
