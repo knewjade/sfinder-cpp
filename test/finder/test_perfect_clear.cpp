@@ -5,7 +5,7 @@
 #include "core/field.hpp"
 #include "core/moves.hpp"
 #include "finder/perfect_clear.hpp"
-#include "finder/permutation.hpp"
+#include "finder/permutations.hpp"
 
 namespace finder {
     using namespace std::literals::string_literals;
@@ -459,7 +459,7 @@ namespace finder {
         const int maxLine = 6;
 
         auto permutations = Permutation::create<7>(core::kAllPieceType, 7);
-        int max = permutations.size();
+        int max = permutations.indexSize();
 
         int success = 0;
         long long int totalTime = 0L;
@@ -502,7 +502,7 @@ namespace finder {
         const int maxLine = 6;
 
         auto permutations = Permutation::create<7>(core::kAllPieceType, 7);
-        int max = permutations.size();
+        int max = permutations.indexSize();
 
         int success = 0;
         long long int totalTime = 0L;
@@ -524,5 +524,45 @@ namespace finder {
         std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
 
         EXPECT_EQ(success, 3248);
+    }
+
+    TEST_F(PerfectClearTest, longtest3) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        auto field = core::createField(
+                "XXXX____XX"s +
+                "XXXX___XXX"s +
+                "XXXX__XXXX"s +
+                "XXXX___XXX"s +
+                ""
+        );
+        const int maxDepth = 3;
+        const int maxLine = 4;
+
+        auto permutations = Permutation::create<7>(core::kAllPieceType, 4);
+        int max = permutations.indexSize();
+
+        int success = 0;
+        long long int totalTime = 0L;
+        for (int value = 0; value < max; ++value) {
+            auto pieces = permutations.pieces(value);
+
+            auto start = std::chrono::system_clock::now();
+
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 0);
+
+            if (!result.empty()) {
+                success += 1;
+            }
+
+            auto elapsed = std::chrono::system_clock::now() - start;
+            totalTime += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+        }
+
+        std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
+
+        EXPECT_EQ(success, 514);
     }
 }

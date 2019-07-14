@@ -16,27 +16,23 @@ namespace finder {
 
             EXPECT_EQ(marker.calculated(index), false);
             EXPECT_EQ(marker.succeed(index), false);
-            EXPECT_EQ(marker.failed(index), false);
 
             marker.set(index, true);
 
             EXPECT_EQ(marker.calculated(index), true);
             EXPECT_EQ(marker.succeed(index), true);
-            EXPECT_EQ(marker.failed(index), false);
         }
 
         {
-            int index = 1;
+            int index = 5039;
 
             EXPECT_EQ(marker.calculated(index), false);
             EXPECT_EQ(marker.succeed(index), false);
-            EXPECT_EQ(marker.failed(index), false);
 
             marker.set(index, false);
 
             EXPECT_EQ(marker.calculated(index), true);
             EXPECT_EQ(marker.succeed(index), false);
-            EXPECT_EQ(marker.failed(index), true);
         }
     }
 }

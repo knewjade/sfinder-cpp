@@ -8,7 +8,7 @@
 namespace finder {
     class Marker {
     public:
-        using FlagType = uint8_t;
+        using FlagType = uint64_t;
 
         static constexpr int kFlagValueSize = 2;
         static constexpr int kFlagItemSize = 64 / kFlagValueSize;
@@ -24,16 +24,14 @@ namespace finder {
         explicit Marker(std::vector<FlagType> flags) : flags_(std::move(flags)) {
         }
 
-        bool calculated(int index);
+        bool calculated(int index) const;
 
-        bool succeed(int index);
-
-        bool failed(int index);
+        bool succeed(int index) const;
 
         void set(int index, bool succeed);
 
     private:
-        std::vector<FlagType> flags_;
+        std::vector<FlagType> flags_{};
     };
 }
 
