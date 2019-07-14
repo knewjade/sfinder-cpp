@@ -111,7 +111,7 @@ namespace finder {
     void Permutations::push(std::vector<core::PieceType> &vector, int index, int depth) const {
         assert(0 <= depth);
 
-        auto permutation = permutations_[depth];
+        auto &permutation = permutations_[depth];
         auto size = permutation.indexSize();
 
         auto k = index % size;
