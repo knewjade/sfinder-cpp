@@ -1,10 +1,11 @@
-#ifndef CORE_CPP_PERCENTAGE_HPP
-#define CORE_CPP_PERCENTAGE_HPP
+#ifndef FINDER_PERCENTAGE_HPP
+#define FINDER_PERCENTAGE_HPP
 
-#include "../finder/permutations.hpp"
-#include "../finder/perfect_clear.hpp"
 #include "../core/moves.hpp"
-#include "../finder/lookup.hpp"
+#include "perfect_clear/finder.hpp"
+#include "permutations.hpp"
+#include "spins.hpp"
+#include "lookup.hpp"
 
 namespace finder {
     template<class T = core::srs::MoveGenerator>
@@ -25,4 +26,4 @@ namespace finder {
     };
 }
 
-#endif //CORE_CPP_PERCENTAGE_HPP
+#endif //FINDER_PERCENTAGE_HPP

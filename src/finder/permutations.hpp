@@ -1,5 +1,5 @@
-#ifndef CORE_CYCLE_HPP
-#define CORE_CYCLE_HPP
+#ifndef FINDER_PERMUTATIONS_HPP
+#define FINDER_PERMUTATIONS_HPP
 
 #include <array>
 #include <vector>
@@ -114,4 +114,4 @@ namespace finder {
     };
 }
 
-#endif //CORE_CYCLE_HPP
+#endif //FINDER_PERMUTATIONS_HPP

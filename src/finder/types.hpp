@@ -1,5 +1,5 @@
-#ifndef SFINDER_CPP_TYPES_HPP
-#define SFINDER_CPP_TYPES_HPP
+#ifndef FINDER_TYPES_HPP
+#define FINDER_TYPES_HPP
 
 #include <vector>
 
@@ -17,4 +17,4 @@ namespace finder {
     inline const Solution kNoSolution = std::vector<Operation>();
 }
 
-#endif //SFINDER_CPP_TYPES_HPP
+#endif //FINDER_TYPES_HPP

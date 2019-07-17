@@ -1,5 +1,5 @@
-#ifndef CORE_MARKER_HPP
-#define CORE_MARKER_HPP
+#ifndef FINDER_MARKER_HPP
+#define FINDER_MARKER_HPP
 
 #include <cstdint>
 #include <vector>
@@ -35,4 +35,4 @@ namespace finder {
     };
 }
 
-#endif //CORE_MARKER_HPP
+#endif //FINDER_MARKER_HPP
