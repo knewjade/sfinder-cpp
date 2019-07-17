@@ -24,8 +24,8 @@ namespace finder::perfect_clear {
     };
 
     struct Configure {
-        const std::vector <core::PieceType> &pieces;
-        std::vector <std::vector<core::Move>> &movePool;
+        const std::vector<core::PieceType> &pieces;
+        std::vector<std::vector<core::Move>> &movePool;
         const int maxDepth;
         const int pieceSize;
     };
@@ -39,83 +39,85 @@ namespace finder::perfect_clear {
         int tSpinAttack;
     };
 
-    struct LeastSoftdrop_LeastLineClear_LeastHold {
-        bool shouldUpdate(
-                const Record &oldRecord, const Record &newRecord
-        ) {
-            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-            }
-
-            if (newRecord.softdropCount != oldRecord.softdropCount) {
-                return newRecord.softdropCount < oldRecord.softdropCount;
-            }
-
-            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                return newRecord.lineClearCount < oldRecord.lineClearCount;
-            }
-
-            return newRecord.holdCount < oldRecord.holdCount;
-        }
-
-        bool isWorseThanBest(const Record &best, const Candidate &current) {
-            if (current.leftNumOfT == 0) {
-                if (current.tSpinAttack != best.tSpinAttack) {
-                    return current.tSpinAttack < best.tSpinAttack;
+    namespace comparators {
+        struct LeastSoftdrop_LeastLineClear_LeastHold {
+            bool shouldUpdate(
+                    const Record &oldRecord, const Record &newRecord
+            ) {
+                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
                 }
 
-                return best.softdropCount < current.softdropCount;
-            }
-
-            return false;
-        }
-    };
-
-    struct LeastSoftdrop_MostCombo_MostLineClear_LeastHold {
-        bool shouldUpdate(
-                const Record &oldRecord, const Record &newRecord
-        ) {
-            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-            }
-
-            if (newRecord.softdropCount != oldRecord.softdropCount) {
-                return newRecord.softdropCount < oldRecord.softdropCount;
-            }
-
-            if (newRecord.maxCombo != oldRecord.maxCombo) {
-                return oldRecord.maxCombo < newRecord.maxCombo;
-            }
-
-            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                return oldRecord.lineClearCount < newRecord.lineClearCount;
-            }
-
-            return newRecord.holdCount < oldRecord.holdCount;
-        }
-
-        bool isWorseThanBest(const Record &best, const Candidate &current) {
-            if (current.leftNumOfT == 0) {
-                if (current.tSpinAttack != best.tSpinAttack) {
-                    return current.tSpinAttack < best.tSpinAttack;
+                if (newRecord.softdropCount != oldRecord.softdropCount) {
+                    return newRecord.softdropCount < oldRecord.softdropCount;
                 }
 
-                return best.softdropCount < current.softdropCount;
+                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                    return newRecord.lineClearCount < oldRecord.lineClearCount;
+                }
+
+                return newRecord.holdCount < oldRecord.holdCount;
             }
 
-            return false;
-        }
-    };
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                if (current.leftNumOfT == 0) {
+                    if (current.tSpinAttack != best.tSpinAttack) {
+                        return current.tSpinAttack < best.tSpinAttack;
+                    }
 
-    struct Faster {
-        bool shouldUpdate(const Record &oldRecord, const Record &newRecord) {
-            return true;
-        }
+                    return best.softdropCount < current.softdropCount;
+                }
 
-        bool isWorseThanBest(const Record &best, const Candidate &current) {
-            return best.solution[0].x != -1;
-        }
-    };
+                return false;
+            }
+        };
+
+        struct LeastSoftdrop_MostCombo_MostLineClear_LeastHold {
+            bool shouldUpdate(
+                    const Record &oldRecord, const Record &newRecord
+            ) {
+                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+                }
+
+                if (newRecord.softdropCount != oldRecord.softdropCount) {
+                    return newRecord.softdropCount < oldRecord.softdropCount;
+                }
+
+                if (newRecord.maxCombo != oldRecord.maxCombo) {
+                    return oldRecord.maxCombo < newRecord.maxCombo;
+                }
+
+                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                    return oldRecord.lineClearCount < newRecord.lineClearCount;
+                }
+
+                return newRecord.holdCount < oldRecord.holdCount;
+            }
+
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                if (current.leftNumOfT == 0) {
+                    if (current.tSpinAttack != best.tSpinAttack) {
+                        return current.tSpinAttack < best.tSpinAttack;
+                    }
+
+                    return best.softdropCount < current.softdropCount;
+                }
+
+                return false;
+            }
+        };
+
+        struct Faster {
+            bool shouldUpdate(const Record &oldRecord, const Record &newRecord) {
+                return true;
+            }
+
+            bool isWorseThanBest(const Record &best, const Candidate &current) {
+                return best.solution[0].x != -1;
+            }
+        };
+    }
 
     namespace {
         inline bool validate(const core::Field &field, int maxLine) {
@@ -135,7 +137,7 @@ namespace finder::perfect_clear {
         }
     }
 
-    template<class T = core::srs::MoveGenerator, class C = Faster>
+    template<class T = core::srs::MoveGenerator, class C = comparators::Faster>
     class Finder {
     public:
         Finder<T>(const core::Factory &factory, T &moveGenerator)
@@ -145,14 +147,14 @@ namespace finder::perfect_clear {
         }
 
         Solution run(
-                const core::Field &field, const std::vector <core::PieceType> &pieces,
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
             return run(field, pieces, maxDepth, maxLine, holdEmpty, 0);
         }
 
         Solution run(
-                const core::Field &field, const std::vector <core::PieceType> &pieces,
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty, int initCombo
         ) {
             assert(1 <= maxDepth);
@@ -161,9 +163,9 @@ namespace finder::perfect_clear {
             auto freeze = core::Field(field);
 
             // Initialize moves
-            std::vector <std::vector<core::Move>> movePool(maxDepth);
+            std::vector<std::vector<core::Move>> movePool(maxDepth);
             for (int index = 0; index < maxDepth; ++index) {
-                movePool[index] = std::vector < core::Move > {};
+                movePool[index] = std::vector<core::Move>{};
             }
 
             // Initialize solution
@@ -278,7 +280,7 @@ namespace finder::perfect_clear {
                 const Configure &configure,
                 const Candidate &candidate,
                 Solution &solution,
-                std::vector <core::Move> &moves,
+                std::vector<core::Move> &moves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex,

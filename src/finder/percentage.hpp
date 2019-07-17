@@ -2,7 +2,7 @@
 #define FINDER_PERCENTAGE_HPP
 
 #include "../core/moves.hpp"
-#include "perfect_clear/finder.hpp"
+#include "perfect_clear/full_finder.hpp"
 #include "permutations.hpp"
 #include "spins.hpp"
 #include "lookup.hpp"

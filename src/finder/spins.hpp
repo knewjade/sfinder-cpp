@@ -1,5 +1,5 @@
-#ifndef CORE_SPINS_HPP
-#define CORE_SPINS_HPP
+#ifndef FINDER_SPINS_HPP
+#define FINDER_SPINS_HPP
 
 #include "./types.hpp"
 #include "../core/factory.hpp"
@@ -25,4 +25,4 @@ namespace finder {
     );
 }
 
-#endif //CORE_SPINS_HPP
+#endif //FINDER_SPINS_HPP
