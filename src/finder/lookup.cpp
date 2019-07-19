@@ -14,7 +14,9 @@ namespace finder {
                 StackOrder{},
         };
         for (int depth = 0; depth < fromDepth; depth++) {
-            int number = depth < indexes.size() ? indexes[depth] : -1;
+            int indexSize = indexes.size();
+            int number = depth < indexSize ? indexes[depth] : -1;
+
             int size = candidates.size();
             if (depth < fromDepth - 1) {
                 for (int index = 0; index < size; index++) {
@@ -48,8 +50,9 @@ namespace finder {
         std::vector<std::vector<core::PieceType>> pieceList{};
         pieceList.reserve(indexesList_.size());
         for (auto &indexes : indexesList_) {
-            std::vector<core::PieceType> list(indexes.size());
-            for (int i = 0; i < indexes.size(); ++i) {
+            int size = indexes.size();
+            std::vector<core::PieceType> list(size);
+            for (int i = 0; i < size; ++i) {
                 auto index = indexes[i];
                 list[i] = static_cast<core::PieceType>(index != -1 ? pieces[index] : -1);
             }

@@ -1,6 +1,7 @@
 #ifndef FINDER_PERMUTATIONS_HPP
 #define FINDER_PERMUTATIONS_HPP
 
+#include <cassert>
 #include <array>
 #include <vector>
 #include <queue>
@@ -19,7 +20,7 @@ namespace finder {
         static Permutation create(const std::vector<core::PieceType> &pieces, int pop) {
             std::vector<int> indexMap(7);
             std::vector<bool> usingFlags(7);
-            for (int index = 0; index < pieces.size(); ++index) {
+            for (int index = 0, size = pieces.size(); index < size; ++index) {
                 auto piece = pieces.at(index);
                 assert(0 <= piece && piece < indexMap.size());
                 indexMap[piece] = index;
@@ -43,9 +44,9 @@ namespace finder {
         ) : pieces_(std::move(pieces)), indexMap_(std::move(indexMap)), usingFlags_(std::move(usingFlags)),
             scales_(std::move(scales)), pop_(pop) {
             assert(0 < pop_);
-            assert(pop_ <= pieces_.size());
+            assert(pop_ <= static_cast<int>(pieces_.size()));
             assert(indexMap_.size() == 7);
-            assert(scales_.size() == pop_);
+            assert(static_cast<int>(scales_.size()) == pop_);
         }
 
         int indexSize() const;

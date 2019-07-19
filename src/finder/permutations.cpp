@@ -1,4 +1,5 @@
-#include  <numeric>
+#include <cassert>
+#include <numeric>
 
 #include "permutations.hpp"
 
@@ -95,7 +96,7 @@ namespace finder {
 
     int Permutations::numberifyAndPop(std::queue<core::PieceType, std::deque<core::PieceType>> &queue) const {
         int value = 0;
-        for (int index = 0; index < permutations_.size(); index++) {
+        for (int index = 0, size = permutations_.size(); index < size; index++) {
             auto &permutation = permutations_[index];
             int number = permutation.numberifyAndPop(queue);
             if (number < 0) {

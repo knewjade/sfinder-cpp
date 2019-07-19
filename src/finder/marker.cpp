@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "marker.hpp"
 
 namespace finder {

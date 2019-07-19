@@ -140,10 +140,9 @@ namespace finder::perfect_clear {
     template<class T = core::srs::MoveGenerator, class C = comparators::Faster>
     class Finder {
     public:
-        Finder<T>(const core::Factory &factory, T &moveGenerator)
-                : factory_(factory), moveGenerator_(moveGenerator),
-                  reachable_(core::srs_rotate_end::Reachable(factory)),
-                  comparator_(C{}) {
+        Finder<T, C>(const core::Factory &factory, T &moveGenerator) :
+                factory_(factory), moveGenerator_(moveGenerator),
+                reachable_(core::srs_rotate_end::Reachable(factory)), comparator_(C{}) {
         }
 
         Solution run(

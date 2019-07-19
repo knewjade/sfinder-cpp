@@ -1,6 +1,7 @@
 #ifndef FINDER_REVERSE_ORDER_LOOKUP_HPP
 #define FINDER_REVERSE_ORDER_LOOKUP_HPP
 
+#include <cassert>
 #include <vector>
 
 #include "../core/types.hpp"

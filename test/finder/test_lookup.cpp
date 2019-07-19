@@ -27,7 +27,7 @@ namespace finder {
     }
 
     TEST_F(LookupTest, look2) {
-        auto lookup = ReverseLookup::create(4, 4);
+        auto lookup = ReverseLookup::create(3, 3);
         auto vector = std::vector{core::PieceType::S, core::PieceType::Z, core::PieceType::O};
 
         auto parse = lookup.parse(vector);

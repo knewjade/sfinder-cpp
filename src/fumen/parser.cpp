@@ -41,7 +41,7 @@ namespace fumen {
         }
 
         int encodeCommentChar(unsigned char c) {
-            for (int index = 0; index < COMMENT_TABLE.size(); ++index) {
+            for (int index = 0, size = COMMENT_TABLE.size(); index < size; ++index) {
                 if (COMMENT_TABLE[index] == c) {
                     return index;
                 }
@@ -245,7 +245,7 @@ namespace fumen {
         auto prevField = ColorField(kFumenFieldMaxHeight);
         std::string prevComment;
 
-        for (int index = 0; index < elements.size(); index++) {
+        for (int index = 0, size = elements.size(); index < size; index++) {
             auto element = elements.at(index);
             auto field = ColorField(element.getFieldOrElse(prevField));
 
@@ -296,7 +296,7 @@ namespace fumen {
         }
 
         std::stringstream out;
-        for (int index = 0; index < encodedValues.size(); index++) {
+        for (int index = 0, size = encodedValues.size(); index < size; index++) {
             int value = encodedValues.at(index);
             auto encoded = encodeData(value);
             out << encoded;
