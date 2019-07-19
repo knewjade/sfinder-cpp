@@ -54,7 +54,7 @@ namespace finder {
                         auto find = std::find(fromPieces.begin(), fromPieces.end(), -1);
                         assert(find != fromPieces.end());
                         int wildcardIndex = find - fromPieces.begin();
-                        assert(0 <= wildcardIndex && wildcardIndex < fromPieces.size());
+                        assert(0 <= wildcardIndex && wildcardIndex < static_cast<int>(fromPieces.size()));
 
                         for (const auto &pieceType : core::kAllPieceType) {
                             assert(pieces.size() == fromPieces.size());
