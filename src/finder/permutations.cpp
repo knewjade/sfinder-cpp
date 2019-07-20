@@ -1,5 +1,6 @@
 #include <cassert>
 #include <numeric>
+#include <vector>
 
 #include "permutations.hpp"
 
@@ -13,7 +14,8 @@ namespace finder {
             assert(0 < N && N <= 7);
             assert(0 < pop && pop <= N);
 
-            int arr[pop];
+			auto arr = std::vector<int>{};
+			arr.reserve(pop);
 
             for (int index = pop - 1; 0 <= index; --index) {
                 int scale = N - index;
@@ -54,7 +56,9 @@ namespace finder {
     }
 
     int Permutation::numberifyAndPop(std::queue<core::PieceType> &pieces) const {
-        int indexes[pop_];
+		auto indexes = std::vector<int>{};
+		indexes.reserve(pop_);
+
         std::vector<bool> flags(usingFlags_);
 
         for (int index = 0; index < pop_; ++index) {

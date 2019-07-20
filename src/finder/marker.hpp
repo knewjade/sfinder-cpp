@@ -16,7 +16,7 @@ namespace finder {
         static constexpr FlagType kFlagBit = (1ULL << kFlagValueSize) - 1;
 
         static Marker create(int max) {
-            int length = ceil(static_cast<double>(max) / kFlagItemSize);
+            auto length = static_cast<int>(ceil(static_cast<double>(max) / kFlagItemSize));
             auto flags_ = std::vector<FlagType>(length);
             return Marker(flags_);
         }
