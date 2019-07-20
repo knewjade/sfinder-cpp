@@ -1,6 +1,9 @@
 #ifndef CORE_CPP_TEMPLATES_HPP
 #define CORE_CPP_TEMPLATES_HPP
 
+#include <cassert>
+#include <array>
+
 #include "types.hpp"
 
 namespace core {
@@ -26,7 +29,10 @@ namespace core {
     // Offsets
     namespace {
         template<PieceType P>
-        struct Offsets {
+        struct Offsets;
+
+        template<>
+        struct Offsets<PieceType::T> {
             static constexpr auto size = 5;
 
             static constexpr auto spawn = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
@@ -34,6 +40,48 @@ namespace core {
             static constexpr auto reverse = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
             static constexpr auto left = std::array<Offset, size>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}};
         };
+
+        template<>
+        struct Offsets<PieceType::S> {
+            static constexpr auto size = 5;
+
+            static constexpr auto spawn = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto right = std::array<Offset, size>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}};
+            static constexpr auto reverse = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto left = std::array<Offset, size>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}};
+        };
+
+        template<>
+        struct Offsets<PieceType::Z> {
+            static constexpr auto size = 5;
+
+            static constexpr auto spawn = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto right = std::array<Offset, size>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}};
+            static constexpr auto reverse = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto left = std::array<Offset, size>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}};
+        };
+
+        template<>
+        struct Offsets<PieceType::L> {
+            static constexpr auto size = 5;
+
+            static constexpr auto spawn = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto right = std::array<Offset, size>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}};
+            static constexpr auto reverse = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto left = std::array<Offset, size>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}};
+        };
+
+        template<>
+        struct Offsets<PieceType::J> {
+            static constexpr auto size = 5;
+
+            static constexpr auto spawn = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto right = std::array<Offset, size>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}};
+            static constexpr auto reverse = std::array<Offset, size>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
+            static constexpr auto left = std::array<Offset, size>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}};
+        };
+
+        // ====================
 
         template<>
         struct Offsets<PieceType::I> {
@@ -215,7 +263,7 @@ namespace core {
 
                 assert(from.size() == to.size());
 
-                auto size = from.size();
+                int size = from.size();
                 for (int index = 0; index < 5; ++index) {
                     if (index < size) {
                         rightOffsets[rotate * 5 + index] = {from[index].x - to[index].x,
@@ -236,7 +284,7 @@ namespace core {
 
                 assert(from.size() == to.size());
 
-                auto size = from.size();
+                int size = from.size();
                 for (int index = 0; index < 5; ++index) {
                     if (index < size) {
                         leftOffsets[rotate * 5 + index] = {from[index].x - to[index].x,

@@ -8,8 +8,8 @@ project(sfinder_test_mac)
 # Compiler options
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-m64 -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")  # -march=native -s
-#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -march=native -DNDEBUG")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")  # -march=native -s
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -march=native -DNDEBUG")
 
 # Build defines
 include_directories(${googletest_SOURCE_DIR}/include)

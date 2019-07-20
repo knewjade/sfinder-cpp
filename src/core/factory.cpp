@@ -80,7 +80,7 @@ namespace core {
 
     const Blocks &Factory::get(PieceType piece, RotateType rotate) const {
         int index = piece * 4 + rotate;
-        assert(0 <= index && index < blocks.size());
+        assert(0 <= index && index < static_cast<int>(blocks.size()));
         return blocks[index];
     }
 }

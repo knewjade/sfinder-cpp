@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <array>
 
 namespace core {
     using Bitboard = uint64_t;
@@ -16,6 +17,16 @@ namespace core {
         S = 4,
         Z = 5,
         O = 6,
+    };
+
+    const std::array<PieceType, 7> kAllPieceType = {
+            PieceType::T,
+            PieceType::I,
+            PieceType::L,
+            PieceType::J,
+            PieceType::S,
+            PieceType::Z,
+            PieceType::O,
     };
 
     const std::string pieceNames[7]{

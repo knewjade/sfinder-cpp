@@ -21,6 +21,12 @@ namespace core {
     bool isWallBetweenLeft(int x, int maxY, Bitboard board);
 
     int bitCount(uint64_t b);
+
+    LineKey getBitKey(int y);
+
+    Bitboard getRowMaskBelowY(int excludeY);
+
+    Bitboard getRowMaskAboveY(int includeY);
 }
 
 #endif //CORE_BITS_HPP
