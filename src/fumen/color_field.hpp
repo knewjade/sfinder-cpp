@@ -42,13 +42,9 @@ namespace fumen {
 
     class ColorField {
     public:
-        explicit ColorField(const int height) noexcept : height(height) {
-            int size = height * 10;
-            field.reserve(size);
-            for (int i = 0; i < size; ++i) {
-                field.emplace_back(ColorType::Empty);
-            }
-        };
+        explicit ColorField(const int height) noexcept :
+                field_(std::vector<ColorType>(height * 10, ColorType::Empty)), height_(height) {
+        }
 
         void setBlock(ColorType colorType, int x, int y);
 
@@ -61,8 +57,8 @@ namespace fumen {
         void clearLine();
 
     private:
-        int height;
-        std::vector<int> field{};
+        std::vector<ColorType> field_;
+        int height_;
     };
 }
 

@@ -32,28 +32,28 @@ namespace fumen {
     }
 
     void ColorField::setBlock(ColorType colorType, int x, int y) {
-        field[y * 10 + x] = colorType;
+        field_[y * 10 + x] = colorType;
     }
 
     int ColorField::at(int x, int y) const {
-        return field[y * 10 + x];
+        return field_[y * 10 + x];
     }
 
     bool ColorField::existsAt(int x, int y) const {
-        return field[y * 10 + x] != ColorType::Empty;
+        return field_[y * 10 + x] != ColorType::Empty;
     }
 
     void ColorField::put(const core::Blocks &blocks, int x, int y) {
         for (const auto &point : blocks.points) {
             int nx = x + point.x;
             int ny = y + point.y;
-            field[ny * 10 + nx] = kDefaultConverter.parseToColorType(blocks.pieceType);
+            field_[ny * 10 + nx] = kDefaultConverter.parseToColorType(blocks.pieceType);
         }
     }
 
     void ColorField::clearLine() {
         int currentY = 0;
-        for (int y = 0; y < height; ++y) {
+        for (int y = 0; y < height_; ++y) {
             bool filled = true;
             for (int x = 0; x < 10; ++x) {
                 if (!existsAt(x, y)) {
@@ -65,16 +65,16 @@ namespace fumen {
             if (!filled) {
                 if (currentY != y) {
                     for (int x = 0; x < 10; ++x) {
-                        field[currentY * 10 + x] = field[y * 10 + x];
+                        field_[currentY * 10 + x] = field_[y * 10 + x];
                     }
                 }
                 currentY += 1;
             }
         }
 
-        for (int y = currentY; y < height; ++y) {
+        for (int y = currentY; y < height_; ++y) {
             for (int x = 0; x < 10; ++x) {
-                field[currentY * 10 + x] = ColorType::Empty;
+                field_[currentY * 10 + x] = ColorType::Empty;
             }
         }
     }
