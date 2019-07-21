@@ -22,7 +22,7 @@ namespace sfinder {
             std::vector<bool> usingFlags(7);
             for (int index = 0, size = pieces.size(); index < size; ++index) {
                 auto piece = pieces.at(index);
-                assert(0 <= piece && piece < indexMap.size());
+                assert(0 <= piece && piece < static_cast<int>(indexMap.size()));
                 indexMap[piece] = index;
                 assert(!usingFlags[piece]);
                 usingFlags[piece] = true;
