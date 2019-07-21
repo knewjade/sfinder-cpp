@@ -7,7 +7,7 @@
 #include "spins.hpp"
 #include "lookup.hpp"
 
-namespace finder {
+namespace sfinder {
     template<class T = core::srs::MoveGenerator>
     class Percentage {
     public:

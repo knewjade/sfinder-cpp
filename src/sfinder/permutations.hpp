@@ -9,7 +9,7 @@
 
 #include "../core/types.hpp"
 
-namespace finder {
+namespace sfinder {
     class Permutation {
     public:
         template<int N>

@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "finder/lookup.hpp"
+#include "sfinder/lookup.hpp"
 
-namespace finder {
+namespace sfinder {
     using namespace std::literals::string_literals;
     using namespace ::testing;
 

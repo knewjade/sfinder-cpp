@@ -2,7 +2,7 @@
 
 #include "marker.hpp"
 
-namespace finder {
+namespace sfinder {
     namespace {
         Marker::FlagType getBit(Marker::FlagType value, int index) {
             auto slide = value >> (index * Marker::kFlagValueSize);

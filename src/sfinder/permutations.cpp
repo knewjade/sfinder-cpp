@@ -4,7 +4,7 @@
 
 #include "permutations.hpp"
 
-namespace finder {
+namespace sfinder {
     namespace {
         void pushPieces(
                 std::vector<core::PieceType> &pieces, int value, const std::vector<core::PieceType> &usings, int pop

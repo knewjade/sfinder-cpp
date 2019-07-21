@@ -4,9 +4,9 @@
 #include <vector>
 #include <array>
 
-#include "finder/percentage.hpp"
+#include "sfinder/percentage.hpp"
 
-namespace finder {
+namespace sfinder {
     using namespace std::literals::string_literals;
     using namespace ::testing;
 

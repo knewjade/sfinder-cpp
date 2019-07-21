@@ -6,7 +6,7 @@
 #include "../../core/factory.hpp"
 #include "../../core/moves.hpp"
 
-namespace finder::perfect_clear {
+namespace sfinder::perfect_clear {
     struct Candidate {
         const core::Field field;
         const int currentIndex;

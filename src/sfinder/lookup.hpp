@@ -6,7 +6,7 @@
 
 #include "../core/types.hpp"
 
-namespace finder {
+namespace sfinder {
     class ReverseLookup {
     public:
         static ReverseLookup create(int toDepth, int fromDepth) {

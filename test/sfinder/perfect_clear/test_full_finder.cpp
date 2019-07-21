@@ -4,11 +4,11 @@
 
 #include "core/field.hpp"
 #include "core/moves.hpp"
-#include "finder/spins.hpp"
-#include "finder/permutations.hpp"
-#include "finder/perfect_clear/full_finder.hpp"
+#include "sfinder/spins.hpp"
+#include "sfinder/permutations.hpp"
+#include "sfinder/perfect_clear/full_finder.hpp"
 
-namespace finder::perfect_clear {
+namespace sfinder::perfect_clear {
     using namespace std::literals::string_literals;
 
     class FullFinderTest : public ::testing::Test {

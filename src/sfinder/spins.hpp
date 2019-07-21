@@ -5,7 +5,7 @@
 #include "../core/factory.hpp"
 #include "../core/moves.hpp"
 
-namespace finder {
+namespace sfinder {
     enum TSpinShapes {
         NoShape,
         RegularShape,

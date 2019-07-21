@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
-#include "finder/marker.hpp"
+#include "sfinder/marker.hpp"
 
-namespace finder {
+namespace sfinder {
     using namespace std::literals::string_literals;
 
     class MarkerTest : public ::testing::Test {

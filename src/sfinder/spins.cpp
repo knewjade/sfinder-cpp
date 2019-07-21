@@ -1,6 +1,6 @@
 #include "spins.hpp"
 
-namespace finder {
+namespace sfinder {
     namespace {
         bool isBlock(const core::Field &field, int x, int y) {
             if (x < 0 || core::kFieldWidth <= x || y < 0) {

@@ -5,7 +5,7 @@
 
 #include "../core/types.hpp"
 
-namespace finder {
+namespace sfinder {
     struct Operation {
         core::PieceType pieceType;
         core::RotateType rotateType;

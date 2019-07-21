@@ -5,7 +5,7 @@
 #include <vector>
 #include <cmath>
 
-namespace finder {
+namespace sfinder {
     class Marker {
     public:
         using FlagType = uint64_t;

@@ -1,7 +1,7 @@
 #include "percentage.hpp"
 #include "marker.hpp"
 
-namespace finder {
+namespace sfinder {
     namespace {
         inline void clearAndPushToQueue(
                 std::queue<core::PieceType, std::deque<core::PieceType>> &queue,

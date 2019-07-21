@@ -4,9 +4,9 @@
 #include <queue>
 #include <deque>
 
-#include "finder/permutations.hpp"
+#include "sfinder/permutations.hpp"
 
-namespace finder {
+namespace sfinder {
     using namespace std::literals::string_literals;
     using namespace ::testing;
 

@@ -1,6 +1,6 @@
 #include "lookup.hpp"
 
-namespace finder {
+namespace sfinder {
     std::vector<std::vector<int>> ReverseLookup::reverse(int toDepth, int fromDepth) {
         assert(1 <= toDepth);
         assert(toDepth <= fromDepth);
