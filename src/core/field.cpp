@@ -161,9 +161,9 @@ namespace core {
             LineKey deleteKeyLow, LineKey deleteKeyMidLow, LineKey deleteKeyMidHigh, LineKey deleteKeyHigh
     ) {
         // Lower half
-        Bitboard newXBoardLow = deleteLine(xBoardLow, deleteKeyLow);
+        Bitboard newXBoardLow = deleteLine(xBoardLow_, deleteKeyLow);
 
-        Bitboard newXBoardMidLow = deleteLine(xBoardMidLow, deleteKeyMidLow);
+        Bitboard newXBoardMidLow = deleteLine(xBoardMidLow_, deleteKeyMidLow);
 
         int deleteLineLow = bitCount(deleteKeyLow);
 
@@ -174,9 +174,9 @@ namespace core {
         int deleteLineBottom = deleteLineLow + deleteLineMidLow;
 
         // Upper half
-        Bitboard newXBoardMidHigh = deleteLine(xBoardMidHigh, deleteKeyMidHigh);
+        Bitboard newXBoardMidHigh = deleteLine(xBoardMidHigh_, deleteKeyMidHigh);
 
-        Bitboard newXBoardHigh = deleteLine(xBoardHigh, deleteKeyHigh);
+        Bitboard newXBoardHigh = deleteLine(xBoardHigh_, deleteKeyHigh);
 
         int deleteLineMidHigh = bitCount(deleteKeyMidHigh);
 
@@ -185,34 +185,34 @@ namespace core {
 
         // Merge the upper and lower halves
         if (deleteLineBottom < 6) {
-            xBoardLow = low;
-            xBoardMidLow = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
-            xBoardMidHigh =
+            xBoardLow_ = low;
+            xBoardMidLow_ = (midLow | (midHigh << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
+            xBoardMidHigh_ =
                     ((midHigh >> deleteLineBottom * 10U) | (high << (6 - deleteLineBottom) * 10U)) & kValidBoardRange;
-            xBoardHigh = high >> deleteLineBottom * 10U;
+            xBoardHigh_ = high >> deleteLineBottom * 10U;
         } else {
             int slide = deleteLineBottom - 6;
-            xBoardLow = (low | (midHigh << (6 - slide) * 10U)) & kValidBoardRange;
-            xBoardMidLow = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & kValidBoardRange;
-            xBoardMidHigh = high >> slide * 10U;
-            xBoardHigh = 0L;
+            xBoardLow_ = (low | (midHigh << (6 - slide) * 10U)) & kValidBoardRange;
+            xBoardMidLow_ = ((midHigh >> slide * 10U) | (high << (6 - slide) * 10U)) & kValidBoardRange;
+            xBoardMidHigh_ = high >> slide * 10U;
+            xBoardHigh_ = 0L;
         }
     }
 
     void Field::clearLine() {
-        LineKey deleteKeyLow = getDeleteKey(xBoardLow);
-        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow);
-        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh);
-        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh);
+        LineKey deleteKeyLow = getDeleteKey(xBoardLow_);
+        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow_);
+        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh_);
+        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh_);
 
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
     }
 
     LineKey Field::clearLineReturnKey() {
-        LineKey deleteKeyLow = getDeleteKey(xBoardLow);
-        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow);
-        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh);
-        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh);
+        LineKey deleteKeyLow = getDeleteKey(xBoardLow_);
+        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow_);
+        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh_);
+        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh_);
 
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
 
@@ -226,27 +226,27 @@ namespace core {
         if (maxY < 12) {
             if (maxY < 6) {
                 Bitboard mask = getColumnOneLineBelowY(maxY) << ux;
-                return bitCount(xBoardLow & mask);
+                return bitCount(xBoardLow_ & mask);
             } else {
                 Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
                 Bitboard mask = getColumnOneLineBelowY(maxY - 6) << ux;
-                return bitCount(xBoardLow & fullMask)
-                       + bitCount(xBoardMidLow & mask);
+                return bitCount(xBoardLow_ & fullMask)
+                       + bitCount(xBoardMidLow_ & mask);
             }
         } else {
             if (maxY < 18) {
                 Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
                 Bitboard mask = getColumnOneLineBelowY(maxY - 12) << ux;
-                return bitCount(xBoardLow & fullMask)
-                       + bitCount(xBoardMidLow & fullMask) +
-                       bitCount(xBoardMidHigh & mask);
+                return bitCount(xBoardLow_ & fullMask)
+                       + bitCount(xBoardMidLow_ & fullMask) +
+                       bitCount(xBoardMidHigh_ & mask);
             } else {
                 Bitboard fullMask = getColumnOneLineBelowY(6) << ux;
                 Bitboard mask = getColumnOneLineBelowY(maxY - 18) << ux;
-                return bitCount(xBoardLow & fullMask)
-                       + bitCount(xBoardMidLow & fullMask)
-                       + bitCount(xBoardMidHigh & fullMask)
-                       + bitCount(xBoardHigh & mask);
+                return bitCount(xBoardLow_ & fullMask)
+                       + bitCount(xBoardMidLow_ & fullMask)
+                       + bitCount(xBoardMidHigh_ & fullMask)
+                       + bitCount(xBoardHigh_ & mask);
             }
         }
     }
@@ -261,55 +261,55 @@ namespace core {
         if (maxY < 12) {
             if (maxY < 6) {
                 // Check Low
-                return isWallBetweenLeft(x, maxY, xBoardLow);
+                return isWallBetweenLeft(x, maxY, xBoardLow_);
             } else {
                 // Check Low
-                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                if (!isWallBetweenLeft(x, 6, xBoardLow_))
                     return false;
 
                 // Check MidLow
-                return isWallBetweenLeft(x, maxY - 6, xBoardMidLow);
+                return isWallBetweenLeft(x, maxY - 6, xBoardMidLow_);
             }
         } else {
             if (maxY < 18) {
                 // Check Low
-                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                if (!isWallBetweenLeft(x, 6, xBoardLow_))
                     return false;
 
                 // Check MidLow
-                if (!isWallBetweenLeft(x, 6, xBoardMidLow))
+                if (!isWallBetweenLeft(x, 6, xBoardMidLow_))
                     return false;
 
                 // Check MidHigh
-                return isWallBetweenLeft(x, maxY - 12, xBoardMidHigh);
+                return isWallBetweenLeft(x, maxY - 12, xBoardMidHigh_);
             } else {
                 // Check Low
-                if (!isWallBetweenLeft(x, 6, xBoardLow))
+                if (!isWallBetweenLeft(x, 6, xBoardLow_))
                     return false;
 
                 // Check MidLow
-                if (!isWallBetweenLeft(x, 6, xBoardMidLow))
+                if (!isWallBetweenLeft(x, 6, xBoardMidLow_))
                     return false;
 
                 // Check MidHigh
-                if (!isWallBetweenLeft(x, 6, xBoardMidHigh))
+                if (!isWallBetweenLeft(x, 6, xBoardMidHigh_))
                     return false;
 
                 // Check High
-                return isWallBetweenLeft(x, maxY - 18, xBoardHigh);
+                return isWallBetweenLeft(x, maxY - 18, xBoardHigh_);
             }
         }
     }
 
     int Field::numOfAllBlocks() const {
-        return bitCount(xBoardLow) + bitCount(xBoardMidLow) + bitCount(xBoardMidHigh) + bitCount(xBoardHigh);
+        return bitCount(xBoardLow_) + bitCount(xBoardMidLow_) + bitCount(xBoardMidHigh_) + bitCount(xBoardHigh_);
     }
 
     int Field::clearLineReturnNum() {
-        LineKey deleteKeyLow = getDeleteKey(xBoardLow);
-        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow);
-        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh);
-        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh);
+        LineKey deleteKeyLow = getDeleteKey(xBoardLow_);
+        LineKey deleteKeyMidLow = getDeleteKey(xBoardMidLow_);
+        LineKey deleteKeyMidHigh = getDeleteKey(xBoardMidHigh_);
+        LineKey deleteKeyHigh = getDeleteKey(xBoardHigh_);
 
         deleteLine_(deleteKeyLow, deleteKeyMidLow, deleteKeyMidHigh, deleteKeyHigh);
 
@@ -336,107 +336,107 @@ namespace core {
             // Low & MidLow & MidHigh & High
             int leftLine3 = 6 - deleteLine3;
             auto newXBoardHigh = insertBlackLine(
-                    (xBoardHigh << 10U * deleteLine3) |
-                    ((xBoardMidHigh & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardHigh_ << 10U * deleteLine3) |
+                    ((xBoardMidHigh_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             int leftLine2 = 6 - deleteLine2;
             auto newXBoardMidHigh = insertBlackLine(
-                    (xBoardMidHigh << 10U * deleteLine2) |
-                    ((xBoardMidLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                    (xBoardMidHigh_ << 10U * deleteLine2) |
+                    ((xBoardMidLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
             );
 
             int leftLine1 = 6 - deleteLine1;
             auto newXBoardMidLow = insertBlackLine(
-                    (xBoardMidLow << 10U * deleteLine1) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                    (xBoardMidLow_ << 10U * deleteLine1) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
             );
 
-            auto newXBoardLow = insertBlackLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+            auto newXBoardLow = insertBlackLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-            xBoardLow = newXBoardLow;
-            xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-            xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-            xBoardHigh = newXBoardHigh & kValidBoardRange;
+            xBoardLow_ = newXBoardLow;
+            xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+            xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+            xBoardHigh_ = newXBoardHigh & kValidBoardRange;
         } else if (deleteLine3 < 12) {
             // Low & MidLow & MidHigh
             int deleteLine3_6 = deleteLine3 - 6;
             int leftLine3 = 6 - deleteLine3_6;
             auto newXBoardHigh = insertBlackLine(
-                    (xBoardMidHigh << 10U * deleteLine3_6) |
-                    ((xBoardMidLow & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardMidHigh_ << 10U * deleteLine3_6) |
+                    ((xBoardMidLow_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             if (deleteLine2 < 6) {
                 // Low & MidLow & MidHigh
                 int leftLine2 = 6 - deleteLine2;
                 auto newXBoardMidHigh = insertBlackLine(
-                        (xBoardMidHigh << 10U * deleteLine2) |
-                        ((xBoardMidLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                        (xBoardMidHigh_ << 10U * deleteLine2) |
+                        ((xBoardMidLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
                 );
 
                 int leftLine1 = 6 - deleteLine1;
                 auto newXBoardMidLow = insertBlackLine(
-                        (xBoardMidLow << 10U * deleteLine1) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                        (xBoardMidLow_ << 10U * deleteLine1) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
                 );
 
-                auto newXBoardLow = insertBlackLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+                auto newXBoardLow = insertBlackLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-                xBoardLow = newXBoardLow;
-                xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-                xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-                xBoardHigh = newXBoardHigh & kValidBoardRange;
+                xBoardLow_ = newXBoardLow;
+                xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+                xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+                xBoardHigh_ = newXBoardHigh & kValidBoardRange;
             } else {
                 // Low & MidLow
                 int deleteLine2_6 = deleteLine2 - 6;
                 int leftLine2 = 6 - deleteLine2_6;
                 auto newXBoardMidHigh = insertBlackLine(
-                        (xBoardMidLow << 10U * deleteLine2_6) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                        (xBoardMidLow_ << 10U * deleteLine2_6) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
                 );
 
                 int leftLine1 = 6 - deleteLine1;
                 auto newXBoardMidLow = insertBlackLine(
-                        (xBoardMidLow << 10U * deleteLine1) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                        (xBoardMidLow_ << 10U * deleteLine1) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
                 );
 
-                auto newXBoardLow = insertBlackLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+                auto newXBoardLow = insertBlackLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-                xBoardLow = newXBoardLow;
-                xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-                xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-                xBoardHigh = newXBoardHigh & kValidBoardRange;
+                xBoardLow_ = newXBoardLow;
+                xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+                xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+                xBoardHigh_ = newXBoardHigh & kValidBoardRange;
             }
         } else {
             // Low & MidLow
             int deleteLine3_12 = deleteLine3 - 12;
             int leftLine3 = 6 - deleteLine3_12;
             auto newXBoardHigh = insertBlackLine(
-                    (xBoardMidLow << 10U * deleteLine3_12) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardMidLow_ << 10U * deleteLine3_12) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             int deleteLine2_6 = deleteLine2 - 6;
             int leftLine2 = 6 - deleteLine2_6;
             auto newXBoardMidHigh = insertBlackLine(
-                    (xBoardMidLow << 10U * deleteLine2_6) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                    (xBoardMidLow_ << 10U * deleteLine2_6) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
             );
 
             int leftLine1 = 6 - deleteLine1;
             auto newXBoardMidLow = insertBlackLine(
-                    (xBoardMidLow << 10U * deleteLine1) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                    (xBoardMidLow_ << 10U * deleteLine1) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
             );
 
-            auto newXBoardLow = insertBlackLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+            auto newXBoardLow = insertBlackLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-            xBoardLow = newXBoardLow;
-            xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-            xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-            xBoardHigh = newXBoardHigh & kValidBoardRange;
+            xBoardLow_ = newXBoardLow;
+            xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+            xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+            xBoardHigh_ = newXBoardHigh & kValidBoardRange;
         }
     }
 
@@ -460,129 +460,129 @@ namespace core {
             // Low & MidLow & MidHigh & High
             int leftLine3 = 6 - deleteLine3;
             auto newXBoardHigh = insertWhiteLine(
-                    (xBoardHigh << 10U * deleteLine3) |
-                    ((xBoardMidHigh & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardHigh_ << 10U * deleteLine3) |
+                    ((xBoardMidHigh_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             int leftLine2 = 6 - deleteLine2;
             auto newXBoardMidHigh = insertWhiteLine(
-                    (xBoardMidHigh << 10U * deleteLine2) |
-                    ((xBoardMidLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                    (xBoardMidHigh_ << 10U * deleteLine2) |
+                    ((xBoardMidLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
             );
 
             int leftLine1 = 6 - deleteLine1;
             auto newXBoardMidLow = insertWhiteLine(
-                    (xBoardMidLow << 10U * deleteLine1) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                    (xBoardMidLow_ << 10U * deleteLine1) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
             );
 
-            auto newXBoardLow = insertWhiteLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+            auto newXBoardLow = insertWhiteLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-            xBoardLow = newXBoardLow;
-            xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-            xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-            xBoardHigh = newXBoardHigh & kValidBoardRange;
+            xBoardLow_ = newXBoardLow;
+            xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+            xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+            xBoardHigh_ = newXBoardHigh & kValidBoardRange;
         } else if (deleteLine3 < 12) {
             // Low & MidLow & MidHigh
             int deleteLine3_6 = deleteLine3 - 6;
             int leftLine3 = 6 - deleteLine3_6;
             auto newXBoardHigh = insertWhiteLine(
-                    (xBoardMidHigh << 10U * deleteLine3_6) |
-                    ((xBoardMidLow & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardMidHigh_ << 10U * deleteLine3_6) |
+                    ((xBoardMidLow_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             if (deleteLine2 < 6) {
                 // Low & MidLow & MidHigh
                 int leftLine2 = 6 - deleteLine2;
                 auto newXBoardMidHigh = insertWhiteLine(
-                        (xBoardMidHigh << 10U * deleteLine2) |
-                        ((xBoardMidLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                        (xBoardMidHigh_ << 10U * deleteLine2) |
+                        ((xBoardMidLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
                 );
 
                 int leftLine1 = 6 - deleteLine1;
                 auto newXBoardMidLow = insertWhiteLine(
-                        (xBoardMidLow << 10U * deleteLine1) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                        (xBoardMidLow_ << 10U * deleteLine1) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
                 );
 
-                auto newXBoardLow = insertWhiteLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+                auto newXBoardLow = insertWhiteLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-                xBoardLow = newXBoardLow;
-                xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-                xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-                xBoardHigh = newXBoardHigh & kValidBoardRange;
+                xBoardLow_ = newXBoardLow;
+                xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+                xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+                xBoardHigh_ = newXBoardHigh & kValidBoardRange;
             } else {
                 // Low & MidLow
                 int deleteLine2_6 = deleteLine2 - 6;
                 int leftLine2 = 6 - deleteLine2_6;
                 auto newXBoardMidHigh = insertWhiteLine(
-                        (xBoardMidLow << 10U * deleteLine2_6) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                        (xBoardMidLow_ << 10U * deleteLine2_6) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
                 );
 
                 int leftLine1 = 6 - deleteLine1;
                 auto newXBoardMidLow = insertWhiteLine(
-                        (xBoardMidLow << 10U * deleteLine1) |
-                        ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                        (xBoardMidLow_ << 10U * deleteLine1) |
+                        ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
                 );
 
-                auto newXBoardLow = insertWhiteLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+                auto newXBoardLow = insertWhiteLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-                xBoardLow = newXBoardLow;
-                xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-                xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-                xBoardHigh = newXBoardHigh & kValidBoardRange;
+                xBoardLow_ = newXBoardLow;
+                xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+                xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+                xBoardHigh_ = newXBoardHigh & kValidBoardRange;
             }
         } else {
             // Low & MidLow
             int deleteLine3_12 = deleteLine3 - 12;
             int leftLine3 = 6 - deleteLine3_12;
             auto newXBoardHigh = insertWhiteLine(
-                    (xBoardMidLow << 10U * deleteLine3_12) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
+                    (xBoardMidLow_ << 10U * deleteLine3_12) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine3)) >> 10U * leftLine3), deleteKeyHigh
             );
 
             int deleteLine2_6 = deleteLine2 - 6;
             int leftLine2 = 6 - deleteLine2_6;
             auto newXBoardMidHigh = insertWhiteLine(
-                    (xBoardMidLow << 10U * deleteLine2_6) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
+                    (xBoardMidLow_ << 10U * deleteLine2_6) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine2)) >> 10U * leftLine2), deleteKeyMidHigh
             );
 
             int leftLine1 = 6 - deleteLine1;
             auto newXBoardMidLow = insertWhiteLine(
-                    (xBoardMidLow << 10U * deleteLine1) |
-                    ((xBoardLow & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
+                    (xBoardMidLow_ << 10U * deleteLine1) |
+                    ((xBoardLow_ & getRowMaskAboveY(leftLine1)) >> 10U * leftLine1), deleteKeyMidLow
             );
 
-            auto newXBoardLow = insertWhiteLine(xBoardLow & getRowMaskBelowY(leftLine1), deleteKeyLow);
+            auto newXBoardLow = insertWhiteLine(xBoardLow_ & getRowMaskBelowY(leftLine1), deleteKeyLow);
 
-            xBoardLow = newXBoardLow;
-            xBoardMidLow = newXBoardMidLow & kValidBoardRange;
-            xBoardMidHigh = newXBoardMidHigh & kValidBoardRange;
-            xBoardHigh = newXBoardHigh & kValidBoardRange;
+            xBoardLow_ = newXBoardLow;
+            xBoardMidLow_ = newXBoardMidLow & kValidBoardRange;
+            xBoardMidHigh_ = newXBoardMidHigh & kValidBoardRange;
+            xBoardHigh_ = newXBoardHigh & kValidBoardRange;
         }
     }
 
     bool Field::canMerge(const Field &other) const {
-        return (xBoardLow & other.xBoardLow) == 0L
-               && (xBoardMidLow & other.xBoardMidLow) == 0L
-               && (xBoardMidHigh & other.xBoardMidHigh) == 0L
-               && (xBoardHigh & other.xBoardHigh) == 0L;
+        return (xBoardLow_ & other.xBoardLow_) == 0L
+               && (xBoardMidLow_ & other.xBoardMidLow_) == 0L
+               && (xBoardMidHigh_ & other.xBoardMidHigh_) == 0L
+               && (xBoardHigh_ & other.xBoardHigh_) == 0L;
     }
 
     void Field::merge(const Field &other) {
-        xBoardLow |= other.xBoardLow;
-        xBoardMidLow |= other.xBoardMidLow;
-        xBoardMidHigh |= other.xBoardMidHigh;
-        xBoardHigh |= other.xBoardHigh;
+        xBoardLow_ |= other.xBoardLow_;
+        xBoardMidLow_ |= other.xBoardMidLow_;
+        xBoardMidHigh_ |= other.xBoardMidHigh_;
+        xBoardHigh_ |= other.xBoardHigh_;
     }
 
     void Field::reduce(const Field &other) {
-        xBoardLow &= ~other.xBoardLow;
-        xBoardMidLow &= ~other.xBoardMidLow;
-        xBoardMidHigh &= ~other.xBoardMidHigh;
-        xBoardHigh &= ~other.xBoardHigh;
+        xBoardLow_ &= ~other.xBoardLow_;
+        xBoardMidLow_ &= ~other.xBoardMidLow_;
+        xBoardMidHigh_ &= ~other.xBoardMidHigh_;
+        xBoardHigh_ &= ~other.xBoardHigh_;
     }
 
     std::string Field::toString(int height) const {

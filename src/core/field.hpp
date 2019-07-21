@@ -10,13 +10,24 @@ namespace core {
     public:
         Bitboard boards[4];
         struct {
-            Bitboard xBoardLow;
-            Bitboard xBoardMidLow;
-            Bitboard xBoardMidHigh;
-            Bitboard xBoardHigh;
+            Bitboard xBoardLow_;
+            Bitboard xBoardMidLow_;
+            Bitboard xBoardMidHigh_;
+            Bitboard xBoardHigh_;
         };
 
-        Field() : xBoardLow(0), xBoardMidLow(0), xBoardMidHigh(0), xBoardHigh(0) {};
+        Field() : Field(0ULL, 0ULL, 0ULL, 0ULL) {}
+
+        Field(Bitboard xBoardLow): Field(xBoardLow, 0ULL, 0ULL, 0ULL) {}
+
+        Field(Bitboard xBoardLow, Bitboard xBoardMidLow): Field(xBoardLow, xBoardMidLow, 0ULL, 0ULL) {}
+
+        Field(Bitboard xBoardLow, Bitboard xBoardMidLow, Bitboard xBoardMidHigh)
+                : Field(xBoardLow, xBoardMidLow, xBoardMidHigh, 0ULL) {}
+
+        Field(Bitboard xBoardLow, Bitboard xBoardMidLow, Bitboard xBoardMidHigh, Bitboard xBoardHigh)
+                : xBoardLow_(xBoardLow), xBoardMidLow_(xBoardMidLow),
+                  xBoardMidHigh_(xBoardMidHigh), xBoardHigh_(xBoardHigh) {}
 
         void setBlock(int x, int y);
 
@@ -73,8 +84,8 @@ namespace core {
     };
 
     inline bool operator==(const Field &lhs, const Field &rhs) {
-        return lhs.xBoardLow == rhs.xBoardLow && lhs.xBoardMidLow == rhs.xBoardMidLow
-               && lhs.xBoardMidHigh == rhs.xBoardMidHigh && lhs.xBoardHigh == rhs.xBoardHigh;
+        return lhs.xBoardLow_ == rhs.xBoardLow_ && lhs.xBoardMidLow_ == rhs.xBoardMidLow_
+               && lhs.xBoardMidHigh_ == rhs.xBoardMidHigh_ && lhs.xBoardHigh_ == rhs.xBoardHigh_;
     }
 
     inline bool operator!=(const Field &lhs, const Field &rhs) {
