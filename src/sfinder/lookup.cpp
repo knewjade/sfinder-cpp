@@ -62,6 +62,86 @@ namespace sfinder {
         return pieceList;
     }
 
+    std::vector<std::vector<int>> ForwardOrderLookUp::forward(int toDepth, bool isOverBlock) {
+        assert(1 < toDepth);
+
+        std::vector<int> indexes(toDepth);
+        for (int index = 0; index < toDepth; ++index) {
+            indexes[index] = index;
+        }
+
+        std::vector<StackOrder> candidates{};
+
+        {
+            auto stack = StackOrder{};
+            stack.addLast(indexes[0]);
+            stack.addLast(indexes[1]);
+            candidates.emplace_back(stack);
+        }
+
+        {
+            auto stack = StackOrder{};
+            stack.addLast(indexes[1]);
+            stack.addLast(indexes[0]);
+            candidates.emplace_back(stack);
+        }
+
+        for (int depth = 2; depth < toDepth; depth++) {
+            int number = indexes[depth];
+            int size = candidates.size();
+            for (int index = 0; index < size; index++) {
+                auto &candidate = candidates[index];
+                auto freeze = StackOrder{candidate};
+
+                candidate.addLastTwo(number);
+                freeze.addLast(number);
+
+                candidates.emplace_back(freeze);
+            }
+        }
+
+        if (isOverBlock) {
+            auto number = toDepth;
+            int size = candidates.size();
+            for (int index = 0; index < size; index++) {
+                auto &candidate = candidates[index];
+                auto freeze = StackOrder{candidate};
+
+                candidate.addLastTwoAndRemoveLast(number);
+
+                candidates.emplace_back(freeze);
+            }
+        }
+
+        std::vector<std::vector<int>> indexesList{};
+        indexesList.reserve(candidates.size());
+        for (auto &candidate : candidates) {
+            const std::vector<int> &args = candidate.vector();
+            indexesList.emplace_back(args);
+        }
+
+        return indexesList;
+    }
+
+    std::vector<std::vector<core::PieceType>> ForwardOrderLookUp::parse(std::vector<core::PieceType> pieces) const {
+        assert(fromDepth <= pieces.size());
+
+        std::vector<std::vector<core::PieceType>> pieceList{};
+        pieceList.reserve(indexesList_.size());
+        for (auto &indexes : indexesList_) {
+            int size = indexes.size();
+            std::vector<core::PieceType> list(size);
+            for (int i = 0; i < size; ++i) {
+                auto index = indexes[i];
+                assert(0 <= index);
+                list[i] = static_cast<core::PieceType>(pieces[index]);
+            }
+            pieceList.emplace_back(list);
+        }
+
+        return pieceList;
+    }
+
     void StackOrder::addLast(int number) {
         blocks_.push_back(number);
     }

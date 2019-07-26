@@ -39,7 +39,7 @@ namespace core {
         assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
-        boards[index] |= getXMask(x, y - 6 * index);
+        boards_[index] |= getXMask(x, y - 6 * index);
     }
 
     void Field::removeBlock(int x, int y) {
@@ -47,7 +47,7 @@ namespace core {
         assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
-        boards[index] &= ~getXMask(x, y - 6 * index);
+        boards_[index] &= ~getXMask(x, y - 6 * index);
     }
 
     bool Field::isEmpty(int x, int y) const {
@@ -56,7 +56,7 @@ namespace core {
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
-        return (boards[index] & mask) == 0;
+        return (boards_[index] & mask) == 0;
     }
 
     bool Field::isEmptyOnY(int y) const {
@@ -64,7 +64,7 @@ namespace core {
 
         int index = y / 6;
         uint64_t mask = getLineMask(y - 6 * index);
-        return (boards[index] & mask) == 0;
+        return (boards_[index] & mask) == 0;
     }
 
     void Field::put(const Blocks &blocks, int x, int y) {
@@ -78,9 +78,9 @@ namespace core {
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
 
-        boards[index] |= mask.low;
+        boards_[index] |= mask.low;
         if (index <= 2) {
-            boards[index + 1] |= mask.high;
+            boards_[index + 1] |= mask.high;
         }
     }
 
@@ -95,9 +95,9 @@ namespace core {
         int index = lowerY / 6;
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
 
-        boards[index] &= ~mask.low;
+        boards_[index] &= ~mask.low;
         if (index <= 2) {
-            boards[index + 1] &= ~mask.high;
+            boards_[index + 1] &= ~mask.high;
         }
     }
 
@@ -113,10 +113,10 @@ namespace core {
         BlocksMask mask = blocks.mask(leftX, lowerY - 6 * index);
 
         if (index <= 2) {
-            return (boards[index] & mask.low) == 0 && (boards[index + 1] & mask.high) == 0;
+            return (boards_[index] & mask.low) == 0 && (boards_[index + 1] & mask.high) == 0;
         }
 
-        return (boards[index] & mask.low) == 0;
+        return (boards_[index] & mask.low) == 0;
     }
 
     bool Field::isOnGround(const Blocks &blocks, int x, int y) const {
@@ -140,10 +140,10 @@ namespace core {
 
         Collider collider = blocks.harddrop(leftX, lowerY);
 
-        return (boards[0] & collider.boards[0]) == 0 &&
-               (boards[1] & collider.boards[1]) == 0 &&
-               (boards[2] & collider.boards[2]) == 0 &&
-               (boards[3] & collider.boards[3]) == 0;
+        return (boards_[0] & collider.boards[0]) == 0 &&
+               (boards_[1] & collider.boards[1]) == 0 &&
+               (boards_[2] & collider.boards[2]) == 0 &&
+               (boards_[3] & collider.boards[3]) == 0;
     }
 
     LineKey getDeleteKey(Bitboard board) {

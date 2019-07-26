@@ -8,19 +8,11 @@
 namespace core {
     union Field {
     public:
-        Bitboard boards[4];
-        struct {
-            Bitboard xBoardLow_;
-            Bitboard xBoardMidLow_;
-            Bitboard xBoardMidHigh_;
-            Bitboard xBoardHigh_;
-        };
-
         Field() : Field(0ULL, 0ULL, 0ULL, 0ULL) {}
 
-        Field(Bitboard xBoardLow): Field(xBoardLow, 0ULL, 0ULL, 0ULL) {}
+        Field(Bitboard xBoardLow) : Field(xBoardLow, 0ULL, 0ULL, 0ULL) {}
 
-        Field(Bitboard xBoardLow, Bitboard xBoardMidLow): Field(xBoardLow, xBoardMidLow, 0ULL, 0ULL) {}
+        Field(Bitboard xBoardLow, Bitboard xBoardMidLow) : Field(xBoardLow, xBoardMidLow, 0ULL, 0ULL) {}
 
         Field(Bitboard xBoardLow, Bitboard xBoardMidLow, Bitboard xBoardMidHigh)
                 : Field(xBoardLow, xBoardMidLow, xBoardMidHigh, 0ULL) {}
@@ -79,13 +71,37 @@ namespace core {
 
         std::string toString(int height) const;
 
+        Bitboard boardLow() const {
+            return xBoardLow_;
+        }
+
+        Bitboard boardMidLow() const {
+            return xBoardMidLow_;
+        }
+
+        Bitboard boardMidHigh() const {
+            return xBoardMidHigh_;
+        }
+
+        Bitboard boardHigh() const {
+            return xBoardHigh_;
+        }
+
     private:
+        Bitboard boards_[4];
+        struct {
+            Bitboard xBoardLow_;
+            Bitboard xBoardMidLow_;
+            Bitboard xBoardMidHigh_;
+            Bitboard xBoardHigh_;
+        };
+
         void deleteLine_(LineKey low, LineKey midLow, LineKey midHigh, LineKey high);
     };
 
     inline bool operator==(const Field &lhs, const Field &rhs) {
-        return lhs.xBoardLow_ == rhs.xBoardLow_ && lhs.xBoardMidLow_ == rhs.xBoardMidLow_
-               && lhs.xBoardMidHigh_ == rhs.xBoardMidHigh_ && lhs.xBoardHigh_ == rhs.xBoardHigh_;
+        return lhs.boardLow() == rhs.boardLow() && lhs.boardMidLow() == rhs.boardMidLow()
+               && lhs.boardMidHigh() == rhs.boardMidHigh() && lhs.boardHigh() == rhs.boardHigh();
     }
 
     inline bool operator!=(const Field &lhs, const Field &rhs) {
