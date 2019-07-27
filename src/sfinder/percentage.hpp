@@ -11,7 +11,7 @@ namespace sfinder {
     template<class T = core::srs::MoveGenerator>
     class Percentage {
     public:
-        explicit Percentage(
+        Percentage(
                 perfect_clear::Finder<T> &finder,
                 const Permutations &permutations,
                 const ReverseLookup &reverseLookup
