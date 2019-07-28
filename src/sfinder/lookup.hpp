@@ -38,7 +38,7 @@ namespace sfinder {
     class ForwardOrderLookUp {
     public:
         static ForwardOrderLookUp create(int toDepth, int fromDepth) {
-            assert(fromDepth == toDepth || fromDepth == toDepth + 1);
+            assert(toDepth <= fromDepth);
             auto isOverBlock = toDepth < fromDepth;
             auto indexesList = forward(toDepth, isOverBlock);
             return ForwardOrderLookUp(toDepth, fromDepth, indexesList);
