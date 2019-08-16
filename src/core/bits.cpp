@@ -517,6 +517,19 @@ namespace core {
         }
     }
 
+    LineKey getUsingLineKey(Bitboard board) {
+        auto a1010101010 = 768614336404564650ULL;
+        auto b1 = (board & a1010101010) >> 1ULL | board;
+        auto a0101010000 = 378672165735973200ULL;
+        auto b2 = (b1 & a0101010000) >> 4ULL | b1;
+        auto a0000010100 = 22540009865236500ULL;
+        auto b3 = (b2 & a0000010100) >> 2ULL | b2;
+        auto a0000000100 = 4508001973047300ULL;
+        auto b4 = (b3 & a0000000100) >> 2ULL | b3;
+        auto a0000000001 = 1127000493261825ULL;
+        return b4 & a0000000001;
+    }
+
     Bitboard getRowMaskBelowY(int excludeY) {
         assert(0 <= excludeY && excludeY <= 6);
 
@@ -558,6 +571,127 @@ namespace core {
             case 5:
                 return 0xffc000000000000ULL;
             case 6:
+                return 0L;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
+    LineKey getUsingKeyBelowY(int excludeY) {
+        assert(0 <= excludeY && excludeY <= 24);
+        switch (excludeY) {
+            case 0:
+                return 0x0ULL;
+            case 1:
+                return 0x1ULL;
+            case 2:
+                return 0x401ULL;
+            case 3:
+                return 0x100401ULL;
+            case 4:
+                return 0x40100401ULL;
+            case 5:
+                return 0x10040100401ULL;
+            case 6:
+                return 0x4010040100401ULL;
+            case 7:
+                return 0x4010040100403ULL;
+            case 8:
+                return 0x4010040100c03ULL;
+            case 9:
+                return 0x4010040300c03ULL;
+            case 10:
+                return 0x40100c0300c03ULL;
+            case 11:
+                return 0x40300c0300c03ULL;
+            case 12:
+                return 0xc0300c0300c03ULL;
+            case 13:
+                return 0xc0300c0300c07ULL;
+            case 14:
+                return 0xc0300c0301c07ULL;
+            case 15:
+                return 0xc0300c0701c07ULL;
+            case 16:
+                return 0xc0301c0701c07ULL;
+            case 17:
+                return 0xc0701c0701c07ULL;
+            case 18:
+                return 0x1c0701c0701c07ULL;
+            case 19:
+                return 0x1c0701c0701c0fULL;
+            case 20:
+                return 0x1c0701c0703c0fULL;
+            case 21:
+                return 0x1c0701c0f03c0fULL;
+            case 22:
+                return 0x1c0703c0f03c0fULL;
+            case 23:
+                return 0x1c0f03c0f03c0fULL;
+            case 24:
+                return 0x3c0f03c0f03c0fULL;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
+    Bitboard getColumnMaskLeftX(int excludeX) {
+        assert(0 <= excludeX && excludeX <= 10);
+        switch (excludeX) {
+            case 0:
+                return 0ULL;
+            case 1:
+                return 0x004010040100401ULL;
+            case 2:
+                return 0x00c0300c0300c03ULL;
+            case 3:
+                return 0x01c0701c0701c07ULL;
+            case 4:
+                return 0x03c0f03c0f03c0fULL;
+            case 5:
+                return 0x07c1f07c1f07c1fULL;
+            case 6:
+                return 0x0fc3f0fc3f0fc3fULL;
+            case 7:
+                return 0x1fc7f1fc7f1fc7fULL;
+            case 8:
+                return 0x3fcff3fcff3fcffULL;
+            case 9:
+                return 0x7fdff7fdff7fdffULL;
+            case 10:
+                return 0xfffffffffffffffULL;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
+    Bitboard getColumnMaskRightX(int includeX) {
+        assert(0 <= includeX && includeX <= 10);
+        switch (includeX) {
+            case 0:
+                return 0xfffffffffffffffULL;
+            case 1:
+                return 0xffbfeffbfeffbfeULL;
+            case 2:
+                return 0xff3fcff3fcff3fcULL;
+            case 3:
+                return 0xfe3f8fe3f8fe3f8ULL;
+            case 4:
+                return 0xfc3f0fc3f0fc3f0ULL;
+            case 5:
+                return 0xf83e0f83e0f83e0ULL;
+            case 6:
+                return 0xf03c0f03c0f03c0ULL;
+            case 7:
+                return 0xe0380e0380e0380ULL;
+            case 8:
+                return 0xc0300c0300c0300ULL;
+            case 9:
+                return 0x802008020080200ULL;
+            case 10:
                 return 0L;
             default:
                 assert(false);
