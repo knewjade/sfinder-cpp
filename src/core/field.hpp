@@ -67,6 +67,8 @@ namespace core {
 
         bool canMerge(const Field &other) const;
 
+        bool contains(const Field &other) const;
+
         void merge(const Field &other);
 
         void reduce(const Field &other);

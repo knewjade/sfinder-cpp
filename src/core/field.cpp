@@ -580,6 +580,13 @@ namespace core {
                && (xBoardHigh_ & other.xBoardHigh_) == 0L;
     }
 
+    bool Field::contains(const Field &other) const {
+        return (xBoardLow_ & other.xBoardLow_) == other.xBoardLow_
+               && (xBoardMidLow_ & other.xBoardMidLow_) == other.xBoardMidLow_
+               && (xBoardMidHigh_ & other.xBoardMidHigh_) == other.xBoardMidHigh_
+               && (xBoardHigh_ & other.xBoardHigh_) == other.xBoardHigh_;
+    }
+
     void Field::merge(const Field &other) {
         xBoardLow_ |= other.xBoardLow_;
         xBoardMidLow_ |= other.xBoardMidLow_;
