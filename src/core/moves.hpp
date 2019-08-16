@@ -79,6 +79,8 @@ namespace core {
 
             void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight);
 
+            bool canReach(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);
+
         private:
             const Factory &factory;
 
