@@ -1,51 +1,31 @@
 #include <random>
+#include <cmath>
 
 #include "gtest/gtest.h"
 
 #include "core/field.hpp"
 #include "core/moves.hpp"
+#include "core/pieces.hpp"
+#include "fumen/color_field.hpp"
+#include "fumen/parser.hpp"
 
-namespace sfinder {
+namespace main {
     class ReverseSearchTest : public ::testing::Test {
     };
 
-    core::LineKey get4LineKey() {
-        core::LineKey key = 0ULL;
-        for (int y = 0; y < 4; ++y) {
-            key |= core::getBitKey(y);
-        }
-        return key;
-    }
-
-    core::Field near(const core::Blocks &blocks, int x, int y) {
-        auto field = core::Field{};
-        field.put(blocks, x, y);
-
-        auto blocksMask = field.boardLow();
-        auto mask = 0ULL;
-
-        // Left
-        mask |= (blocksMask & core::getColumnMaskRightX(1)) >> 1ULL;
-
-        // Right
-        mask |= (blocksMask & core::getColumnMaskLeftX(9)) << 1ULL;
-
-        // Down
-        mask |= blocksMask >> 10ULL;
-
-        // Up
-        mask |= blocksMask << 10ULL;
-
-        auto near = core::Field(mask & core::getRowMaskBelowY(4));
-        near.remove(blocks, x, y);
-        return near;
-    }
+    struct Configure {
+        core::Factory &factory;
+        core::srs::MoveGenerator &moveGenerator;
+        std::mt19937 &mt19937;
+        int height;
+    };
 
     struct Operation {
         core::PieceType pieceType;
         core::RotateType rotateType;
         int x;
         int y;
+        double score;
     };
 
     struct Result {
@@ -54,157 +34,355 @@ namespace sfinder {
         core::Field next;
     };
 
-    Result run(
-            const core::Factory &factory, core::Field &field2, const core::Blocks &blocks, int x, int y, int height
-    ) {
-        auto field = core::Field{field2};
+    auto elements = std::vector<fumen::Element>{};
 
-        field.remove(blocks, x, y);
-
-//        std::cout << std::endl;
-//        std::cout << field.toString(height) << std::endl;
-
-        auto freeze = core::Field{field};
-
-        auto deletedLine = field.clearLineReturnKey();
-//        std::cout << std::hex << deletedLine << std::endl;
-
-        auto deletedLineBelowPiece = deletedLine & core::getUsingKeyBelowY(y);
-//        std::cout << std::hex << deletedLineBelowPiece << std::endl;
-
-//        std::cout << std::endl;
-//        std::cout << field.toString(height) << std::endl;
-
-        auto reachable = core::srs::MoveGenerator(factory);
-        auto flag = reachable.canReach(field, blocks.pieceType, blocks.rotateType, x,
-                                     y - core::bitCount(deletedLineBelowPiece), 24);
-
-//        std::cout << std::boolalpha << flag << std::endl;
-
-        return {flag, blocks.pieceType, freeze};
+    core::Field initField(int height) {
+        auto field = core::Field{};
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < core::kFieldWidth; ++x) {
+                field.setBlock(x, y);
+            }
+        }
+        return field;
     }
 
-    void loop2(
-            const core::Factory &factory, core::Field &field, core::Field &must, int height, int depth, std::mt19937 &mt
+    void k(core::Field &field, int x, int y, int height) {
+        if (!field.isEmpty(x, y)) {
+            field.removeBlock(x, y);
+
+            if (0 <= x - 1) {
+                k(field, x - 1, y, height);
+            }
+
+            if (x + 1 < core::kFieldWidth) {
+                k(field, x + 1, y, height);
+            }
+
+            if (0 <= y - 1) {
+                k(field, x, y - 1, height);
+            }
+
+            if (y + 1 < height) {
+                k(field, x, y + 1, height);
+            }
+        }
+    }
+
+    void k2(core::Field &field, int x, int y, int height) {
+        if (field.isEmpty(x, y)) {
+            field.setBlock(x, y);
+
+            if (0 <= x - 1) {
+                k2(field, x - 1, y, height);
+            }
+
+            if (x + 1 < core::kFieldWidth) {
+                k2(field, x + 1, y, height);
+            }
+
+            if (0 <= y - 1) {
+                k2(field, x, y - 1, height);
+            }
+
+            if (y + 1 < height) {
+                k2(field, x, y + 1, height);
+            }
+        }
+    }
+
+    double validate(
+            const Configure &configure, const core::Field &field, const core::Blocks &blocks, int x, int y
     ) {
-        std::uniform_int_distribution<> rand08(0, 6);
-        std::uniform_int_distribution<> rand03(0, 3);
+        auto mino = core::Field{};
+        mino.put(blocks, x, y);
 
-        Result result;
-        auto m = core::Field{must};
-
-        do {
-            Operation operation{core::PieceType::T, core::RotateType::Spawn, -1, -1};
-
-            while (operation.x == -1) {
-                auto piece = static_cast<core::PieceType>(rand08(mt));
-                auto rotate = static_cast<core::RotateType>(rand03(mt));
-
-                const auto &blocks = factory.get(piece, rotate);
-
-                std::uniform_int_distribution<> randX(-blocks.minX, core::kFieldWidth - blocks.maxX - 1);
-                auto x = randX(mt);
-
-                std::uniform_int_distribution<> randY(-blocks.minY, height - blocks.maxY - 1);
-                auto y = randY(mt);
-
-                auto mino = core::Field{};
-                mino.put(blocks, x, y);
-
-                if (!field.contains(mino)) {
-                    continue;
-                }
-
-                if (must.canMerge(mino)) {
-                    continue;
-                }
-
-                operation = {piece, rotate, x, y};
-            }
-
-            {
-                const auto &blocks = factory.get(operation.pieceType, operation.rotateType);
-                result = run(factory, field, blocks, operation.x, operation.y, height);
-
-                if (result.success) {
-                    auto n = near(blocks, operation.x, operation.y);
-                    m.merge(n);
-                }
-            }
-        } while (!result.success);
-
-        if (depth < 3) {
-            loop2(factory, result.next, m, height, depth + 1, mt);
-        } else {
-            result.next.clearLine();
-            std::cout << std::endl;
-            std::cout << result.next.toString(height) << std::endl;
-            std::cout << "↓ミノ順：ホールドなし" << std::endl;
+        if (!field.contains(mino)) {
+            return -1;
         }
 
-        std::cout << factory.get(result.pieceType).name << std::endl;
+        auto freeze = core::Field{field};
+        freeze.reduce(mino);
+
+        auto deletedLine = freeze.clearLineReturnKey();
+        auto deletedLineBelowPiece = deletedLine & core::getUsingKeyBelowY(y);
+
+        auto canReach = configure.moveGenerator.canReach(
+                freeze, blocks.pieceType, blocks.rotateType, x, y - core::bitCount(deletedLineBelowPiece), 24
+        );
+
+        if (!canReach) {
+            return -1;
+        }
+
+        int deletedLineCount = core::bitCount(deletedLine);
+        int height = configure.height - deletedLineCount;
+
+        auto freeze2 = core::Field{freeze};
+        for (int x = 0; x < core::kFieldWidth; ++x) {
+            k(freeze2, x, 0, height);
+        }
+
+        auto floating = 0;
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < core::kFieldWidth; ++x) {
+                if (!freeze2.isEmpty(x, y)) {
+                    floating += 1;
+                    k(freeze2, x, y, height);
+                }
+            }
+        }
+
+        auto freeze3 = core::Field{freeze};
+        auto space = 0;
+        for (int y = 0; y < height; ++y) {
+            for (int x = 0; x < core::kFieldWidth; ++x) {
+                if (freeze3.isEmpty(x, y)) {
+                    space += 1;
+                    k2(freeze3, x, y, height);
+                }
+            }
+        }
+
+        auto hole = 0;
+        for (int x = 0; x < core::kFieldWidth; ++x) {
+            auto isHole = false;
+            for (int y = height - 1; 0 <= y; --y) {
+                if (!freeze.isEmpty(x, y)) {
+                    isHole = true;
+                } else if (isHole) {
+                    hole += 1;
+                }
+            }
+        }
+
+        auto square = 0;
+        for (int x = 0; x < core::kFieldWidth; ++x) {
+            auto count = 0;
+            for (int y = 0; y < height; ++y) {
+                if (x - 1 < 0 || !freeze.isEmpty(x - 1, y)) {
+                    count++;
+                }
+
+                if (core::kFieldWidth <= x + 1 || !freeze.isEmpty(x + 1, y)) {
+                    count++;
+                }
+
+                if (y - 1 < 0 || !freeze.isEmpty(x, y - 1)) {
+                    count++;
+                }
+
+                if (height <= y + 1 || !freeze.isEmpty(x, y + 1)) {
+                    count++;
+                }
+
+                if (3 < count) {
+                    square++;
+                }
+            }
+        }
+
+        auto distance = 0.0;
+        for (int x = 0; x < core::kFieldWidth; ++x) {
+            for (int y = 0; y < height; ++y) {
+                if (freeze.isEmpty(x, y)) {
+                    for (int x2 = 0; x2 < core::kFieldWidth; ++x2) {
+                        for (int y2 = 0; y2 < height; ++y2) {
+                            if (freeze.isEmpty(x2, y2)) {
+                                auto d = sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y));
+                                if (distance < d) {
+                                    distance = d;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        auto score = (10 - space - 1) * 10 - floating * 2000 - hole * 10 - deletedLineCount * 10 + square * 1 - distance * 10;
+
+//        std::cout << freeze.toString(height) << std::endl;
+//        std::cout << score << std::endl;
+
+        if (score <= 0) {
+            return -1.0;
+        }
+
+        double s = score / 50.0;
+        return s * s;
     }
 
-    void loop(
-            const core::Factory &factory, core::Field &field, int height, std::mt19937 &mt
+    Operation select(std::mt19937 &mt19937, const std::vector<Operation> &operations) {
+        assert(!operations.empty());
+
+        auto sum = 0.0;
+        for (const auto &operation : operations) {
+            sum += operation.score;
+        }
+
+        assert(0.0 < sum);
+        std::uniform_real_distribution<> random(0, sum);
+        auto selectedScore = random(mt19937);
+
+        auto prev = 0.0;
+        for (const auto &operation : operations) {
+            if (prev + operation.score >= selectedScore) {
+                return operation;
+            }
+            prev += operation.score;
+        }
+
+        assert(false);
+        return operations.at(0);
+    }
+
+    template<int MAX_COUNT>
+    Operation generateNextOperation(
+            const Configure &configure, const core::PieceCounter pieceCounter, const core::Field &field, int count
     ) {
-        std::uniform_int_distribution<> rand08(0, 6);
-        std::uniform_int_distribution<> rand03(0, 3);
+        if (MAX_COUNT <= count) {
+            return Operation{core::PieceType::T, core::RotateType::Spawn, -1, -1};
+        }
 
-        Result result;
-        auto m = core::Field{};
+        std::vector<core::PieceType> pieceTypes{};
+        for (const auto pieceType : core::kAllPieceType) {
+            if (!pieceCounter.containsAll(core::PieceCounter::create(pieceType))) {
+                continue;
+            }
+            pieceTypes.emplace_back(pieceType);
+        }
 
+        if (pieceTypes.empty()) {
+            return generateNextOperation<MAX_COUNT>(configure, pieceCounter, field, count + 1);
+        }
+
+        assert(!pieceTypes.empty());
+        std::uniform_int_distribution<> randomPiece(0, pieceTypes.size() - 1);
+
+        auto pieceIndex = randomPiece(configure.mt19937);
+        auto pieceType = pieceTypes.at(pieceIndex);
+        auto piece = configure.factory.get(pieceType);
+
+        auto candidates = std::vector<Operation>{};
+
+        auto bit = piece.uniqueShapeRotate;
         do {
-            Operation operation{core::PieceType::T, core::RotateType::Spawn, -1, -1};
+            auto next = bit & (bit - 1U);
+            auto nextRotateType = core::rotateBitToVal[bit & ~next];
 
-            while (operation.x == -1) {
-                auto piece = static_cast<core::PieceType>(rand08(mt));
-                auto rotate = static_cast<core::RotateType>(rand03(mt));
+            auto &blocks = configure.factory.get(pieceType, nextRotateType);
 
-                const auto &blocks = factory.get(piece, rotate);
+            for (int y = -blocks.minY; y < core::kFieldWidth - blocks.maxY; ++y) {
+                for (int x = -blocks.minX; x < core::kFieldWidth - blocks.maxX; ++x) {
+                    auto score = validate(configure, field, blocks, x, y);
+                    if (score <= 0.0) {
+                        continue;
+                    }
 
-                std::uniform_int_distribution<> randX(-blocks.minX, core::kFieldWidth - blocks.maxX - 1);
-                auto x = randX(mt);
-
-                std::uniform_int_distribution<> randY(-blocks.minY, height - blocks.maxY - 1);
-                auto y = randY(mt);
-
-                auto mino = core::Field{};
-                mino.put(blocks, x, y);
-
-                if (!field.contains(mino)) {
-                    continue;
-                }
-
-                operation = {piece, rotate, x, y};
-            }
-
-            {
-                const auto &blocks = factory.get(operation.pieceType, operation.rotateType);
-                result = run(factory, field, blocks, operation.x, operation.y, height);
-
-                if (result.success) {
-                    auto n = near(blocks, operation.x, operation.y);
-                    m.merge(n);
+                    auto operation = Operation{
+                            pieceType,
+                            nextRotateType,
+                            x,
+                            y,
+                            score
+                    };
+                    candidates.emplace_back(operation);
                 }
             }
-        } while (!result.success);
 
-        loop2(factory, result.next, m, height, 1, mt);
+            bit = next;
+        } while (bit != 0);
 
-        std::cout << factory.get(result.pieceType).name << std::endl;
+        if (candidates.empty()) {
+            return generateNextOperation<MAX_COUNT>(configure, pieceCounter, field, count + 1);
+        }
+
+        return select(configure.mt19937, candidates);
+    }
+
+    template<int MAX_DEPTH, int MAX_COUNT>
+    bool run(
+            const Configure &configure, const core::Field field,
+            std::vector<core::PieceType> &pieces, const core::PieceCounter pieceCounter, int depth
+    ) {
+        auto operation = generateNextOperation<MAX_COUNT>(configure, pieceCounter, field, 0);
+        if (operation.x == -1) {
+            return false;
+        }
+
+        auto blocks = configure.factory.get(operation.pieceType, operation.rotateType);
+
+        auto freeze = core::Field{field};
+        freeze.remove(blocks, operation.x, operation.y);
+
+        pieces.emplace_back(operation.pieceType);
+
+        if (depth < MAX_DEPTH - 1) {
+            auto p = pieceCounter - core::PieceCounter::create(operation.pieceType);
+            auto success = run<MAX_DEPTH, MAX_COUNT>(configure, freeze, pieces, p, depth + 1);
+            if (!success) {
+                pieces.pop_back();
+                return run<MAX_DEPTH, MAX_COUNT>(configure, field, pieces, pieceCounter, depth);
+            }
+        } else {
+            std::cout << std::endl;
+            std::cout << freeze.toString(configure.height) << std::endl;
+
+            freeze.clearLine();
+
+            auto ss = std::stringstream{};
+            ss << "#Q=[](" << configure.factory.get(pieces.at(pieces.size() - 1)).name << ")";
+            for (int index = pieces.size() - 2; 0 <= index; --index) {
+                ss << configure.factory.get(pieces.at(index)).name;
+            }
+
+            auto colorField = fumen::ColorField(24);
+            for (int y = 0; y < configure.height; ++y) {
+                for (int x = 0; x < core::kFieldWidth; ++x) {
+                    if (!freeze.isEmpty(x, y)) {
+                        colorField.setBlock(fumen::ColorType::Gray, x, y);
+                    }
+                }
+            }
+
+            auto comment = ss.str();
+            elements.push_back(
+                    fumen::Element(
+                            fumen::ColorType::Empty, core::RotateType::Spawn, 0, 0, true, colorField, comment
+                    )
+            );
+            
+            std::cout << comment << std::endl;
+        }
+
+        return true;
     }
 
     TEST_F(ReverseSearchTest, succeed) {
-        const auto factory = core::Factory::create();
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
 
-        auto rd = std::random_device{};
-        auto mt = std::mt19937(rd());
+        auto randomDevice = std::random_device{};
+        auto height = 4;
 
-        auto field = core::Field{};
-        auto key = get4LineKey();
-        field.insertBlackLineWithKey(key);
+        auto mt19937 = std::mt19937(randomDevice());
+        auto configure = Configure{
+                factory,
+                moveGenerator,
+                mt19937,
+                height
+        };
 
-        loop(factory, field, 4, mt);
+        for (int count = 0; count < 15; ++count) {
+            auto field = initField(height);
+            auto pieceCounter = core::PieceCounter::create<7>(core::kAllPieceType);
+            auto pieces = std::vector<core::PieceType>();
+            run<4, 5>(configure, field, pieces, pieceCounter, 0);
+        }
+
+        auto converter = fumen::ColorConverter::create();
+        auto parser = fumen::Parser(configure.factory, converter);
+        std::cout << "https://knewjade.github.io/fumen-for-mobile/#?d=" << "v115@" << parser.encode(elements)
+                  << std::endl;
     }
 }
