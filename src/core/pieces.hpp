@@ -42,6 +42,14 @@ namespace core {
 
     class PieceCounter {
     public:
+        static PieceCounter create() {
+            return PieceCounter(0ULL);
+        }
+
+        static PieceCounter create(core::PieceType piece) {
+            return PieceCounter(kSlideMask[piece]);
+        }
+
         static PieceCounter create(const std::vector<core::PieceType> &pieces) {
             auto value = 0ULL;
             for (auto piece : pieces) {

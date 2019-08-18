@@ -219,6 +219,15 @@ namespace core {
         return deleteKeyLow | (deleteKeyMidLow << 1U) | (deleteKeyMidHigh << 2U) | (deleteKeyHigh << 3U);
     }
 
+    LineKey Field::getUsingKey() const {
+        auto usingKeyLow = getUsingLineKey(xBoardLow_);
+        auto usingKeyMidLow = getUsingLineKey(xBoardMidLow_);
+        auto usingKeyMidHigh = getUsingLineKey(xBoardMidHigh_);
+        auto usingKeyHigh = getUsingLineKey(xBoardHigh_);
+
+        return usingKeyLow | (usingKeyMidLow << 1ULL) | (usingKeyMidHigh << 2ULL) | (usingKeyHigh << 3ULL);
+    }
+
     int Field::getBlockOnX(int x, int maxY) const {
         assert(0 <= maxY && maxY <= kMaxFieldHeight);
 
@@ -569,6 +578,13 @@ namespace core {
                && (xBoardMidLow_ & other.xBoardMidLow_) == 0L
                && (xBoardMidHigh_ & other.xBoardMidHigh_) == 0L
                && (xBoardHigh_ & other.xBoardHigh_) == 0L;
+    }
+
+    bool Field::contains(const Field &other) const {
+        return (xBoardLow_ & other.xBoardLow_) == other.xBoardLow_
+               && (xBoardMidLow_ & other.xBoardMidLow_) == other.xBoardMidLow_
+               && (xBoardMidHigh_ & other.xBoardMidHigh_) == other.xBoardMidHigh_
+               && (xBoardHigh_ & other.xBoardHigh_) == other.xBoardHigh_;
     }
 
     void Field::merge(const Field &other) {

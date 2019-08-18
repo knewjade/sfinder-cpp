@@ -291,6 +291,50 @@ namespace core {
 
             return MoveResults::No;
         }
+
+        bool MoveGenerator::canReach(
+                const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight
+        ) {
+            assert(field.canPut(factory.get(pieceType, rotateType), x, y));
+
+            appearY = validHeight;
+
+            cache.clear();
+
+            auto &piece = factory.get(pieceType);
+
+            auto &transform = piece.transforms[rotateType];
+            auto currentRotateType = transform.toRotate;
+            auto currentX = x + transform.offset.x;
+            auto currentY = y + transform.offset.y;
+
+            auto bit = piece.sameShapeRotates[currentRotateType];
+            assert(bit != 0);
+
+            auto target = TargetObject{field, piece};
+
+            do {
+                auto next = bit & (bit - 1U);
+                RotateType nextRotateType = rotateBitToVal[bit & ~next];
+
+                auto &blocks = factory.get(pieceType, nextRotateType);
+
+                auto &nextTransform = piece.transforms[nextRotateType];
+
+                assert(currentRotateType == nextTransform.toRotate);
+
+                auto nextX = currentX - nextTransform.offset.x;
+                auto nextY = currentY - nextTransform.offset.y;
+
+                if (check(target, blocks, nextX, nextY, From::None, true)) {
+                    return true;
+                }
+
+                bit = next;
+            } while (bit != 0);
+
+            return false;
+        }
     }
 
     namespace srs_rotate_end {

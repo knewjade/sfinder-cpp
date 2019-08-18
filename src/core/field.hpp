@@ -53,6 +53,8 @@ namespace core {
 
         LineKey clearLineReturnKey();
 
+        LineKey getUsingKey() const;
+
         int getBlockOnX(int ux, int maxY) const;
 
         bool isWallBetween(int x, int maxY) const;
@@ -64,6 +66,8 @@ namespace core {
         void insertWhiteLineWithKey(LineKey deleteKey);
 
         bool canMerge(const Field &other) const;
+
+        bool contains(const Field &other) const;
 
         void merge(const Field &other);
 

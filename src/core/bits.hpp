@@ -24,9 +24,17 @@ namespace core {
 
     LineKey getBitKey(int y);
 
+    LineKey getUsingLineKey(Bitboard board);
+
     Bitboard getRowMaskBelowY(int excludeY);
 
     Bitboard getRowMaskAboveY(int includeY);
+
+    LineKey getUsingKeyBelowY(int excludeY);
+
+    Bitboard getColumnMaskLeftX(int excludeX);
+
+    Bitboard getColumnMaskRightX(int includeX);
 }
 
 #endif //CORE_BITS_HPP
