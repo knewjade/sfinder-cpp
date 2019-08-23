@@ -1,5 +1,5 @@
 # File defines
-set(sfinder_test_SOURCE_DIR ${CMAKE_SOURCE_DIR}/test)
+set(sfinder_test_SOURCE_DIR ${sfinder_SOURCE_DIR}/test)
 
 file(GLOB sfinder_test_SRC
         ${sfinder_test_SOURCE_DIR}/main.cpp
