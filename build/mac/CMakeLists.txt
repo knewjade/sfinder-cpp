@@ -1,2 +1,5 @@
 ﻿add_subdirectory (core)
-add_subdirectory (test)
+
+if (TEST_ENABLE EQUAL 1)
+    add_subdirectory (test)
+endif ()
