@@ -12,6 +12,11 @@
 namespace sfinder {
     class Permutation {
     public:
+        static Permutation create(core::PieceType piece) {
+            auto pieces = std::array<core::PieceType, 1>{piece};
+            return Permutation::create < 1 > (pieces, 1);
+        }
+
         template<int N>
         static Permutation create(const std::array<core::PieceType, N> &pieces, int pop) {
             return Permutation::create(std::vector<core::PieceType>(pieces.begin(), pieces.end()), pop);
@@ -52,6 +57,8 @@ namespace sfinder {
         int indexSize() const;
 
         int depth() const;
+
+        int scale(int depth) const;
 
         std::vector<core::PieceType> pieces(int index) const;
 
@@ -101,6 +108,8 @@ namespace sfinder {
         int size() const;
 
         int depth() const;
+
+        int scale(int depth) const;
 
     private:
         const std::vector<Permutation> permutations_;

@@ -44,6 +44,14 @@ namespace sfinder {
         return pop_;
     }
 
+    int Permutation::scale(int depth) const {
+        assert(0 <= depth && depth <= pop_);
+        if (depth == 0) {
+            return indexSize();
+        }
+        return scales_[depth - 1];
+    }
+
     std::vector<core::PieceType> Permutation::pieces(int index) const {
         std::vector<core::PieceType> vector = {};
         pushPieces(vector, index, pieces_, pop_);
@@ -141,5 +149,24 @@ namespace sfinder {
             depth += permutation.depth();
         }
         return depth;
+    }
+
+    int Permutations::scale(int depth2) const {
+        assert(0 <= depth2 && depth2 <= depth());
+        if (depth2 == 0) {
+            return size();
+        }
+
+        int depth = 0;
+        for (int index = 0; index < permutations_.size(); ++index) {
+            auto &permutation = permutations_[index];
+            auto d = permutation.depth();
+            if (depth2 < depth + d) {
+                return permutation.scale(depth2 - depth) * scales_[index];
+            }
+            depth += d;
+        }
+
+        return 1;
     }
 }

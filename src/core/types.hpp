@@ -19,6 +19,8 @@ namespace core {
         O = 6,
     };
 
+    constexpr auto emptyPieceType = static_cast<PieceType>(-1);
+
     const std::array<PieceType, 7> kAllPieceType = {
             PieceType::T,
             PieceType::I,
