@@ -48,12 +48,24 @@ namespace core {
         Left = 3,
     };
 
+    constexpr auto dp = emptyPieceType;
+    const PieceType pieceBitToVal[65]{dp,
+                                      PieceType::T,
+                                      PieceType::I, dp,
+                                      PieceType::L, dp, dp, dp,
+                                      PieceType::J, dp, dp, dp, dp, dp, dp, dp,
+                                      PieceType::S, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp,
+                                      PieceType::Z, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp,
+                                      dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp, dp,
+                                      PieceType::O,
+    };
+
     constexpr auto dummyRotate = RotateType::Spawn;
-    const RotateType rotateBitToVal[16]{dummyRotate,
-                                        RotateType::Spawn,
-                                        RotateType::Right, dummyRotate,
-                                        RotateType::Reverse, dummyRotate, dummyRotate, dummyRotate,
-                                        RotateType::Left,
+    const RotateType rotateBitToVal[9]{dummyRotate,
+                                       RotateType::Spawn,
+                                       RotateType::Right, dummyRotate,
+                                       RotateType::Reverse, dummyRotate, dummyRotate, dummyRotate,
+                                       RotateType::Left,
     };
 
     constexpr auto kFieldWidth = 10;

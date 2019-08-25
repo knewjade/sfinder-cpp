@@ -7,37 +7,55 @@
 #include "../../core/moves.hpp"
 
 namespace sfinder::perfect_clear {
-    struct Candidate {
-        const core::Field field;
-        const int currentIndex;
-        const int holdIndex;
-        const int leftLine;
-        const int depth;
-        const int softdropCount;
-        const int holdCount;
-        const int lineClearCount;
-        const int currentCombo;
-        const int maxCombo;
-        const int tSpinAttack;
-        const bool b2b;
-        const int leftNumOfT;
-    };
+    namespace {
+        struct Candidate {
+            const core::Field field;
+            const int currentIndex;
+            const int holdIndex;
+            const int leftLine;
+            const int depth;
+            const int softdropCount;
+            const int holdCount;
+            const int lineClearCount;
+            const int currentCombo;
+            const int maxCombo;
+            const int tSpinAttack;
+            const bool b2b;
+            const int leftNumOfT;
+        };
 
-    struct Configure {
-        const std::vector<core::PieceType> &pieces;
-        std::vector<std::vector<core::Move>> &movePool;
-        const int maxDepth;
-        const int pieceSize;
-    };
+        struct Configure {
+            const std::vector<core::PieceType> &pieces;
+            std::vector<std::vector<core::Move>> &movePool;
+            const int maxDepth;
+            const int pieceSize;
+        };
 
-    struct Record {
-        Solution solution;
-        int softdropCount;
-        int holdCount;
-        int lineClearCount;
-        int maxCombo;
-        int tSpinAttack;
-    };
+        struct Record {
+            Solution solution;
+            int softdropCount;
+            int holdCount;
+            int lineClearCount;
+            int maxCombo;
+            int tSpinAttack;
+        };
+
+        inline bool validate(const core::Field &field, int maxLine) {
+            int sum = maxLine - field.getBlockOnX(0, maxLine);
+            for (int x = 1; x < core::kFieldWidth; x++) {
+                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
+                if (field.isWallBetween(x, maxLine)) {
+                    if (sum % 4 != 0)
+                        return false;
+                    sum = emptyCountInColumn;
+                } else {
+                    sum += emptyCountInColumn;
+                }
+            }
+
+            return sum % 4 == 0;
+        }
+    }
 
     namespace comparators {
         struct LeastSoftdrop_LeastLineClear_LeastHold {
@@ -117,24 +135,6 @@ namespace sfinder::perfect_clear {
                 return best.solution[0].x != -1;
             }
         };
-    }
-
-    namespace {
-        inline bool validate(const core::Field &field, int maxLine) {
-            int sum = maxLine - field.getBlockOnX(0, maxLine);
-            for (int x = 1; x < core::kFieldWidth; x++) {
-                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
-                if (field.isWallBetween(x, maxLine)) {
-                    if (sum % 4 != 0)
-                        return false;
-                    sum = emptyCountInColumn;
-                } else {
-                    sum += emptyCountInColumn;
-                }
-            }
-
-            return sum % 4 == 0;
-        }
     }
 
     template<class T = core::srs::MoveGenerator, class C = comparators::Faster>

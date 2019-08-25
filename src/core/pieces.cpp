@@ -11,6 +11,16 @@ namespace core {
         return Pieces(value, size);
     }
 
+    Pieces Pieces::create(const std::list<core::PieceType> &pieces) {
+        auto value = 0ULL;
+        auto size = pieces.size();
+        for (auto it = pieces.crbegin(); it != pieces.crend(); ++it) {
+            value *= 7ULL;
+            value += *it;
+        }
+        return Pieces(value, size);
+    }
+
     std::vector<core::PieceType> Pieces::vector() const {
         auto vector = std::vector<core::PieceType>(size_);
         auto value = value_;

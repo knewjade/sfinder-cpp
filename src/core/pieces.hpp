@@ -4,6 +4,7 @@
 #include <cassert>
 #include <vector>
 #include <array>
+#include <list>
 
 #include "types.hpp"
 
@@ -11,6 +12,8 @@ namespace core {
     class Pieces {
     public:
         static Pieces create(const std::vector<core::PieceType> &pieces);
+
+        static Pieces create(const std::list<core::PieceType> &pieces);
 
         Pieces(uint64_t value, int size) : value_(value), size_(size) {
         }
