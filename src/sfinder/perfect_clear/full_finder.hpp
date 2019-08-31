@@ -6,9 +6,11 @@
 #include "../../core/factory.hpp"
 #include "../../core/moves.hpp"
 
+#include "types.hpp"
+
 namespace sfinder::perfect_clear {
     namespace {
-        struct Candidate {
+        struct FullCandidate {
             const core::Field field;
             const int currentIndex;
             const int holdIndex;
@@ -24,13 +26,6 @@ namespace sfinder::perfect_clear {
             const int leftNumOfT;
         };
 
-        struct Configure {
-            const std::vector<core::PieceType> &pieces;
-            std::vector<std::vector<core::Move>> &movePool;
-            const int maxDepth;
-            const int pieceSize;
-        };
-
         struct Record {
             Solution solution;
             int softdropCount;
@@ -39,22 +34,6 @@ namespace sfinder::perfect_clear {
             int maxCombo;
             int tSpinAttack;
         };
-
-        inline bool validate(const core::Field &field, int maxLine) {
-            int sum = maxLine - field.getBlockOnX(0, maxLine);
-            for (int x = 1; x < core::kFieldWidth; x++) {
-                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
-                if (field.isWallBetween(x, maxLine)) {
-                    if (sum % 4 != 0)
-                        return false;
-                    sum = emptyCountInColumn;
-                } else {
-                    sum += emptyCountInColumn;
-                }
-            }
-
-            return sum % 4 == 0;
-        }
     }
 
     namespace comparators {
@@ -77,7 +56,7 @@ namespace sfinder::perfect_clear {
                 return newRecord.holdCount < oldRecord.holdCount;
             }
 
-            bool isWorseThanBest(const Record &best, const Candidate &current) {
+            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
                 if (current.leftNumOfT == 0) {
                     if (current.tSpinAttack != best.tSpinAttack) {
                         return current.tSpinAttack < best.tSpinAttack;
@@ -113,7 +92,7 @@ namespace sfinder::perfect_clear {
                 return newRecord.holdCount < oldRecord.holdCount;
             }
 
-            bool isWorseThanBest(const Record &best, const Candidate &current) {
+            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
                 if (current.leftNumOfT == 0) {
                     if (current.tSpinAttack != best.tSpinAttack) {
                         return current.tSpinAttack < best.tSpinAttack;
@@ -131,7 +110,7 @@ namespace sfinder::perfect_clear {
                 return true;
             }
 
-            bool isWorseThanBest(const Record &best, const Candidate &current) {
+            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
                 return best.solution[0].x != -1;
             }
         };
@@ -187,9 +166,9 @@ namespace sfinder::perfect_clear {
             int leftNumOfT = static_cast<int>(std::count(pieces.begin(), pieces.end(), core::PieceType::T));
 
             // Create candidate
-            Candidate candidate = holdEmpty ? Candidate{
+            FullCandidate candidate = holdEmpty ? FullCandidate{
                     freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT,
-            } : Candidate{
+            } : FullCandidate{
                     freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT
             };
 
@@ -220,7 +199,7 @@ namespace sfinder::perfect_clear {
 
         void search(
                 const Configure &configure,
-                const Candidate &candidate,
+                const FullCandidate &candidate,
                 Solution &solution
         ) {
             if (comparator_.isWorseThanBest(best_, candidate)) {
@@ -277,7 +256,7 @@ namespace sfinder::perfect_clear {
 
         void move(
                 const Configure &configure,
-                const Candidate &candidate,
+                const FullCandidate &candidate,
                 Solution &solution,
                 std::vector<core::Move> &moves,
                 core::PieceType pieceType,
@@ -347,7 +326,7 @@ namespace sfinder::perfect_clear {
                     continue;
                 }
 
-                auto nextCandidate = Candidate{
+                auto nextCandidate = FullCandidate{
                         freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                         nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                         nextTSpinAttack, nextB2b, nextLeftNumOfT,

@@ -5,25 +5,17 @@
 #include "../spins.hpp"
 #include "../../core/factory.hpp"
 #include "../../core/moves.hpp"
-#include "full_finder.hpp"
+
+#include "types.hpp"
 
 namespace sfinder::perfect_clear {
-    namespace {
-        struct Candidate2 {
-            const core::Field field;
-            const int currentIndex;
-            const int holdIndex;
-            const int leftLine;
-            const int depth;
-        };
-
-        struct Configure2 {
-            const std::vector<core::PieceType> &pieces;
-            std::vector<std::vector<core::Move>> &movePool;
-            const int maxDepth;
-            const int pieceSize;
-        };
-    }
+    struct CheckerCandidate {
+        const core::Field field;
+        const int currentIndex;
+        const int holdIndex;
+        const int leftLine;
+        const int depth;
+    };
 
     template<class T = core::srs::MoveGenerator>
     class Checker {
@@ -54,7 +46,7 @@ namespace sfinder::perfect_clear {
             }
 
             // Initialize configure
-            const Configure2 configure{
+            const Configure configure{
                     pieces,
                     movePool,
                     maxDepth,
@@ -62,13 +54,21 @@ namespace sfinder::perfect_clear {
             };
 
             // Create candidate
-            auto candidate = holdEmpty ? Candidate2{
+            auto candidate = holdEmpty ? CheckerCandidate{
                     freeze, 0, -1, maxLine, 0,
-            } : Candidate2{
+            } : CheckerCandidate{
                     freeze, 1, 0, maxLine, 0,
             };
 
             // Execute
+            return search<UseFirstHold>(configure, candidate);
+        }
+
+        template<bool UseFirstHold>
+        bool searchPublic(
+                const Configure &configure,
+                const CheckerCandidate &candidate
+        ) {
             return search<UseFirstHold>(configure, candidate);
         }
 
@@ -80,17 +80,17 @@ namespace sfinder::perfect_clear {
         // UseFirstHold = false if do not allow hold at first call only
         template<bool UseFirstHold>
         bool search(
-                const Configure2 &configure,
-                const Candidate2 &candidate
+                const Configure &configure,
+                const CheckerCandidate &candidate
         ) {
-            auto depth = candidate.depth;
+            auto &depth = candidate.depth;
 
             auto &pieces = configure.pieces;
             auto &moves = configure.movePool[depth];
 
-            auto currentIndex = candidate.currentIndex;
+            auto &currentIndex = candidate.currentIndex;
             assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
-            auto holdIndex = candidate.holdIndex;
+            auto &holdIndex = candidate.holdIndex;
             assert(-1 <= holdIndex && holdIndex < static_cast<long long int>(configure.pieceSize));
 
             bool canUseCurrent = currentIndex < configure.pieceSize;
@@ -140,18 +140,18 @@ namespace sfinder::perfect_clear {
         }
 
         bool move(
-                const Configure2 &configure,
-                const Candidate2 &candidate,
+                const Configure &configure,
+                const CheckerCandidate &candidate,
                 std::vector<core::Move> &moves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex
         ) {
-            auto depth = candidate.depth;
-            auto maxDepth = configure.maxDepth;
+            auto &depth = candidate.depth;
+            auto &maxDepth = configure.maxDepth;
             auto &field = candidate.field;
 
-            auto leftLine = candidate.leftLine;
+            auto &leftLine = candidate.leftLine;
             assert(0 < leftLine);
 
             moveGenerator_.search(moves, field, pieceType, leftLine);
@@ -178,7 +178,7 @@ namespace sfinder::perfect_clear {
                     continue;
                 }
 
-                auto nextCandidate = Candidate2{
+                auto nextCandidate = CheckerCandidate{
                         freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                 };
 
