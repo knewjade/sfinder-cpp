@@ -25,7 +25,7 @@ namespace sfinder::perfect_clear {
                 reachable_(core::srs_rotate_end::Reachable(factory)) {
         }
 
-        template<bool UseFirstHold>
+        template<bool UseHold, bool UseFirstHold>
         bool run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
@@ -61,15 +61,7 @@ namespace sfinder::perfect_clear {
             };
 
             // Execute
-            return search<UseFirstHold>(configure, candidate);
-        }
-
-        template<bool UseFirstHold>
-        bool searchPublic(
-                const Configure &configure,
-                const CheckerCandidate &candidate
-        ) {
-            return search<UseFirstHold>(configure, candidate);
+            return search<UseHold, UseFirstHold>(configure, candidate);
         }
 
     private:
@@ -77,8 +69,9 @@ namespace sfinder::perfect_clear {
         T &moveGenerator_;
         core::srs_rotate_end::Reachable reachable_;
 
+        // UseHold = true if allow using hold
         // UseFirstHold = false if do not allow hold at first call only
-        template<bool UseFirstHold>
+        template<bool UseHold, bool UseFirstHold>
         bool search(
                 const Configure &configure,
                 const CheckerCandidate &candidate
@@ -99,12 +92,12 @@ namespace sfinder::perfect_clear {
                 auto &current = pieces[currentIndex];
 
                 moves.clear();
-                if (move(configure, candidate, moves, current, currentIndex + 1, holdIndex)) {
+                if (move<UseHold>(configure, candidate, moves, current, currentIndex + 1, holdIndex)) {
                     return true;
                 }
             }
 
-            if constexpr (UseFirstHold) {
+            if constexpr (UseHold && UseFirstHold) {
                 if (0 <= holdIndex) {
                     assert(static_cast<unsigned int>(holdIndex) < pieces.size());
 
@@ -113,7 +106,7 @@ namespace sfinder::perfect_clear {
                         auto &hold = pieces[holdIndex];
 
                         moves.clear();
-                        if (move(configure, candidate, moves, hold, currentIndex + 1, currentIndex)) {
+                        if (move<UseHold>(configure, candidate, moves, hold, currentIndex + 1, currentIndex)) {
                             return true;
                         }
                     }
@@ -129,7 +122,7 @@ namespace sfinder::perfect_clear {
                         auto &next = pieces[nextIndex];
 
                         moves.clear();
-                        if (move(configure, candidate, moves, next, nextIndex + 1, currentIndex)) {
+                        if (move<UseHold>(configure, candidate, moves, next, nextIndex + 1, currentIndex)) {
                             return true;
                         }
                     }
@@ -139,6 +132,7 @@ namespace sfinder::perfect_clear {
             return false;
         }
 
+        template<bool UseHold>
         bool move(
                 const Configure &configure,
                 const CheckerCandidate &candidate,
@@ -182,7 +176,7 @@ namespace sfinder::perfect_clear {
                         freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                 };
 
-                if (search<true>(configure, nextCandidate)) {
+                if (search<UseHold, true>(configure, nextCandidate)) {
                     return true;
                 }
             }
