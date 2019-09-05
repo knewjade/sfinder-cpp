@@ -25,7 +25,7 @@ namespace sfinder::perfect_clear {
                 reachable_(core::srs_rotate_end::Reachable(factory)) {
         }
 
-        template<bool UseHold, bool UseFirstHold>
+        template<bool UseHold>
         bool run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
@@ -61,7 +61,7 @@ namespace sfinder::perfect_clear {
             };
 
             // Execute
-            return search<UseHold, UseFirstHold>(configure, candidate);
+            return search<UseHold>(configure, candidate);
         }
 
     private:
@@ -71,7 +71,7 @@ namespace sfinder::perfect_clear {
 
         // UseHold = true if allow using hold
         // UseFirstHold = false if do not allow hold at first call only
-        template<bool UseHold, bool UseFirstHold>
+        template<bool UseHold>
         bool search(
                 const Configure &configure,
                 const CheckerCandidate &candidate
@@ -97,7 +97,7 @@ namespace sfinder::perfect_clear {
                 }
             }
 
-            if constexpr (UseHold && UseFirstHold) {
+            if constexpr (UseHold) {
                 if (0 <= holdIndex) {
                     assert(static_cast<unsigned int>(holdIndex) < pieces.size());
 
@@ -176,7 +176,7 @@ namespace sfinder::perfect_clear {
                         freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                 };
 
-                if (search<UseHold, true>(configure, nextCandidate)) {
+                if (search<UseHold>(configure, nextCandidate)) {
                     return true;
                 }
             }
