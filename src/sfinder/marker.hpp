@@ -30,7 +30,7 @@ namespace sfinder {
 
         void set(int index, bool succeed);
 
-        const std::vector<FlagType> &flags() {
+        const std::vector<FlagType> &flags() const {
             return flags_;
         }
 
