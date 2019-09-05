@@ -26,7 +26,7 @@ namespace sfinder {
         const int maxDepth = 7;
         const int maxLine = 6;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 7);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 7);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 
@@ -58,7 +58,7 @@ namespace sfinder {
         const int maxDepth = 7;
         const int maxLine = 6;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 7);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 7);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 
@@ -90,7 +90,7 @@ namespace sfinder {
         const int maxDepth = 3;
         const int maxLine = 4;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 4);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 4);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 
@@ -121,7 +121,7 @@ namespace sfinder {
         const int maxDepth = 4;
         const int maxLine = 4;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 5);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 5);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 
@@ -152,7 +152,7 @@ namespace sfinder {
         const int maxDepth = 4;
         const int maxLine = 4;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 5);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 5);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 
@@ -183,7 +183,7 @@ namespace sfinder {
         const int maxDepth = 5;
         const int maxLine = 4;
 
-        auto reverseLookup = ReverseLookup::create(maxDepth, 6);
+        auto reverseLookup = ReverseOrderLookup::create(maxDepth, 6);
 
         auto percentage = Percentage<>(finder, permutations, reverseLookup);
 

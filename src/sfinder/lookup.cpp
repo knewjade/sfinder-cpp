@@ -1,7 +1,7 @@
 #include "lookup.hpp"
 
 namespace sfinder {
-    std::vector<std::vector<int>> ReverseLookup::reverse(int toDepth, int fromDepth) {
+    std::vector<std::vector<int>> ReverseOrderLookup::reverse(int toDepth, int fromDepth) {
         assert(1 <= toDepth);
         assert(toDepth <= fromDepth);
 
@@ -44,7 +44,7 @@ namespace sfinder {
         return indexesList;
     }
 
-    std::vector<std::vector<core::PieceType>> ReverseLookup::parse(std::vector<core::PieceType> pieces) const {
+    std::vector<std::vector<core::PieceType>> ReverseOrderLookup::parse(std::vector<core::PieceType> pieces) const {
         assert(pieces.size() <= indexesList_.at(0).size());
 
         std::vector<std::vector<core::PieceType>> pieceList{};
@@ -62,7 +62,9 @@ namespace sfinder {
         return pieceList;
     }
 
-    std::vector<std::vector<int>> ForwardOrderLookUp::forward(int toDepth, bool isOverBlock) {
+    std::vector<std::vector<int>> ForwardOrderLookUp::forward(
+            int toDepth, bool isOverBlock, bool holdEmpty, bool mustUseHoldAtFirst
+    ) {
         assert(1 < toDepth);
 
         std::vector<int> indexes(toDepth);
@@ -72,18 +74,38 @@ namespace sfinder {
 
         std::vector<StackOrder> candidates{};
 
-        {
-            auto stack = StackOrder{};
-            stack.addLast(indexes[0]);
-            stack.addLast(indexes[1]);
-            candidates.emplace_back(stack);
-        }
+        if (holdEmpty) {
+            // direct
+            if (!mustUseHoldAtFirst) {
+                auto stack = StackOrder{};
+                stack.addLast(indexes[0]);
+                stack.addLast(indexes[1]);
+                candidates.emplace_back(stack);
+            }
 
-        {
-            auto stack = StackOrder{};
-            stack.addLast(indexes[1]);
-            stack.addLast(indexes[0]);
-            candidates.emplace_back(stack);
+            // after swapping hold
+            {
+                auto stack = StackOrder{};
+                stack.addLast(indexes[1]);
+                stack.addLast(indexes[0]);
+                candidates.emplace_back(stack);
+            }
+        } else {
+            // direct
+            if (!mustUseHoldAtFirst) {
+                auto stack = StackOrder{};
+                stack.addLast(indexes[1]);
+                stack.addLast(indexes[0]);
+                candidates.emplace_back(stack);
+            }
+
+            // after swapping hold
+            {
+                auto stack = StackOrder{};
+                stack.addLast(indexes[0]);
+                stack.addLast(indexes[1]);
+                candidates.emplace_back(stack);
+            }
         }
 
         for (int depth = 2; depth < toDepth; depth++) {

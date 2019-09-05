@@ -14,7 +14,7 @@ namespace sfinder {
         Percentage(
                 perfect_clear::Finder<T> &finder,
                 const Permutations &permutations,
-                const ReverseLookup &reverseLookup
+                const ReverseOrderLookup &reverseLookup
         ) : finder_(finder), permutations_(permutations), reverseLookup_(reverseLookup) {}
 
         int run(const core::Field &field, int maxDepth, int maxLine);
@@ -22,7 +22,7 @@ namespace sfinder {
     private:
         perfect_clear::Finder<T> &finder_;
         const Permutations &permutations_;
-        const ReverseLookup &reverseLookup_;
+        const ReverseOrderLookup &reverseLookup_;
     };
 }
 
