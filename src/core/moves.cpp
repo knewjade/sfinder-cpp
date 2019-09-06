@@ -54,11 +54,36 @@ namespace core {
         return (foundBoard[boardIndex] & mask) != 0;
     }
 
+    void Cache::push(int x, int y, RotateType rotateType) {
+        assert(0 <= x && x < FIELD_WIDTH);
+        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+
+        int index = y / 6;
+        uint64_t mask = getXMask(x, y - 6 * index);
+
+        int boardIndex = index + 4 * rotateType;
+        pushedBoard[boardIndex] |= mask;
+    }
+
+    bool Cache::isPushed(int x, int y, core::RotateType rotateType) const {
+        assert(0 <= x && x < FIELD_WIDTH);
+        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+
+        int index = y / 6;
+        uint64_t mask = getXMask(x, y - 6 * index);
+
+        int boardIndex = index + 4 * rotateType;
+        return (pushedBoard[boardIndex] & mask) != 0;
+    }
+
     void Cache::clear() {
         for (auto &board : visitedBoard) {
             board = 0;
         }
         for (auto &board : foundBoard) {
+            board = 0;
+        }
+        for (auto &board : pushedBoard) {
             board = 0;
         }
     }
@@ -118,12 +143,14 @@ namespace core {
                         if (field.canPut(blocks, x, y) && field.isOnGround(blocks, x, y)) {
                             auto result = check(target, blocks, x, y, From::None, true);
                             if (result != MoveResults::No) {
+                                cache.found(x, y, rotateType);
+
                                 auto &transform = piece.transforms[rotateType];
                                 RotateType newRotate = transform.toRotate;
                                 int newX = x + transform.offset.x;
                                 int newY = y + transform.offset.y;
-                                if (!cache.isFound(newX, newY, newRotate)) {
-                                    cache.found(newX, newY, newRotate);
+                                if (!cache.isPushed(newX, newY, newRotate)) {
+                                    cache.push(newX, newY, newRotate);
                                     moves.push_back(Move{newRotate, newX, newY, result == MoveResults::Harddrop});
                                 }
                             }
