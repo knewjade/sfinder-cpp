@@ -57,8 +57,8 @@ namespace core {
     }
 
     void Cache::push(int x, int y, RotateType rotateType) {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
@@ -68,8 +68,8 @@ namespace core {
     }
 
     bool Cache::isPushed(int x, int y, core::RotateType rotateType) const {
-        assert(0 <= x && x < FIELD_WIDTH);
-        assert(0 <= y && y < MAX_FIELD_HEIGHT);
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
 
         int index = y / 6;
         uint64_t mask = getXMask(x, y - 6 * index);
