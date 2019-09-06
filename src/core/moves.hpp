@@ -43,6 +43,10 @@ namespace core {
 
         bool isFound(int x, int y, RotateType rotateType) const;
 
+        void push(int x, int y, RotateType rotateType);
+
+        bool isPushed(int x, int y, RotateType rotateType) const;
+
         void resetTrail();
 
         void clear();
@@ -50,6 +54,7 @@ namespace core {
     private:
         Bitboard visitedBoard[4 * 4];
         Bitboard foundBoard[4 * 4];
+        Bitboard pushedBoard[4 * 4];
     };
 
     namespace harddrop {
