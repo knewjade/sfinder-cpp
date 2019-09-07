@@ -10,7 +10,7 @@ namespace core {
     public:
         Field() : Field(0ULL, 0ULL, 0ULL, 0ULL) {}
 
-        Field(Bitboard xBoardLow) : Field(xBoardLow, 0ULL, 0ULL, 0ULL) {}
+        explicit Field(Bitboard xBoardLow) : Field(xBoardLow, 0ULL, 0ULL, 0ULL) {}
 
         Field(Bitboard xBoardLow, Bitboard xBoardMidLow) : Field(xBoardLow, xBoardMidLow, 0ULL, 0ULL) {}
 

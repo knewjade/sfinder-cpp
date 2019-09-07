@@ -1,6 +1,8 @@
 #ifndef FINDER_PERFECT_CLEAR_FINDER_HPP
 #define FINDER_PERFECT_CLEAR_FINDER_HPP
 
+#include <climits>
+
 #include "../types.hpp"
 #include "../spins.hpp"
 #include "../../core/factory.hpp"
@@ -175,9 +177,9 @@ namespace sfinder::perfect_clear {
             // Create current record & best record
             best_ = Record{
                     std::vector(solution),
-                    INT_MAX,
-                    INT_MAX,
-                    INT_MAX,
+                    std::numeric_limits<int>::max(),
+                    std::numeric_limits<int>::max(),
+                    std::numeric_limits<int>::max(),
                     0,
             };
 

@@ -14,7 +14,7 @@ namespace sfinder {
             assert(0 < N && N <= 7);
             assert(0 < pop && pop <= N);
 
-			auto arr = std::vector<int>(pop);
+            auto arr = std::vector<int>(pop);
 
             for (int index = pop - 1; 0 <= index; --index) {
                 int scale = N - index;
@@ -63,7 +63,7 @@ namespace sfinder {
     }
 
     int Permutation::numberifyAndPop(std::queue<core::PieceType> &pieces) const {
-		auto indexes = std::vector<int>(pop_);
+        auto indexes = std::vector<int>(pop_);
 
         std::vector<bool> flags(usingFlags_);
 
@@ -158,7 +158,7 @@ namespace sfinder {
         }
 
         int depth = 0;
-        for (int index = 0; index < permutations_.size(); ++index) {
+        for (int index = 0, size = permutations_.size(); index < size; ++index) {
             auto &permutation = permutations_[index];
             auto d = permutation.depth();
             if (depth2 < depth + d) {
