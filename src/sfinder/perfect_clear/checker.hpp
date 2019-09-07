@@ -25,7 +25,7 @@ namespace sfinder::perfect_clear {
                 reachable_(core::srs_rotate_end::Reachable(factory)) {
         }
 
-        template<bool UseHold>
+        template<bool UseHold = true>
         bool run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty

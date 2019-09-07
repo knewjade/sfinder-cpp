@@ -197,6 +197,7 @@ namespace sfinder::perfect_clear {
         Record best_;
         C comparator_;
 
+        template<bool UseHold = true>
         void search(
                 const Configure &configure,
                 const FullCandidate &candidate,
@@ -227,29 +228,32 @@ namespace sfinder::perfect_clear {
                 move(configure, candidate, solution, moves, current, currentIndex + 1, holdIndex, holdCount);
             }
 
-            if (0 <= holdIndex) {
-                assert(static_cast<unsigned int>(holdIndex) < pieces.size());
+            if constexpr (UseHold) {
+                if (0 <= holdIndex) {
+                    assert(static_cast<unsigned int>(holdIndex) < pieces.size());
 
-                // Hold exists
-                if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
-                    auto &hold = pieces[holdIndex];
+                    // Hold exists
+                    if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
+                        auto &hold = pieces[holdIndex];
 
-                    moves.clear();
-                    move(configure, candidate, solution, moves, hold, currentIndex + 1, currentIndex, holdCount + 1);
-                }
-            } else {
-                assert(canUseCurrent);
+                        moves.clear();
+                        move(configure, candidate, solution, moves, hold, currentIndex + 1, currentIndex,
+                             holdCount + 1);
+                    }
+                } else {
+                    assert(canUseCurrent);
 
-                // Empty hold
-                auto nextIndex = currentIndex + 1;
-                assert(static_cast<unsigned int>(nextIndex) < pieces.size() + 1);
+                    // Empty hold
+                    auto nextIndex = currentIndex + 1;
+                    assert(static_cast<unsigned int>(nextIndex) < pieces.size() + 1);
 
-                if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
-                    assert(static_cast<unsigned int>(nextIndex) < pieces.size());
-                    auto &next = pieces[nextIndex];
+                    if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
+                        assert(static_cast<unsigned int>(nextIndex) < pieces.size());
+                        auto &next = pieces[nextIndex];
 
-                    moves.clear();
-                    move(configure, candidate, solution, moves, next, nextIndex + 1, currentIndex, holdCount + 1);
+                        moves.clear();
+                        move(configure, candidate, solution, moves, next, nextIndex + 1, currentIndex, holdCount + 1);
+                    }
                 }
             }
         }
