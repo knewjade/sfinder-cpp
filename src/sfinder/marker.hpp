@@ -13,7 +13,7 @@ namespace sfinder {
         static constexpr int kFlagValueSize = 2;
         static constexpr int kFlagItemSize = 64 / kFlagValueSize;
 
-        static constexpr FlagType kFlagBit = (1ULL << kFlagValueSize) - 1;
+        static constexpr FlagType kFlagBit = (1ULL << static_cast<unsigned int>(kFlagValueSize)) - 1;
 
         static Marker create(int max) {
             auto length = static_cast<int>(ceil(static_cast<double>(max) / kFlagItemSize));
@@ -27,6 +27,36 @@ namespace sfinder {
         bool calculated(int index) const;
 
         bool succeed(int index) const;
+
+        void set(int index, bool succeed);
+
+        const std::vector<FlagType> &flags() const {
+            return flags_;
+        }
+
+    private:
+        std::vector<FlagType> flags_{};
+    };
+
+    class Bits {
+    public:
+        using FlagType = uint64_t;
+
+        static constexpr int kFlagValueSize = 1;
+        static constexpr int kFlagItemSize = 64 / kFlagValueSize;
+
+        static constexpr FlagType kFlagBit = (1ULL << static_cast<unsigned int>(kFlagValueSize)) - 1;
+
+        static Bits create(int max) {
+            auto length = static_cast<int>(ceil(static_cast<double>(max) / kFlagItemSize));
+            auto flags_ = std::vector<FlagType>(length);
+            return Bits(flags_);
+        }
+
+        explicit Bits(std::vector<FlagType> flags) : flags_(std::move(flags)) {
+        }
+
+        bool checks(int index) const;
 
         void set(int index, bool succeed);
 
