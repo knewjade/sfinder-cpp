@@ -32,6 +32,8 @@ namespace core {
 
     LineKey getUsingKeyBelowY(int excludeY);
 
+    LineKey getUsingKeyAboveY(int includeY);
+
     Bitboard getColumnMaskLeftX(int excludeX);
 
     Bitboard getColumnMaskRightX(int includeX);

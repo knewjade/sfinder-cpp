@@ -637,6 +637,65 @@ namespace core {
         }
     }
 
+    LineKey getUsingKeyAboveY(int includeY) {
+        assert(0 <= includeY && includeY <= 24);
+        switch (includeY) {
+            case 0:
+                return 0x3c0f03c0f03c0fULL;
+            case 1:
+                return 0x3c0f03c0f03c0eULL;
+            case 2:
+                return 0x3c0f03c0f0380eULL;
+            case 3:
+                return 0x3c0f03c0e0380eULL;
+            case 4:
+                return 0x3c0f0380e0380eULL;
+            case 5:
+                return 0x3c0e0380e0380eULL;
+            case 6:
+                return 0x380e0380e0380eULL;
+            case 7:
+                return 0x380e0380e0380cULL;
+            case 8:
+                return 0x380e0380e0300cULL;
+            case 9:
+                return 0x380e0380c0300cULL;
+            case 10:
+                return 0x380e0300c0300cULL;
+            case 11:
+                return 0x380c0300c0300cULL;
+            case 12:
+                return 0x300c0300c0300cULL;
+            case 13:
+                return 0x300c0300c03008ULL;
+            case 14:
+                return 0x300c0300c02008ULL;
+            case 15:
+                return 0x300c0300802008ULL;
+            case 16:
+                return 0x300c0200802008ULL;
+            case 17:
+                return 0x30080200802008ULL;
+            case 18:
+                return 0x20080200802008ULL;
+            case 19:
+                return 0x20080200802000ULL;
+            case 20:
+                return 0x20080200800000ULL;
+            case 21:
+                return 0x20080200000000ULL;
+            case 22:
+                return 0x20080000000000ULL;
+            case 23:
+                return 0x20000000000000ULL;
+            case 24:
+                return 0ULL;
+            default:
+                assert(false);
+                return 0ULL;
+        }
+    }
+
     Bitboard getColumnMaskLeftX(int excludeX) {
         assert(0 <= excludeX && excludeX <= 10);
         switch (excludeX) {
