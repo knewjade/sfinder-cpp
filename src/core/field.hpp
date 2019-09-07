@@ -53,7 +53,9 @@ namespace core {
 
         LineKey clearLineReturnKey();
 
-        LineKey getUsingKey() const;
+        LineKey usingKey() const;
+
+        LineKey filledKey() const;
 
         int getBlockOnX(int ux, int maxY) const;
 
