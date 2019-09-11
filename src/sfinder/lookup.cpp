@@ -63,7 +63,7 @@ namespace sfinder {
     }
 
     std::vector<std::vector<int>> ForwardOrderLookUp::forward(
-            int toDepth, bool isOverBlock, bool holdEmpty, bool mustUseHoldAtFirst
+            int toDepth, bool isOverBlock, bool holdEmpty, bool mustNotUseHoldAtFirst
     ) {
         assert(1 < toDepth);
 
@@ -76,7 +76,7 @@ namespace sfinder {
 
         if (holdEmpty) {
             // direct
-            if (!mustUseHoldAtFirst) {
+            {
                 auto stack = StackOrder{};
                 stack.addLast(indexes[0]);
                 stack.addLast(indexes[1]);
@@ -84,7 +84,7 @@ namespace sfinder {
             }
 
             // after swapping hold
-            {
+            if (!mustNotUseHoldAtFirst) {
                 auto stack = StackOrder{};
                 stack.addLast(indexes[1]);
                 stack.addLast(indexes[0]);
@@ -92,7 +92,7 @@ namespace sfinder {
             }
         } else {
             // direct
-            if (!mustUseHoldAtFirst) {
+            {
                 auto stack = StackOrder{};
                 stack.addLast(indexes[1]);
                 stack.addLast(indexes[0]);
@@ -100,7 +100,7 @@ namespace sfinder {
             }
 
             // after swapping hold
-            {
+            if (!mustNotUseHoldAtFirst) {
                 auto stack = StackOrder{};
                 stack.addLast(indexes[0]);
                 stack.addLast(indexes[1]);

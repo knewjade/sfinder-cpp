@@ -57,7 +57,7 @@ namespace sfinder {
             ASSERT_THAT(parse.at(3), ElementsAre(core::PieceType::I, core::PieceType::T));
         }
 
-        TEST_F(LookupTest, forward_holdEmpty_mustUseHoldAtFirst) {
+        TEST_F(LookupTest, forward_holdEmpty_mustNotUseHoldAtFirst) {
             auto lookup = ForwardOrderLookUp::create(2, 3, true, true);
             auto vector = std::vector{core::PieceType::T, core::PieceType::I, core::PieceType::O};
 
@@ -65,8 +65,8 @@ namespace sfinder {
             EXPECT_EQ(parse.size(), 2);
             EXPECT_EQ(parse.at(0).size(), 2);
 
-            ASSERT_THAT(parse.at(0), ElementsAre(core::PieceType::I, core::PieceType::O));
-            ASSERT_THAT(parse.at(1), ElementsAre(core::PieceType::I, core::PieceType::T));
+            ASSERT_THAT(parse.at(0), ElementsAre(core::PieceType::T, core::PieceType::O));
+            ASSERT_THAT(parse.at(1), ElementsAre(core::PieceType::T, core::PieceType::I));
         }
 
         TEST_F(LookupTest, forward_holdNotEmpty1) {
@@ -83,7 +83,7 @@ namespace sfinder {
             ASSERT_THAT(parse.at(3), ElementsAre(core::PieceType::T, core::PieceType::I));
         }
 
-        TEST_F(LookupTest, forward_holdNotEmpty1_mustUseHoldAtFirst) {
+        TEST_F(LookupTest, forward_holdNotEmpty1_mustNotUseHoldAtFirst) {
             auto lookup = ForwardOrderLookUp::create(2, 3, false, true);
             auto vector = std::vector{core::PieceType::T, core::PieceType::I, core::PieceType::O};
 
@@ -91,8 +91,8 @@ namespace sfinder {
             EXPECT_EQ(parse.size(), 2);
             EXPECT_EQ(parse.at(0).size(), 2);
 
-            ASSERT_THAT(parse.at(0), ElementsAre(core::PieceType::T, core::PieceType::O));
-            ASSERT_THAT(parse.at(1), ElementsAre(core::PieceType::T, core::PieceType::I));
+            ASSERT_THAT(parse.at(0), ElementsAre(core::PieceType::I, core::PieceType::O));
+            ASSERT_THAT(parse.at(1), ElementsAre(core::PieceType::I, core::PieceType::T));
         }
     }
 }

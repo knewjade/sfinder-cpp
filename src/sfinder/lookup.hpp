@@ -41,10 +41,10 @@ namespace sfinder {
             return create(toDepth, fromDepth, true, false);
         }
 
-        static ForwardOrderLookUp create(int toDepth, int fromDepth, bool holdEmpty, bool mustUseHoldAtFirst) {
+        static ForwardOrderLookUp create(int toDepth, int fromDepth, bool holdEmpty, bool mustNotUseHoldAtFirst) {
             assert(fromDepth == toDepth || fromDepth == toDepth + 1);
             auto isOverBlock = toDepth < fromDepth;
-            auto indexesList = forward(toDepth, isOverBlock, holdEmpty, mustUseHoldAtFirst);
+            auto indexesList = forward(toDepth, isOverBlock, holdEmpty, mustNotUseHoldAtFirst);
             return ForwardOrderLookUp(toDepth, fromDepth, indexesList);
         }
 
@@ -55,7 +55,7 @@ namespace sfinder {
 
     private:
         static std::vector<std::vector<int>> forward(
-                int toDepth, bool isOverBlock, bool holdEmpty, bool mustUseHoldAtFirst
+                int toDepth, bool isOverBlock, bool holdEmpty, bool mustNotUseHoldAtFirst
         );
 
         ForwardOrderLookUp(
