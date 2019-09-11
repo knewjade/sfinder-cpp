@@ -19,6 +19,22 @@ namespace core {
             auto vector = pieces.vector();
             ASSERT_THAT(vector, ElementsAre(core::PieceType::T, core::PieceType::I, core::PieceType::O));
         }
+
+        TEST_F(PiecesTest, create) {
+            auto vector = std::vector<core::PieceType>{
+                    core::PieceType::T, core::PieceType::I, core::PieceType::O,
+            };
+
+            {
+                auto pieces = Pieces::create(vector);
+                ASSERT_THAT(pieces.vector(), ElementsAre(core::PieceType::T, core::PieceType::I, core::PieceType::O));
+            }
+
+            {
+                auto pieces = Pieces::create(vector.cbegin(), vector.cend());
+                ASSERT_THAT(pieces.vector(), ElementsAre(core::PieceType::T, core::PieceType::I, core::PieceType::O));
+            }
+        }
     }
 
     namespace {

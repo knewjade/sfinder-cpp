@@ -1,26 +1,6 @@
 #include "pieces.hpp"
 
 namespace core {
-    Pieces Pieces::create(const std::vector<core::PieceType> &pieces) {
-        auto value = 0ULL;
-        auto size = pieces.size();
-        for (int index = size - 1; 0 <= index; index--) {
-            value *= 7ULL;
-            value += pieces[index];
-        }
-        return Pieces(value, size);
-    }
-
-    Pieces Pieces::create(const std::list<core::PieceType> &pieces) {
-        auto value = 0ULL;
-        auto size = pieces.size();
-        for (auto it = pieces.crbegin(); it != pieces.crend(); ++it) {
-            value *= 7ULL;
-            value += *it;
-        }
-        return Pieces(value, size);
-    }
-
     std::vector<core::PieceType> Pieces::vector() const {
         auto vector = std::vector<core::PieceType>(size_);
         auto value = value_;

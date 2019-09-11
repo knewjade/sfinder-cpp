@@ -9,11 +9,43 @@
 #include "types.hpp"
 
 namespace core {
+    template<class InputIterator, typename T>
+    struct is_input_iterator {
+        using type = typename std::enable_if<
+                std::is_constructible<
+                        T, typename std::iterator_traits<InputIterator>::reference
+                >::value &&
+                std::is_base_of<
+                        std::input_iterator_tag, typename std::iterator_traits<InputIterator>::iterator_category
+                >::value,
+                InputIterator
+        >::type;
+    };
+
     class Pieces {
     public:
-        static Pieces create(const std::vector<core::PieceType> &pieces);
+        template<class Container>
+        static Pieces create(const Container &pieces) {
+            return Pieces::create(pieces.cbegin(), pieces.cend());
+        }
 
-        static Pieces create(const std::list<core::PieceType> &pieces);
+        template<class InputIterator>
+        static Pieces create(
+                InputIterator begin,
+                typename is_input_iterator<InputIterator, core::PieceType>::type end
+        ) {
+            std::reverse_iterator<InputIterator> first(end);
+            std::reverse_iterator<InputIterator> last(begin);
+
+            auto value = 0ULL;
+            auto size = 0;
+            for (auto it = first; it != last; ++it) {
+                value *= 7ULL;
+                value += *it;
+                size += 1;
+            }
+            return Pieces(value, size);
+        }
 
         Pieces(uint64_t value, int size) : value_(value), size_(size) {
         }
