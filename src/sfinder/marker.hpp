@@ -47,8 +47,16 @@ namespace sfinder {
 
         static constexpr FlagType kFlagBit = (1ULL << static_cast<unsigned int>(kFlagValueSize)) - 1;
 
+        static int calculateLength(int max) {
+            constexpr int size = kFlagItemSize;
+            if (max % size == 0) {
+                return max / size;
+            }
+            return (max / size) + 1;
+        }
+
         static Bits create(int max) {
-            auto length = static_cast<int>(ceil(static_cast<double>(max) / kFlagItemSize));
+            auto length = calculateLength(max);
             auto flags_ = std::vector<FlagType>(length);
             return Bits(flags_);
         }
