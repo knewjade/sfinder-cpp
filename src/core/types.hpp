@@ -73,6 +73,19 @@ namespace core {
 
     constexpr auto kMaxFieldHeight = 24;
     constexpr uint64_t kValidBoardRange = 0xfffffffffffffffULL;
+
+    template<class InputIterator, typename T>
+    struct is_input_iterator {
+        using type = typename std::enable_if<
+                std::is_constructible<
+                        T, typename std::iterator_traits<InputIterator>::reference
+                >::value &&
+                std::is_base_of<
+                        std::input_iterator_tag, typename std::iterator_traits<InputIterator>::iterator_category
+                >::value,
+                InputIterator
+        >::type;
+    };
 }
 
 #endif //CORE_TYPES_HPP
