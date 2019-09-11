@@ -54,7 +54,7 @@ namespace sfinder {
             std::vector<core::PieceType> list(size);
             for (int i = 0; i < size; ++i) {
                 auto index = indexes[i];
-                list[i] = static_cast<core::PieceType>(index != -1 ? pieces[index] : -1);
+                list[i] = static_cast<core::PieceType>(index != -1 ? pieces[index] : core::kEmptyPieceType);
             }
             pieceList.emplace_back(list);
         }

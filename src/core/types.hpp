@@ -19,7 +19,7 @@ namespace core {
         O = 6,
     };
 
-    constexpr auto emptyPieceType = static_cast<PieceType>(-1);
+    constexpr auto kEmptyPieceType = static_cast<PieceType>(-1);
 
     const std::array<PieceType, 7> kAllPieceType = {
             PieceType::T,
@@ -48,7 +48,7 @@ namespace core {
         Left = 3,
     };
 
-    constexpr auto dp = emptyPieceType;
+    constexpr auto dp = kEmptyPieceType;
     const PieceType pieceBitToVal[65]{dp,
                                       PieceType::T,
                                       PieceType::I, dp,
