@@ -99,7 +99,7 @@ namespace sfinder {
     }
 
     int Permutations::numberify(const std::vector<core::PieceType> &pieces) const {
-        auto deque = std::deque<core::PieceType>(pieces.begin(), pieces.end());
+        auto deque = std::deque<core::PieceType>(pieces.cbegin(), pieces.cend());
         auto queue = std::queue<core::PieceType, std::deque<core::PieceType>>(deque);
         return numberifyAndPop(queue);
     }

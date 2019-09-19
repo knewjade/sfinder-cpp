@@ -53,6 +53,25 @@ namespace sfinder {
 
         [[nodiscard]] std::vector<std::vector<core::PieceType>> parse(std::vector<core::PieceType> pieces) const;
 
+        template<class Operator>
+        void foreachUntilTrue(std::vector<core::PieceType> pieces, Operator op) const {
+            assert(fromDepth <= pieces.size());
+
+            std::vector<core::PieceType> toPieces(toDepth);
+            for (auto &indexes : indexesList_) {
+                for (int i = 0; i < toDepth; ++i) {
+                    auto index = indexes[i];
+                    assert(0 <= index);
+                    toPieces[i] = static_cast<core::PieceType>(pieces[index]);
+                }
+
+                auto result = op(toPieces);
+                if (result) {
+                    return;
+                }
+            }
+        }
+
     private:
         static std::vector<std::vector<int>> forward(
                 int toDepth, bool isOverBlock, bool holdEmpty, bool mustNotUseHoldAtFirst

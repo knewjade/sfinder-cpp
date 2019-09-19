@@ -52,7 +52,7 @@ namespace core {
         const int size_;
     };
 
-    constexpr std::array<uint64_t, 7> kSlideMask = std::array<uint64_t, 7>{
+    constexpr auto kSlideMask = std::array<uint64_t, 7>{
             1ULL << 8U * 0,
             1ULL << 8U * 1,
             1ULL << 8U * 2,
@@ -73,31 +73,42 @@ namespace core {
         }
 
         static PieceCounter create(const std::vector<core::PieceType> &pieces) {
-            auto value = 0ULL;
-            for (auto piece : pieces) {
-                value += kSlideMask[piece];
-            }
-            return PieceCounter(value);
+            return PieceCounter::create(pieces.cbegin(), pieces.cend());
         }
 
         template<int N>
         static PieceCounter create(const std::array<core::PieceType, N> &pieces) {
+            return PieceCounter::create(pieces.cbegin(), pieces.cend());
+        }
+
+        template<class InputIterator>
+        static PieceCounter create(
+                InputIterator begin,
+                typename is_input_iterator<InputIterator, core::PieceType>::type end
+        ) {
             auto value = 0ULL;
-            for (auto piece : pieces) {
-                value += kSlideMask[piece];
+            for (auto it = begin; it != end; ++it) {
+                value += kSlideMask[*it];
             }
             return PieceCounter(value);
         }
 
         explicit PieceCounter(uint64_t value) : value_(value) {
+            assert((value & 0x80808080808080ULL) == 0L);
         }
 
         std::vector<core::PieceType> vector() const;
+
+        int size() const;
 
         bool containsAll(PieceCounter other) const;
 
         uint64_t value() const {
             return value_;
+        }
+
+        bool empty() const {
+            return value_ == 0ULL;
         }
 
         int operator[](PieceType pieceType) const {
@@ -107,12 +118,21 @@ namespace core {
 
         PieceCounter operator-(PieceCounter other) const {
             auto difference = value_ - other.value_;
-            assert((difference & 0x80808080808080ULL) == 0L);
+            return PieceCounter(difference);
+        }
+
+        PieceCounter operator+(PieceCounter other) const {
+            auto difference = value_ + other.value_;
+            return PieceCounter(difference);
+        }
+
+        PieceCounter operator+(PieceType pieceType) const {
+            auto difference = value_ + kSlideMask[pieceType];
             return PieceCounter(difference);
         }
 
     private:
-        const uint64_t value_;
+        uint64_t value_;  // const
     };
 }
 

@@ -14,14 +14,21 @@ namespace core {
 
     std::vector<core::PieceType> PieceCounter::vector() const {
         auto vector = std::vector<core::PieceType>{};
-        for (int piece = 0; piece < 7; ++piece) {
-            auto type = static_cast<core::PieceType>(piece);
-            int size = operator[](type);
+        for (const auto &pieceType : core::kAllPieceType) {
+            int size = operator[](pieceType);
             for (int count = 0; count < size; ++count) {
-                vector.emplace_back(type);
+                vector.emplace_back(pieceType);
             }
         }
         return vector;
+    }
+
+    int PieceCounter::size() const {
+        int size = 0;
+        for (const auto &pieceType : core::kAllPieceType) {
+            size += operator[](pieceType);
+        }
+        return size;
     }
 
     bool PieceCounter::containsAll(PieceCounter other) const {

@@ -19,7 +19,16 @@ namespace sfinder {
 
         template<int N>
         static Permutation create(const std::array<core::PieceType, N> &pieces, int pop) {
-            return Permutation::create(std::vector<core::PieceType>(pieces.begin(), pieces.end()), pop);
+            return Permutation::create(pieces.cbegin(), pieces.cend(), pop);
+        }
+
+        template<class InputIterator>
+        static Permutation create(
+                InputIterator begin,
+                typename core::is_input_iterator<InputIterator, core::PieceType>::type end,
+                int pop
+        ) {
+            return Permutation::create(std::vector<core::PieceType>(begin, end), pop);
         }
 
         static Permutation create(const std::vector<core::PieceType> &pieces, int pop) {
@@ -100,6 +109,16 @@ namespace sfinder {
         }
 
         std::vector<core::PieceType> pieces(int index) const;
+
+        template<class InputIterator>
+        int numberify(
+                InputIterator begin,
+                typename core::is_input_iterator<InputIterator, core::PieceType>::type end
+        ) const {
+            auto deque = std::deque<core::PieceType>(begin, end);
+            auto queue = std::queue<core::PieceType, std::deque<core::PieceType>>(deque);
+            return numberifyAndPop(queue);
+        }
 
         int numberify(const std::vector<core::PieceType> &pieces) const;
 
