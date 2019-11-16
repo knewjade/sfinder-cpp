@@ -28,8 +28,9 @@ namespace finder {
     }
 
     enum SearchTypes {
-        Fast = 0,
-        TSpin = 1,
+        Fast,
+        TSpin,
+        AllSpins,
     };
 
     template<class M, class C>
@@ -135,7 +136,7 @@ namespace finder {
         Recorder<C, R> recorder;
     };
 
-    // Mover defines
+    // Mover implementations
     template<class M>
     class Mover<M, TSpinCandidate> {
     public:
@@ -294,6 +295,91 @@ namespace finder {
         core::srs_rotate_end::Reachable reachable;
     };
 
+    template<class M>
+    class Mover<M, AllSpinsCandidate> {
+    public:
+        Mover<M, AllSpinsCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
+                : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        }
+
+        void move(
+                const Configure &configure,
+                const AllSpinsCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                int nextHoldCount,
+                PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord> *finder
+        ) {
+            assert(0 < candidate.leftLine);
+
+            auto getAttack = configure.regularOnly ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
+
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
+
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                int spinAttack = getAttack(
+                        reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                );
+
+                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
+                int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                int nextTSpinAttack = candidate.spinAttack + spinAttack;
+                bool nextB2b = 0 < numCleared ? (spinAttack != 0 || numCleared == 4) : candidate.b2b;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = AllSpinsCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b,
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
+                }
+
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
+
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
+                auto nextCandidate = AllSpinsCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                        nextTSpinAttack, nextB2b,
+                };
+                finder->search(configure, nextCandidate, solution);
+            }
+        }
+
+    private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
     // Recorder defines
     template<>
     class Recorder<TSpinCandidate, TSpinRecord> {
@@ -333,6 +419,25 @@ namespace finder {
         FastRecord best_;
     };
 
+    template<>
+    class Recorder<AllSpinsCandidate, AllSpinsRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const AllSpinsCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const AllSpinsCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const AllSpinsCandidate &newRecord) const;
+
+        [[nodiscard]] const AllSpinsRecord& best() const {
+            return best_;
+        }
+
+    private:
+        AllSpinsRecord best_;
+    };
+
     // Entry point to find best perfect clear
     template<class M = core::srs::MoveGenerator>
     class PerfectClearFinder {
@@ -342,8 +447,8 @@ namespace finder {
         }
 
         Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, SearchTypes searchTypes
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, SearchTypes searchTypes, bool regularOnly
         ) {
             assert(1 <= maxDepth);
 
@@ -363,6 +468,7 @@ namespace finder {
                     maxDepth,
                     static_cast<int>(pieces.size()),
                     leastLineClears,
+                    regularOnly,
             };
 
             switch (searchTypes) {
@@ -378,6 +484,8 @@ namespace finder {
                     return finder.run(configure, candidate);
                 }
                 case SearchTypes::TSpin: {
+                    assert(regularOnly);  // Support regular T-Spin only (Mini is no attack)
+
                     // Count up T
                     int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
 
@@ -391,6 +499,17 @@ namespace finder {
                     auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
                 }
+                case SearchTypes::AllSpins: {
+                    // Create candidate
+                    auto candidate = holdEmpty
+                                     ? AllSpinsCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true}
+                                     : AllSpinsCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true};
+
+                    auto finder = PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
             }
 
             assert(false);
@@ -401,7 +520,7 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
-            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin);
+            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, true);
         }
 
     private:

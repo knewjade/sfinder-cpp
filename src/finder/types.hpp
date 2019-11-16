@@ -11,6 +11,7 @@ namespace finder {
         const int maxDepth;
         const int pieceSize;
         const bool leastLineClears;
+        bool regularOnly;
     };
 
     struct Operation {
@@ -69,6 +70,31 @@ namespace finder {
         int lineClearCount;
         int maxCombo;
         int tSpinAttack;
+    };
+
+    // For all spins search
+    struct AllSpinsCandidate {
+        const core::Field &field;
+        const int currentIndex;
+        const int holdIndex;
+        const int leftLine;
+        const int depth;
+        const int softdropCount;
+        const int holdCount;
+        const int lineClearCount;
+        const int currentCombo;
+        const int maxCombo;
+        const int spinAttack;
+        const bool b2b;
+    };
+
+    struct AllSpinsRecord {
+        Solution solution;
+        int softdropCount;
+        int holdCount;
+        int lineClearCount;
+        int maxCombo;
+        int spinAttack;
     };
 }
 
