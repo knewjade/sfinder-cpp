@@ -31,7 +31,7 @@ namespace finder {
         TSpin = 1,
     };
 
-    template<class M>
+    template<class M, class C>
     class Mover;
 
     template<class C>
@@ -42,7 +42,7 @@ namespace finder {
     public:
         PerfectClearFinder<M, C>(
                 const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
-        ) : mover(Mover<M>(factory, moveGenerator, reachable)), recordComparator(RecordComparator<C>()) {
+        ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recordComparator(RecordComparator<C>()) {
         }
 
         Solution run(const Configure &configure, const C &candidate, Solution &solution) {
@@ -131,15 +131,15 @@ namespace finder {
         }
 
     private:
-        Mover<M> mover;
+        Mover<M, C> mover;
         RecordComparator<C> recordComparator;
         Record best;
     };
 
     template<class M>
-    class Mover {
+    class Mover<M, Candidate> {
     public:
-        Mover<M>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
+        Mover<M, Candidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
                 : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
