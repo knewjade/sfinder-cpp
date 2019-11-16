@@ -38,10 +38,11 @@ namespace finder {
     template<class C, class R>
     class Recorder;
 
+    // Main finder implementation
     template<class M = core::srs::MoveGenerator, class C = TSpinCandidate, class R = TSpinRecord>
-    class PerfectClearFinder {
+    class PCFindRunner {
     public:
-        PerfectClearFinder<M, C, R>(
+        PCFindRunner<M, C, R>(
                 const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
         ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recorder(Recorder<C, R>()) {
         }
@@ -134,7 +135,7 @@ namespace finder {
         Recorder<C, R> recorder;
     };
 
-    // Mover
+    // Mover defines
     template<class M>
     class Mover<M, TSpinCandidate> {
     public:
@@ -151,7 +152,7 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PerfectClearFinder<M, TSpinCandidate, TSpinRecord> *finder
+                PCFindRunner<M, TSpinCandidate, TSpinRecord> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -236,7 +237,7 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PerfectClearFinder<M, FastCandidate, FastRecord> *finder
+                PCFindRunner<M, FastCandidate, FastRecord> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -293,7 +294,7 @@ namespace finder {
         core::srs_rotate_end::Reachable reachable;
     };
 
-    // Recorder
+    // Recorder defines
     template<>
     class Recorder<TSpinCandidate, TSpinRecord> {
     public:
@@ -332,10 +333,11 @@ namespace finder {
         FastRecord best_;
     };
 
+    // Entry point to find best perfect clear
     template<class M = core::srs::MoveGenerator>
-    class PerfectFinder {
+    class PerfectClearFinder {
     public:
-        PerfectFinder<M>(const core::Factory &factory, M &moveGenerator)
+        PerfectClearFinder<M>(const core::Factory &factory, M &moveGenerator)
                 : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
@@ -372,7 +374,7 @@ namespace finder {
                                                : FastCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
                                                                 initCombo, initCombo};
 
-                    auto finder = PerfectClearFinder<M, FastCandidate, FastRecord>(factory, moveGenerator, reachable);
+                    auto finder = PCFindRunner<M, FastCandidate, FastRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
                 }
                 case SearchTypes::TSpin: {
@@ -386,7 +388,7 @@ namespace finder {
                                                : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
                                                                 initCombo, initCombo, 0, true, leftNumOfT};
 
-                    auto finder = PerfectClearFinder<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
+                    auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
                 }
             }
