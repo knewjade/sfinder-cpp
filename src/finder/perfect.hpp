@@ -37,7 +37,7 @@ namespace finder {
     template<class C, class R>
     class Recorder;
 
-    template<class M = core::srs::MoveGenerator, class C = Candidate, class R = Record>
+    template<class M = core::srs::MoveGenerator, class C = TSpinCandidate, class R = TSpinRecord>
     class PerfectClearFinder {
     public:
         PerfectClearFinder<M, C, R>(
@@ -122,7 +122,7 @@ namespace finder {
             }
         }
 
-        void accept(const Configure &configure, const Solution &solution, const Candidate &current) {
+        void accept(const Configure &configure, const Solution &solution, const TSpinCandidate &current) {
             if (recorder.shouldUpdate(configure.leastLineClears, current)) {
                 recorder.update(solution, current);
             }
@@ -134,22 +134,22 @@ namespace finder {
     };
 
     template<class M>
-    class Mover<M, Candidate> {
+    class Mover<M, TSpinCandidate> {
     public:
-        Mover<M, Candidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
+        Mover<M, TSpinCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
                 : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
         void move(
                 const Configure &configure,
-                const Candidate &candidate,
+                const TSpinCandidate &candidate,
                 Solution &solution,
                 std::vector<core::Move> &moves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PerfectClearFinder<M, Candidate> *finder
+                PerfectClearFinder<M, TSpinCandidate> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -186,7 +186,7 @@ namespace finder {
 
                 int nextLeftLine = candidate.leftLine - numCleared;
                 if (nextLeftLine == 0) {
-                    auto bestCandidate = Candidate{
+                    auto bestCandidate = TSpinCandidate{
                             freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b, nextLeftNumOfT,
@@ -203,7 +203,7 @@ namespace finder {
                     continue;
                 }
 
-                auto nextCandidate = Candidate{
+                auto nextCandidate = TSpinCandidate{
                         freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                         nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                         nextTSpinAttack, nextB2b, nextLeftNumOfT,
@@ -219,14 +219,14 @@ namespace finder {
     };
 
     template<>
-    class Recorder<Candidate, Record> {
+    class Recorder<TSpinCandidate, TSpinRecord> {
     public:
-        [[nodiscard]] const Record& best() const {
+        [[nodiscard]] const TSpinRecord& best() const {
             return best_;
         }
 
         void clear() {
-            best_ = Record{
+            best_ = TSpinRecord{
                     std::vector<Operation>{},
                     INT_MAX,
                     INT_MAX,
@@ -235,15 +235,15 @@ namespace finder {
             };
         }
 
-        void update(const Solution &solution, const Candidate &current) {
+        void update(const Solution &solution, const TSpinCandidate &current) {
             assert(!best_.solution.empty());
-            best_ = Record{
+            best_ = TSpinRecord{
                     solution, current.softdropCount, current.holdCount, current.lineClearCount,
                     current.maxCombo, current.tSpinAttack
             };
         }
 
-        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const Candidate &current) const {
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const {
             if (current.leftNumOfT == 0) {
                 if (current.tSpinAttack != best_.tSpinAttack) {
                     return current.tSpinAttack < best_.tSpinAttack;
@@ -255,7 +255,7 @@ namespace finder {
             return false;
         }
 
-        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const Candidate &newRecord) const {
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const {
             if (best_.solution.empty()) {
                 return true;
             }
@@ -268,10 +268,10 @@ namespace finder {
         }
 
     private:
-        Record best_;
+        TSpinRecord best_;
 
         [[nodiscard]] bool shouldUpdateLeastLineClear(
-                const Record &oldRecord, const Candidate &newRecord
+                const TSpinRecord &oldRecord, const TSpinCandidate &newRecord
         ) const {
             if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
                 return oldRecord.tSpinAttack < newRecord.tSpinAttack;
@@ -289,7 +289,7 @@ namespace finder {
         }
 
         [[nodiscard]] bool shouldUpdateMostLineClear(
-                const Record &oldRecord, const Candidate &newRecord
+                const TSpinRecord &oldRecord, const TSpinCandidate &newRecord
         ) const {
             if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
                 return oldRecord.tSpinAttack < newRecord.tSpinAttack;
@@ -311,10 +311,10 @@ namespace finder {
         }
     };
 
-    template<class T = core::srs::MoveGenerator>
+    template<class M = core::srs::MoveGenerator>
     class PerfectFinder {
     public:
-        PerfectFinder<T>(const core::Factory &factory, T &moveGenerator)
+        PerfectFinder<M>(const core::Factory &factory, M &moveGenerator)
                 : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
@@ -342,18 +342,25 @@ namespace finder {
                     leastLineClears,
             };
 
-            // Count up T
-            int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
+            switch (searchTypes) {
+                case SearchTypes::TSpin: {
+                    // Count up T
+                    int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
 
-            // Create candidate
-            Candidate candidate = holdEmpty
-                                  ? Candidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                              initCombo, initCombo, 0, true, leftNumOfT}
-                                  : Candidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                              initCombo, initCombo, 0, true, leftNumOfT};
+                    // Create candidate
+                    TSpinCandidate candidate = holdEmpty
+                                               ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                                initCombo, initCombo, 0, true, leftNumOfT}
+                                               : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                                initCombo, initCombo, 0, true, leftNumOfT};
 
-            auto pcf = PerfectClearFinder(factory, moveGenerator, reachable);
-            return pcf.run(configure, candidate);
+                    auto finder = PerfectClearFinder<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
+            }
+
+            assert(false);
+            throw std::runtime_error("Illegal search types: value=" + std::to_string(searchTypes));
         }
 
         Solution run(
@@ -365,7 +372,7 @@ namespace finder {
 
     private:
         const core::Factory &factory;
-        T &moveGenerator;
+        M &moveGenerator;
         core::srs_rotate_end::Reachable reachable;
     };
 }
