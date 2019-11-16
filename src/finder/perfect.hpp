@@ -28,6 +28,7 @@ namespace finder {
     }
 
     enum SearchTypes {
+        Fast = 0,
         TSpin = 1,
     };
 
@@ -122,7 +123,7 @@ namespace finder {
             }
         }
 
-        void accept(const Configure &configure, const Solution &solution, const TSpinCandidate &current) {
+        void accept(const Configure &configure, const Solution &solution, const C &current) {
             if (recorder.shouldUpdate(configure.leastLineClears, current)) {
                 recorder.update(solution, current);
             }
@@ -133,6 +134,7 @@ namespace finder {
         Recorder<C, R> recorder;
     };
 
+    // Mover
     template<class M>
     class Mover<M, TSpinCandidate> {
     public:
@@ -149,7 +151,7 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PerfectClearFinder<M, TSpinCandidate> *finder
+                PerfectClearFinder<M, TSpinCandidate, TSpinRecord> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -218,97 +220,116 @@ namespace finder {
         core::srs_rotate_end::Reachable reachable;
     };
 
-    template<>
-    class Recorder<TSpinCandidate, TSpinRecord> {
+    template<class M>
+    class Mover<M, FastCandidate> {
     public:
-        [[nodiscard]] const TSpinRecord& best() const {
-            return best_;
+        Mover<M, FastCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
+                : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
-        void clear() {
-            best_ = TSpinRecord{
-                    std::vector<Operation>{},
-                    INT_MAX,
-                    INT_MAX,
-                    INT_MAX,
-                    0,
-            };
-        }
+        void move(
+                const Configure &configure,
+                const FastCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                int nextHoldCount,
+                PerfectClearFinder<M, FastCandidate, FastRecord> *finder
+        ) {
+            assert(0 < candidate.leftLine);
 
-        void update(const Solution &solution, const TSpinCandidate &current) {
-            assert(!best_.solution.empty());
-            best_ = TSpinRecord{
-                    solution, current.softdropCount, current.holdCount, current.lineClearCount,
-                    current.maxCombo, current.tSpinAttack
-            };
-        }
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
 
-        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const {
-            if (current.leftNumOfT == 0) {
-                if (current.tSpinAttack != best_.tSpinAttack) {
-                    return current.tSpinAttack < best_.tSpinAttack;
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = FastCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
                 }
 
-                return best_.softdropCount < current.softdropCount;
-            }
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
 
-            return false;
-        }
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
 
-        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const {
-            if (best_.solution.empty()) {
-                return true;
-            }
-
-            if (leastLineClears) {
-                return shouldUpdateLeastLineClear(best_, newRecord);
-            } else {
-                return shouldUpdateMostLineClear(best_, newRecord);
+                auto nextCandidate = FastCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                        nextSoftdropCount, nextHoldCount, nextLineClearCount
+                };
+                finder->search(configure, nextCandidate, solution);
             }
         }
 
     private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
+    // Recorder
+    template<>
+    class Recorder<TSpinCandidate, TSpinRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const TSpinCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const;
+
+        [[nodiscard]] const TSpinRecord& best() const {
+            return best_;
+        }
+
+    private:
         TSpinRecord best_;
+    };
 
-        [[nodiscard]] bool shouldUpdateLeastLineClear(
-                const TSpinRecord &oldRecord, const TSpinCandidate &newRecord
-        ) const {
-            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-            }
+    template<>
+    class Recorder<FastCandidate, FastRecord> {
+    public:
+        void clear();
 
-            if (newRecord.softdropCount != oldRecord.softdropCount) {
-                return newRecord.softdropCount < oldRecord.softdropCount;
-            }
+        void update(const Solution &solution, const FastCandidate &current);
 
-            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                return newRecord.lineClearCount < oldRecord.lineClearCount;
-            }
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const FastCandidate &current) const;
 
-            return newRecord.holdCount < oldRecord.holdCount;
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const FastCandidate &newRecord) const;
+
+        [[nodiscard]] const FastRecord& best() const {
+            return best_;
         }
 
-        [[nodiscard]] bool shouldUpdateMostLineClear(
-                const TSpinRecord &oldRecord, const TSpinCandidate &newRecord
-        ) const {
-            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-            }
-
-            if (newRecord.softdropCount != oldRecord.softdropCount) {
-                return newRecord.softdropCount < oldRecord.softdropCount;
-            }
-
-            if (newRecord.maxCombo != oldRecord.maxCombo) {
-                return oldRecord.maxCombo < newRecord.maxCombo;
-            }
-
-            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                return oldRecord.lineClearCount < newRecord.lineClearCount;
-            }
-
-            return newRecord.holdCount < oldRecord.holdCount;
-        }
+    private:
+        FastRecord best_;
     };
 
     template<class M = core::srs::MoveGenerator>
@@ -343,12 +364,23 @@ namespace finder {
             };
 
             switch (searchTypes) {
+                case SearchTypes::Fast: {
+                    // Create candidate
+                    auto candidate = holdEmpty
+                                               ? FastCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                                initCombo, initCombo}
+                                               : FastCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                                initCombo, initCombo};
+
+                    auto finder = PerfectClearFinder<M, FastCandidate, FastRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
                 case SearchTypes::TSpin: {
                     // Count up T
                     int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
 
                     // Create candidate
-                    TSpinCandidate candidate = holdEmpty
+                    auto candidate = holdEmpty
                                                ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
                                                                 initCombo, initCombo, 0, true, leftNumOfT}
                                                : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,

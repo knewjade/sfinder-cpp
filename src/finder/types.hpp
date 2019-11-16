@@ -23,6 +23,29 @@ namespace finder {
     using Solution = std::vector<Operation>;
     inline const Solution kNoSolution = std::vector<Operation>();
 
+    // For fast search
+    struct FastCandidate {
+        const core::Field &field;
+        const int currentIndex;
+        const int holdIndex;
+        const int leftLine;
+        const int depth;
+        const int softdropCount;
+        const int holdCount;
+        const int lineClearCount;
+        const int currentCombo;
+        const int maxCombo;
+    };
+
+    struct FastRecord {
+        Solution solution;
+        int softdropCount;
+        int holdCount;
+        int lineClearCount;
+        int maxCombo;
+    };
+
+    // For T-Spin search
     struct TSpinCandidate {
         const core::Field &field;
         const int currentIndex;
