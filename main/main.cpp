@@ -1,10 +1,10 @@
 #include <iostream>
 #include <string>
 #include <random>
-#include <core/moves.hpp>
+#include <chrono>
 
+#include "core/moves.hpp"
 #include "core/field.hpp"
-#include "core/srs.hpp"
 #include "core/types.hpp"
 #include "finder/perfect.hpp"
 
@@ -125,7 +125,9 @@ void sample() {
     const int maxLine = 6;
     const bool holdEmpty = false;  // If true, hold is empty at start
 
-    auto result = finder.run(field, pieces, maxDepth, maxLine, holdEmpty, false, 0);
+    auto result = finder.run(
+            field, pieces, maxDepth, maxLine, holdEmpty, false, 0, finder::SearchTypes::TSpin
+    );
 
     if (!result.empty()) {
         std::cout << "PC: success" << std::endl;
