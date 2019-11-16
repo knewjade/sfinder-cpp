@@ -34,35 +34,35 @@ namespace finder {
     template<class M, class C>
     class Mover;
 
-    template<class C>
-    class RecordComparator;
+    template<class C, class R>
+    class Recorder;
 
-    template<class M = core::srs::MoveGenerator, class C = Candidate>
+    template<class M = core::srs::MoveGenerator, class C = Candidate, class R = Record>
     class PerfectClearFinder {
     public:
-        PerfectClearFinder<M, C>(
+        PerfectClearFinder<M, C, R>(
                 const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
-        ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recordComparator(RecordComparator<C>()) {
+        ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recorder(Recorder<C, R>()) {
         }
 
-        Solution run(const Configure &configure, const C &candidate, Solution &solution) {
-            // Create current record & best record
-            best = Record{
-                    std::vector(solution),
-                    INT_MAX,
-                    INT_MAX,
-                    INT_MAX,
-                    0,
-            };
+        Solution run(const Configure &configure, const C &candidate) {
+            recorder.clear();
+
+            // Initialize solution
+            Solution solution(configure.maxDepth);
+            std::fill(solution.begin(), solution.end(), Operation{
+                    core::PieceType::T, core::RotateType::Spawn, -1, -1
+            });
 
             // Execute
             search(configure, candidate, solution);
 
-            return best.solution[0].x == -1 ? kNoSolution : std::vector<Operation>(best.solution);
+            auto &best = recorder.best();
+            return best.solution.empty() ? kNoSolution : std::vector<Operation>(best.solution);
         }
 
         void search(const Configure &configure, const C &candidate, Solution &solution) {
-            if (recordComparator.isWorseThanBest(configure.leastLineClears, best, candidate)) {
+            if (recorder.isWorseThanBest(configure.leastLineClears, candidate)) {
                 return;
             }
 
@@ -122,18 +122,15 @@ namespace finder {
             }
         }
 
-        void accept(const Configure &configure, const Record &record) {
-            assert(!best.solution.empty());
-
-            if (best.solution[0].x == -1 || recordComparator.shouldUpdate(configure.leastLineClears, best, record)) {
-                best = Record(record);
+        void accept(const Configure &configure, const Solution &solution, const Candidate &current) {
+            if (recorder.shouldUpdate(configure.leastLineClears, current)) {
+                recorder.update(solution, current);
             }
         }
 
     private:
         Mover<M, C> mover;
-        RecordComparator<C> recordComparator;
-        Record best;
+        Recorder<C, R> recorder;
     };
 
     template<class M>
@@ -168,10 +165,11 @@ namespace finder {
 
                 int numCleared = freeze.clearLineReturnNum();
 
-                solution[candidate.depth].pieceType = pieceType;
-                solution[candidate.depth].rotateType = move.rotateType;
-                solution[candidate.depth].x = move.x;
-                solution[candidate.depth].y = move.y;
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
 
                 int tSpinAttack = getAttackIfTSpin(
                         reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
@@ -184,17 +182,19 @@ namespace finder {
                 int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
                 bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : candidate.b2b;
 
+                auto nextDepth = candidate.depth + 1;
+
                 int nextLeftLine = candidate.leftLine - numCleared;
                 if (nextLeftLine == 0) {
-                    auto record = Record{
-                            solution, nextSoftdropCount, nextHoldCount, nextLineClearCount, nextMaxCombo,
-                            nextTSpinAttack
+                    auto bestCandidate = Candidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b, nextLeftNumOfT,
                     };
-                    finder->accept(configure, record);
+                    finder->accept(configure, solution, bestCandidate);
                     return;
                 }
 
-                auto nextDepth = candidate.depth + 1;
                 if (configure.maxDepth <= nextDepth) {
                     continue;
                 }
@@ -218,79 +218,98 @@ namespace finder {
         core::srs_rotate_end::Reachable reachable;
     };
 
-    template<class C>
-    class RecordComparator {
-    public:
-        bool isWorseThanBest(bool leastLineClears, const Record &best, const C &current);
-
-        bool shouldUpdate(bool leastLineClears, const Record &oldRecord, const Record &newRecord);
-    };
-
     template<>
-    inline bool RecordComparator<Candidate>::isWorseThanBest(
-            bool leastLineClears, const Record &best, const Candidate &current
-    ) {
-        if (current.leftNumOfT == 0) {
-            if (current.tSpinAttack != best.tSpinAttack) {
-                return current.tSpinAttack < best.tSpinAttack;
+    class Recorder<Candidate, Record> {
+    public:
+        [[nodiscard]] const Record& best() const {
+            return best_;
+        }
+
+        void clear() {
+            best_ = Record{
+                    std::vector<Operation>{},
+                    INT_MAX,
+                    INT_MAX,
+                    INT_MAX,
+                    0,
+            };
+        }
+
+        void update(const Solution &solution, const Candidate &current) {
+            assert(!best_.solution.empty());
+            best_ = Record{
+                    solution, current.softdropCount, current.holdCount, current.lineClearCount,
+                    current.maxCombo, current.tSpinAttack
+            };
+        }
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const Candidate &current) const {
+            if (current.leftNumOfT == 0) {
+                if (current.tSpinAttack != best_.tSpinAttack) {
+                    return current.tSpinAttack < best_.tSpinAttack;
+                }
+
+                return best_.softdropCount < current.softdropCount;
             }
 
-            return best.softdropCount < current.softdropCount;
+            return false;
         }
 
-        return false;
-    }
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const Candidate &newRecord) const {
+            if (best_.solution.empty()) {
+                return true;
+            }
 
-    inline bool shouldUpdateLeastLineClear(
-            const Record &oldRecord, const Record &newRecord
-    ) {
-        if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-            return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+            if (leastLineClears) {
+                return shouldUpdateLeastLineClear(best_, newRecord);
+            } else {
+                return shouldUpdateMostLineClear(best_, newRecord);
+            }
         }
 
-        if (newRecord.softdropCount != oldRecord.softdropCount) {
-            return newRecord.softdropCount < oldRecord.softdropCount;
+    private:
+        Record best_;
+
+        [[nodiscard]] bool shouldUpdateLeastLineClear(
+                const Record &oldRecord, const Candidate &newRecord
+        ) const {
+            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+            }
+
+            if (newRecord.softdropCount != oldRecord.softdropCount) {
+                return newRecord.softdropCount < oldRecord.softdropCount;
+            }
+
+            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                return newRecord.lineClearCount < oldRecord.lineClearCount;
+            }
+
+            return newRecord.holdCount < oldRecord.holdCount;
         }
 
-        if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-            return newRecord.lineClearCount < oldRecord.lineClearCount;
+        [[nodiscard]] bool shouldUpdateMostLineClear(
+                const Record &oldRecord, const Candidate &newRecord
+        ) const {
+            if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
+                return oldRecord.tSpinAttack < newRecord.tSpinAttack;
+            }
+
+            if (newRecord.softdropCount != oldRecord.softdropCount) {
+                return newRecord.softdropCount < oldRecord.softdropCount;
+            }
+
+            if (newRecord.maxCombo != oldRecord.maxCombo) {
+                return oldRecord.maxCombo < newRecord.maxCombo;
+            }
+
+            if (newRecord.lineClearCount != oldRecord.lineClearCount) {
+                return oldRecord.lineClearCount < newRecord.lineClearCount;
+            }
+
+            return newRecord.holdCount < oldRecord.holdCount;
         }
-
-        return newRecord.holdCount < oldRecord.holdCount;
-    }
-
-    inline bool shouldUpdateMostLineClear(
-            const Record &oldRecord, const Record &newRecord
-    ) {
-        if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-            return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-        }
-
-        if (newRecord.softdropCount != oldRecord.softdropCount) {
-            return newRecord.softdropCount < oldRecord.softdropCount;
-        }
-
-        if (newRecord.maxCombo != oldRecord.maxCombo) {
-            return oldRecord.maxCombo < newRecord.maxCombo;
-        }
-
-        if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-            return oldRecord.lineClearCount < newRecord.lineClearCount;
-        }
-
-        return newRecord.holdCount < oldRecord.holdCount;
-    }
-
-    template<>
-    inline bool RecordComparator<Candidate>::shouldUpdate(
-            bool leastLineClears, const Record &oldRecord, const Record &newRecord
-    ) {
-        if (leastLineClears) {
-            return shouldUpdateLeastLineClear(oldRecord, newRecord);
-        } else {
-            return shouldUpdateMostLineClear(oldRecord, newRecord);
-        }
-    }
+    };
 
     template<class T = core::srs::MoveGenerator>
     class PerfectFinder {
@@ -314,14 +333,6 @@ namespace finder {
                 movePool[index] = std::vector<core::Move>{};
             }
 
-            // Initialize solution
-            Solution solution(maxDepth);
-            for (int index = 0; index < maxDepth; ++index) {
-                solution[index] = Operation{
-                        core::PieceType::T, core::RotateType::Spawn, -1, -1
-                };
-            }
-
             // Initialize configure
             const Configure configure{
                     pieces,
@@ -342,7 +353,7 @@ namespace finder {
                                               initCombo, initCombo, 0, true, leftNumOfT};
 
             auto pcf = PerfectClearFinder(factory, moveGenerator, reachable);
-            return pcf.run(configure, candidate, solution);
+            return pcf.run(configure, candidate);
         }
 
         Solution run(
