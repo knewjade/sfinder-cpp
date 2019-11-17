@@ -140,8 +140,9 @@ namespace finder {
     template<class M>
     class Mover<M, TSpinCandidate> {
     public:
-        Mover<M, TSpinCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
-                : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        Mover<M, TSpinCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
         void move(
@@ -225,8 +226,9 @@ namespace finder {
     template<class M>
     class Mover<M, FastCandidate> {
     public:
-        Mover<M, FastCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
-                : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        Mover<M, FastCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
         void move(
@@ -298,8 +300,9 @@ namespace finder {
     template<class M>
     class Mover<M, AllSpinsCandidate> {
     public:
-        Mover<M, AllSpinsCandidate>(const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable)
-                : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        Mover<M, AllSpinsCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
         void move(
@@ -315,7 +318,7 @@ namespace finder {
         ) {
             assert(0 < candidate.leftLine);
 
-            auto getAttack = configure.regularOnly ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
+            auto getAttack = configure.alwaysRegularAttack ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
 
             moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
 
@@ -334,7 +337,7 @@ namespace finder {
                 operation.y = move.y;
 
                 int spinAttack = getAttack(
-                        reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                        factory, candidate.field, pieceType, move, numCleared, candidate.b2b
                 );
 
                 int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
@@ -392,7 +395,7 @@ namespace finder {
 
         [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const;
 
-        [[nodiscard]] const TSpinRecord& best() const {
+        [[nodiscard]] const TSpinRecord &best() const {
             return best_;
         }
 
@@ -411,7 +414,7 @@ namespace finder {
 
         [[nodiscard]] bool shouldUpdate(bool leastLineClears, const FastCandidate &newRecord) const;
 
-        [[nodiscard]] const FastRecord& best() const {
+        [[nodiscard]] const FastRecord &best() const {
             return best_;
         }
 
@@ -430,7 +433,7 @@ namespace finder {
 
         [[nodiscard]] bool shouldUpdate(bool leastLineClears, const AllSpinsCandidate &newRecord) const;
 
-        [[nodiscard]] const AllSpinsRecord& best() const {
+        [[nodiscard]] const AllSpinsRecord &best() const {
             return best_;
         }
 
@@ -447,8 +450,9 @@ namespace finder {
         }
 
         Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
-                int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, SearchTypes searchTypes, bool regularOnly
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
+                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo,
+                SearchTypes searchTypes, bool alwaysRegularAttack
         ) {
             assert(1 <= maxDepth);
 
@@ -462,23 +466,23 @@ namespace finder {
             }
 
             // Initialize configure
-            const Configure configure{
+            const auto configure = Configure{
                     pieces,
                     movePool,
                     maxDepth,
                     static_cast<int>(pieces.size()),
                     leastLineClears,
-                    regularOnly,
+                    alwaysRegularAttack,
             };
 
             switch (searchTypes) {
                 case SearchTypes::Fast: {
                     // Create candidate
                     auto candidate = holdEmpty
-                                               ? FastCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                                                initCombo, initCombo}
-                                               : FastCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                                                initCombo, initCombo};
+                                     ? FastCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                     initCombo, initCombo}
+                                     : FastCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                     initCombo, initCombo};
 
                     auto finder = PCFindRunner<M, FastCandidate, FastRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
@@ -491,10 +495,10 @@ namespace finder {
 
                     // Create candidate
                     auto candidate = holdEmpty
-                                               ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                                                initCombo, initCombo, 0, true, leftNumOfT}
-                                               : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                                                initCombo, initCombo, 0, true, leftNumOfT};
+                                     ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true, leftNumOfT}
+                                     : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true, leftNumOfT};
 
                     auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
@@ -503,17 +507,46 @@ namespace finder {
                     // Create candidate
                     auto candidate = holdEmpty
                                      ? AllSpinsCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                                      initCombo, initCombo, 0, true}
+                                                         initCombo, initCombo, 0, true}
                                      : AllSpinsCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                                      initCombo, initCombo, 0, true};
+                                                         initCombo, initCombo, 0, true};
 
                     auto finder = PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
                 }
+                default: {
+                    assert(false);
+                    throw std::runtime_error("Illegal search types: value=" + std::to_string(searchTypes));
+                }
             }
+        }
 
-            assert(false);
-            throw std::runtime_error("Illegal search types: value=" + std::to_string(searchTypes));
+        // searchType refers to code
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                int maxLine, bool holdEmpty, int searchType, bool leastLineClears, int initCombo
+        ) {
+            switch (searchType) {
+                case 0: {
+                    // No softdrop is top priority
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::Fast, false);
+                }
+                case 1: {
+                    // T-Spin is top priority (mini is zero attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, true);
+                }
+                case 2: {
+                    // All-Spins is top priority (all spins are judged as regular attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::AllSpins, true);
+                }
+                case 3: {
+                    // All-Spins is top priority (mini is zero attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::AllSpins, false);
+                }
+                default: {
+                    throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
+                }
+            }
         }
 
         Solution run(

@@ -164,9 +164,9 @@ namespace finder {
         return b2b ? 1 : 0;
     }
 
-    template<bool RegularOnly>
+    template<bool AlwaysRegularAttack>
     inline int getAttackIfAllSpins(
-            core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+            const core::Factory &factory, const core::Field &field,
             core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
     ) {
         if (pieceType == core::PieceType::O) {
@@ -189,15 +189,15 @@ namespace finder {
             // It's spin
             int baseAttack = numCleared * 2;
 
-            if constexpr (!RegularOnly) {
-                // If `RegularOnly` is false, mini attack is 0.
+            if constexpr (!AlwaysRegularAttack) {
+                // If `AlwaysRegularAttack` is false, mini attack is 0.
                 // Judged as mini if doesn't clear every line it occupies.
                 if (numCleared != blocks.height) {
                     return b2b ? 1 : 0;
                 }
             }
 
-            // If `RegularOnly` is true, all spins attack is judged as regular
+            // If `AlwaysRegularAttack` is true, all spins attack is judged as regular
             // Regular is enable or regular spin
             return b2b ? baseAttack + 1 : baseAttack;
         }

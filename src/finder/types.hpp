@@ -11,7 +11,7 @@ namespace finder {
         const int maxDepth;
         const int pieceSize;
         const bool leastLineClears;
-        bool regularOnly;
+        bool alwaysRegularAttack;
     };
 
     struct Operation {
