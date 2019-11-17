@@ -4,7 +4,7 @@
 
 #include "core/field.hpp"
 #include "core/moves.hpp"
-#include "finder/perfect.hpp"
+#include "finder/perfect_clear.hpp"
 
 void verify(const core::Factory &factory, const core::Field &field, const finder::Solution &solution) {
     auto freeze = core::Field(field);

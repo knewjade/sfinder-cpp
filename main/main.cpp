@@ -6,7 +6,7 @@
 #include "core/moves.hpp"
 #include "core/field.hpp"
 #include "core/types.hpp"
-#include "finder/perfect.hpp"
+#include "finder/perfect_clear.hpp"
 
 template<int N>
 std::array<core::PieceType, N> toPieces(int value) {

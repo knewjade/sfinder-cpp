@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "core/field.hpp"
-#include "finder/perfect.hpp"
+#include "finder/perfect_clear.hpp"
 
 namespace finder {
     using namespace std::literals::string_literals;
