@@ -148,7 +148,7 @@ namespace finder {
 
             auto move = core::Move{core::RotateType::Left, 7, 1, false};
             EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 0);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 0);
+            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 1);
         }
 
         {
@@ -196,6 +196,97 @@ namespace finder {
             auto move = core::Move{core::RotateType::Left, 8, 1, false};
             EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, false), 0);
             EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, true), 0);
+        }
+    }
+
+    TEST_F(SpinsTest, getAttackIfAllSpins) {
+        auto factory = core::Factory::create();
+        auto reachable = core::srs_rotate_end::Reachable(factory);
+
+        {
+            auto field = core::createField(""s +
+                    "XXX__XXXXX"s +
+                    "XX__XXXXXX"s +
+                    ""
+            );
+
+            auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
+            int numCleared = 2;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
+        }
+
+        {
+            auto field = core::createField(""s +
+                                           "XXX_______"s +
+                                           "XX__XXXXXX"s +
+                                           ""
+            );
+
+            auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
+            int numCleared = 1;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 1);
+        }
+
+        {
+            auto field = core::createField(""s +
+                                           "_XXXXXXXXX"s +
+                                           "_XXXXXXXXX"s +
+                                           "_XXXXXXXXX"s +
+                                           "____XXXXXX"s +
+                                           ""
+            );
+
+            auto move = core::Move{core::RotateType::Reverse, 2, 0, false};
+            int numCleared = 1;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
+        }
+
+        {
+            auto field = core::createField(""s +
+                                           "X__XXXXXXX"s +
+                                           "X__XXXXXXX"s +
+                                           "___XXXXXXX"s +
+                                           "X__XXXXXXX"s +
+                                           ""
+            );
+
+            auto move = core::Move{core::RotateType::Reverse, 1, 1, false};
+            int numCleared = 1;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::J, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::J, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::J, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::J, move, numCleared, true), 1);
+        }
+
+        {
+            auto field = core::createField(""s +
+                                           "XXXXXXXX__"s +
+                                           "XXXXXXXX__"s +
+                                           "XXXXXXX___"s +
+                                           "XXXXXXX_XX"s +
+                                           ""
+            );
+
+            auto move = core::Move{core::RotateType::Reverse, 8, 1, false};
+            int numCleared = 1;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::L, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::L, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::L, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::L, move, numCleared, true), 1);
         }
     }
 }

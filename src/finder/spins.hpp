@@ -95,29 +95,33 @@ namespace finder {
             auto fromRotate = static_cast<core::RotateType>((rotateType + 3) % 4);
             auto &fromBlocks = factory.get(pieceType, fromRotate);
 
+            // Last SRS offset
+            int lastOffsetIndex = fromRotate * 5 + (piece.offsetsSize - 1);
+            auto &offset = piece.rightOffsets[lastOffsetIndex];
+
             // Change the direction to `from`
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
-            auto head = fromRotate * 5;
+            int fromLeftX = toLeftX - offset.x;
+            int fromLowerY = toLowerY - offset.y;
+
             int width = kFieldWidth - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
-                auto &offset = piece.rightOffsets[index];
-                int fromLeftX = toLeftX - offset.x;
-                int fromLowerY = toLowerY - offset.y;
-                if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
-                    field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
-                    int fromX = toX - offset.x;
-                    int fromY = toY - offset.y;
-                    int srsResult = core::srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
-                    if (0 <= srsResult && srsResult % 5 == 4) {
-                        // T-Spin Regular
+
+            if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                int fromX = toX - offset.x;
+                int fromY = toY - offset.y;
+                int srsResult = core::srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                if (srsResult == lastOffsetIndex) {
+                    // T-Spin Regular if come back to the place
+                    if (reachable.checks(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
                     }
-
-                    // Mini
                 }
+
+                // Mini
             }
         }
 
@@ -127,29 +131,33 @@ namespace finder {
             auto fromRotate = static_cast<core::RotateType>((rotateType + 1) % 4);
             auto &fromBlocks = factory.get(pieceType, fromRotate);
 
+            // Last SRS offset
+            int lastOffsetIndex = fromRotate * 5 + (piece.offsetsSize - 1);
+            auto &offset = piece.leftOffsets[lastOffsetIndex];
+
             // Change the direction to `from`
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
-            auto head = fromRotate * 5;
+            int fromLeftX = toLeftX - offset.x;
+            int fromLowerY = toLowerY - offset.y;
+
             int width = kFieldWidth - fromBlocks.width;
-            for (int index = head; index < head + piece.offsetsSize; ++index) {
-                auto &offset = piece.leftOffsets[index];
-                int fromLeftX = toLeftX - offset.x;
-                int fromLowerY = toLowerY - offset.y;
-                if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
-                    field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
-                    int fromX = toX - offset.x;
-                    int fromY = toY - offset.y;
-                    int srsResult = core::srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
-                    if (0 <= srsResult && srsResult % 5 == 4) {
-                        // T-Spin Regular
+
+            if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                int fromX = toX - offset.x;
+                int fromY = toY - offset.y;
+                int srsResult = core::srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
+                if (srsResult == lastOffsetIndex) {
+                    // T-Spin Regular if come back to the place
+                    if (reachable.checks(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
                     }
-
-                    // Mini
                 }
+
+                // Mini
             }
         }
 
