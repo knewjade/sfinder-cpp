@@ -530,19 +530,19 @@ namespace finder {
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::Fast, false);
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::Fast, false);
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, false);
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::TSpin, false);
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::AllSpins, true);
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins, true);
                 }
                 case 3: {
                     // All-Spins is top priority (mini is zero attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::AllSpins, false);
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins, false);
                 }
                 default: {
                     throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
