@@ -201,7 +201,6 @@ namespace finder {
 
     TEST_F(SpinsTest, getAttackIfAllSpins) {
         auto factory = core::Factory::create();
-        auto reachable = core::srs_rotate_end::Reachable(factory);
 
         {
             auto field = core::createField(""s +
@@ -213,10 +212,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
             int numCleared = 2;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, true), 5);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, true), 5);
         }
 
         {
@@ -229,10 +228,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::S, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, true), 1);
         }
 
         {
@@ -247,10 +246,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 2, 0, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::I, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::I, move, numCleared, true), 3);
         }
 
         {
@@ -265,10 +264,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 1, 1, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::J, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::J, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::J, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::J, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::J, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::J, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::J, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::J, move, numCleared, true), 1);
         }
 
         {
@@ -283,10 +282,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 8, 1, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::L, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(reachable, factory, field, core::PieceType::L, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::L, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(reachable, factory, field, core::PieceType::L, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::L, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::L, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::L, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::L, move, numCleared, true), 1);
         }
     }
 }
