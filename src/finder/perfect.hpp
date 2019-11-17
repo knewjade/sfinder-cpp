@@ -449,6 +449,7 @@ namespace finder {
                 : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
+        // If `alwaysRegularAttack` is true, mini spin is judged as regular attack
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo,
@@ -488,7 +489,7 @@ namespace finder {
                     return finder.run(configure, candidate);
                 }
                 case SearchTypes::TSpin: {
-                    assert(regularOnly);  // Support regular T-Spin only (Mini is no attack)
+                    assert(!alwaysRegularAttack);  // Support no mini only
 
                     // Count up T
                     int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
@@ -533,7 +534,7 @@ namespace finder {
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, true);
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, false);
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
@@ -553,7 +554,7 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
-            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, true);
+            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, false);
         }
 
     private:

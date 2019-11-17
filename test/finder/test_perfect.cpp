@@ -328,7 +328,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, SearchTypes::TSpin, true);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, SearchTypes::TSpin, false);
 
             // Failed: 975, 2295
             if (!result.empty()) {
@@ -370,7 +370,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, SearchTypes::TSpin, true);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, SearchTypes::TSpin, false);
 
             if (!result.empty()) {
                 success += 1;

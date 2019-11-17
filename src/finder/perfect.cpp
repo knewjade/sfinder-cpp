@@ -12,7 +12,6 @@ namespace finder {
     }
 
     void Recorder<FastCandidate, FastRecord>::update(const Solution &solution, const FastCandidate &current) {
-        assert(!best_.solution.empty());
         best_ = FastRecord{
                 solution, current.softdropCount, current.holdCount, current.lineClearCount, current.maxCombo
         };
@@ -83,7 +82,6 @@ namespace finder {
     }
 
     void Recorder<TSpinCandidate, TSpinRecord>::update(const Solution &solution, const TSpinCandidate &current) {
-        assert(!best_.solution.empty());
         best_ = TSpinRecord{
                 solution, current.softdropCount, current.holdCount, current.lineClearCount,
                 current.maxCombo, current.tSpinAttack
@@ -172,7 +170,6 @@ namespace finder {
     }
 
     void Recorder<AllSpinsCandidate, AllSpinsRecord>::update(const Solution &solution, const AllSpinsCandidate &current) {
-        assert(!best_.solution.empty());
         best_ = AllSpinsRecord{
                 solution, current.softdropCount, current.holdCount, current.lineClearCount,
                 current.maxCombo, current.spinAttack

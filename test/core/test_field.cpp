@@ -24,8 +24,6 @@ namespace core {
         for (int x = 0; x < 10; ++x) {
             field.setBlock(x, 0);
         }
-
-        std::cout << field.toString(8) << std::endl;
     }
 
     TEST_F(FieldTest, equals) {
