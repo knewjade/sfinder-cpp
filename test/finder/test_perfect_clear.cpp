@@ -14,6 +14,8 @@ void verify(const core::Factory &factory, const core::Field &field, const finder
         EXPECT_TRUE(freeze.canPut(blocks, operation.x, operation.y));
         freeze.put(blocks, operation.x, operation.y);
         freeze.clearLine();
+
+//        std::cout << freeze.toString(4) << std::endl;
     }
 
     EXPECT_EQ(freeze, core::Field{});
@@ -531,7 +533,8 @@ namespace finder {
 
             auto freeze = core::Field(field);
 
-            int attackCount = 0;
+            int attackCountAlwaysRegular = 0;
+            int attackCountWithoutMini = 0;
             for (const auto &operation : result) {
                 auto piece = operation.pieceType;
                 auto rotate = operation.rotateType;
@@ -544,13 +547,23 @@ namespace finder {
                 freeze.put(blocks, x, y);
                 auto clearLine = freeze.clearLineReturnNum();
 
-                auto attacks = getAttackIfAllSpins<true>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
-                if (0 < attacks) {
-                    attackCount += 1;
+                {
+                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    if (0 < attacksAlwaysRegular) {
+                        attackCountAlwaysRegular += 1;
+                    }
+                }
+
+                {
+                    auto attackWithoutMini = getAttackIfAllSpins<false>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    if (0 < attackWithoutMini) {
+                        attackCountWithoutMini += 1;
+                    }
                 }
             }
 
-            EXPECT_EQ(attackCount, 3);
+            EXPECT_EQ(attackCountAlwaysRegular, 2);
+            EXPECT_EQ(attackCountWithoutMini, 1);
         }
 
         // with mini (mini is zero attack)
@@ -563,7 +576,8 @@ namespace finder {
 
             auto freeze = core::Field(field);
 
-            int attackCount = 0;
+            int attackCountAlwaysRegular = 0;
+            int attackCountWithoutMini = 0;
             for (const auto &operation : result) {
                 auto piece = operation.pieceType;
                 auto rotate = operation.rotateType;
@@ -576,13 +590,23 @@ namespace finder {
                 freeze.put(blocks, x, y);
                 auto clearLine = freeze.clearLineReturnNum();
 
-                auto attacks = getAttackIfAllSpins<false>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
-                if (0 < attacks) {
-                    attackCount += 1;
+                {
+                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    if (0 < attacksAlwaysRegular) {
+                        attackCountAlwaysRegular += 1;
+                    }
+                }
+
+                {
+                    auto attackWithoutMini = getAttackIfAllSpins<false>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    if (0 < attackWithoutMini) {
+                        attackCountWithoutMini += 1;
+                    }
                 }
             }
 
-            EXPECT_EQ(attackCount, 2);
+            EXPECT_EQ(attackCountAlwaysRegular, 2);
+            EXPECT_EQ(attackCountWithoutMini, 2);
         }
     }
 }

@@ -322,6 +322,8 @@ namespace finder {
 
             moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
 
+            auto lastDepth = candidate.depth == configure.maxDepth - 1;
+
             for (const auto &move : moves) {
                 auto &blocks = factory.get(pieceType, move.rotateType);
 
@@ -339,6 +341,12 @@ namespace finder {
                 int spinAttack = getAttack(
                         factory, candidate.field, pieceType, move, numCleared, candidate.b2b
                 );
+
+                // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)
+                // However, B2B will continue, so add 1 line attack
+                if (0 < spinAttack && lastDepth) {
+                    spinAttack = 1;
+                }
 
                 int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
                 int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
