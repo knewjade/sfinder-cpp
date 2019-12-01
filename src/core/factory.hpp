@@ -74,8 +74,8 @@ namespace core {
 
             using base = PieceBase<P>;
             return Piece(
-                    P, base::name(),
-                    std::array<Blocks, 4>{spawn, right, reverse, left},
+                    P, base::name(), std::array<Blocks, 4>{spawn, right, reverse, left},
+                    base::offsetsType::size,
                     base::rightOffsets(), base::leftOffsets(), base::transforms,
                     base::uniqueShapeRotate(), base::sameShapeRotates()
             );
@@ -84,6 +84,7 @@ namespace core {
         const PieceType pieceType;
         const std::string name;
         const std::array<Blocks, 4> blocks;
+        const int offsetsSize;
         const std::array<Offset, 20> rightOffsets;
         const std::array<Offset, 20> leftOffsets;
         const std::array<Transform, 4> transforms;
@@ -95,12 +96,13 @@ namespace core {
                 const PieceType pieceType,
                 std::string name,
                 const std::array<Blocks, 4> &blocks,
+                const int offsetsSize,
                 const std::array<Offset, 20> &rightOffsets,
                 const std::array<Offset, 20> &leftOffsets,
                 const std::array<Transform, 4> &transforms,
                 const uint8_t uniqueShapeRotate,
                 const std::array<uint8_t, 4> &sameShapeRotates
-        ) : pieceType(pieceType), name(std::move(name)), blocks(blocks),
+        ) : pieceType(pieceType), name(std::move(name)), blocks(blocks), offsetsSize(offsetsSize),
             rightOffsets(rightOffsets), leftOffsets(leftOffsets), transforms(transforms),
             uniqueShapeRotate(uniqueShapeRotate), sameShapeRotates(sameShapeRotates) {
         };

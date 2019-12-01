@@ -6,7 +6,7 @@
 #include "core/moves.hpp"
 #include "sfinder/spins.hpp"
 #include "sfinder/permutations.hpp"
-#include "sfinder/perfect_clear/checker.hpp"
+#include "sfinder/perfect_clear/full_finder.hpp"
 
 namespace sfinder::perfect_clear {
     using namespace std::literals::string_literals;
@@ -17,7 +17,7 @@ namespace sfinder::perfect_clear {
     TEST_F(CheckerTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Checker<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XX________"s +
@@ -41,7 +41,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run<true>(field, pieces, maxDepth, maxLine, false);
+            auto result = finder.checks(field, pieces, maxDepth, maxLine, false);
 
             // Failed: 975, 2295
             if (result) {
@@ -60,7 +60,7 @@ namespace sfinder::perfect_clear {
     TEST_F(CheckerTest, longtest2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Checker<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "__________"s +
@@ -84,7 +84,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run<true>(field, pieces, maxDepth, maxLine, false);
+            auto result = finder.checks(field, pieces, maxDepth, maxLine, false);
 
             if (result) {
                 success += 1;
@@ -102,7 +102,7 @@ namespace sfinder::perfect_clear {
     TEST_F(CheckerTest, longtest3) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Checker<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XXXX____XX"s +
@@ -124,7 +124,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run<true>(field, pieces, maxDepth, maxLine, false);
+            auto result = finder.checks(field, pieces, maxDepth, maxLine, false);
 
             if (result) {
                 success += 1;
@@ -142,7 +142,7 @@ namespace sfinder::perfect_clear {
     TEST_F(CheckerTest, longtest4) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Checker<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "__________"s +
@@ -166,7 +166,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run<true>(field, pieces, maxDepth, maxLine, false);
+            auto result = finder.checks(field, pieces, maxDepth, maxLine, false);
 
             if (result) {
                 success += 1;

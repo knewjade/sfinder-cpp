@@ -1,141 +1,558 @@
 #ifndef FINDER_PERFECT_CLEAR_FINDER_HPP
 #define FINDER_PERFECT_CLEAR_FINDER_HPP
 
-#include <climits>
-
-#include "../types.hpp"
-#include "../spins.hpp"
-#include "../../core/factory.hpp"
-#include "../../core/moves.hpp"
-
 #include "types.hpp"
+#include "spins.hpp"
+
+#include "../../core/piece.hpp"
+#include "../../core/moves.hpp"
+#include "../../core/types.hpp"
 
 namespace sfinder::perfect_clear {
     namespace {
-        struct FullCandidate {
-            const core::Field field;
-            const int currentIndex;
-            const int holdIndex;
-            const int leftLine;
-            const int depth;
-            const int softdropCount;
-            const int holdCount;
-            const int lineClearCount;
-            const int currentCombo;
-            const int maxCombo;
-            const int tSpinAttack;
-            const bool b2b;
-            const int leftNumOfT;
-        };
+        bool validate(const core::Field &field, int maxLine) {
+            int sum = maxLine - field.getBlockOnX(0, maxLine);
+            for (int x = 1; x < core::kFieldWidth; x++) {
+                int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
+                if (field.isWallBetween(x, maxLine)) {
+                    if (sum % 4 != 0)
+                        return false;
+                    sum = emptyCountInColumn;
+                } else {
+                    sum += emptyCountInColumn;
+                }
+            }
 
-        struct Record {
-            Solution solution;
-            int softdropCount;
-            int holdCount;
-            int lineClearCount;
-            int maxCombo;
-            int tSpinAttack;
-        };
+            return sum % 4 == 0;
+        }
     }
 
-    namespace comparators {
-        struct LeastSoftdrop_LeastLineClear_LeastHold {
-            bool shouldUpdate(
-                    const Record &oldRecord, const Record &newRecord
-            ) {
-                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-                }
+    enum SearchTypes {
+        Fast,
+        TSpin,
+        AllSpins,
+    };
 
-                if (newRecord.softdropCount != oldRecord.softdropCount) {
-                    return newRecord.softdropCount < oldRecord.softdropCount;
-                }
+    template<class M, class C>
+    class Mover;
 
-                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                    return newRecord.lineClearCount < oldRecord.lineClearCount;
-                }
+    template<class C, class R>
+    class Recorder;
 
-                return newRecord.holdCount < oldRecord.holdCount;
-            }
-
-            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
-                if (current.leftNumOfT == 0) {
-                    if (current.tSpinAttack != best.tSpinAttack) {
-                        return current.tSpinAttack < best.tSpinAttack;
-                    }
-
-                    return best.softdropCount < current.softdropCount;
-                }
-
-                return false;
-            }
-        };
-
-        struct LeastSoftdrop_MostCombo_MostLineClear_LeastHold {
-            bool shouldUpdate(
-                    const Record &oldRecord, const Record &newRecord
-            ) {
-                if (newRecord.tSpinAttack != oldRecord.tSpinAttack) {
-                    return oldRecord.tSpinAttack < newRecord.tSpinAttack;
-                }
-
-                if (newRecord.softdropCount != oldRecord.softdropCount) {
-                    return newRecord.softdropCount < oldRecord.softdropCount;
-                }
-
-                if (newRecord.maxCombo != oldRecord.maxCombo) {
-                    return oldRecord.maxCombo < newRecord.maxCombo;
-                }
-
-                if (newRecord.lineClearCount != oldRecord.lineClearCount) {
-                    return oldRecord.lineClearCount < newRecord.lineClearCount;
-                }
-
-                return newRecord.holdCount < oldRecord.holdCount;
-            }
-
-            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
-                if (current.leftNumOfT == 0) {
-                    if (current.tSpinAttack != best.tSpinAttack) {
-                        return current.tSpinAttack < best.tSpinAttack;
-                    }
-
-                    return best.softdropCount < current.softdropCount;
-                }
-
-                return false;
-            }
-        };
-
-        struct Faster {
-            bool shouldUpdate(const Record &oldRecord, const Record &newRecord) {
-                return true;
-            }
-
-            bool isWorseThanBest(const Record &best, const FullCandidate &current) {
-                return best.solution[0].x != -1;
-            }
-        };
-    }
-
-    template<class T = core::srs::MoveGenerator, class C = comparators::Faster>
-    class Finder {
+    // Main finder implementation
+    template<class M = core::srs::MoveGenerator, class C = TSpinCandidate, class R = TSpinRecord>
+    class PCFindRunner {
     public:
-        Finder<T, C>(const core::Factory &factory, T &moveGenerator) :
-                factory_(factory), moveGenerator_(moveGenerator),
-                reachable_(core::srs_rotate_end::Reachable(factory)), comparator_(C{}) {
+        PCFindRunner<M, C, R>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recorder(Recorder<C, R>()) {
         }
 
-        Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty
+        Solution run(const Configure &configure, const C &candidate) {
+            recorder.clear();
+
+            // Initialize solution
+            Solution solution(configure.maxDepth);
+            std::fill(solution.begin(), solution.end(), Operation{
+                    core::PieceType::T, core::RotateType::Spawn, -1, -1
+            });
+
+            // Execute
+            search(configure, candidate, solution);
+
+            auto &best = recorder.best();
+            return best.solution.empty() ? kNoSolution : std::vector<Operation>(best.solution);
+        }
+
+        void search(const Configure &configure, const C &candidate, Solution &solution) {
+            if (recorder.isWorseThanBest(configure.leastLineClears, candidate)) {
+                return;
+            }
+
+            auto depth = candidate.depth;
+
+            auto &pieces = configure.pieces;
+            auto &moves = configure.movePool[depth];
+
+            auto currentIndex = candidate.currentIndex;
+            assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
+            auto holdIndex = candidate.holdIndex;
+            assert(-1 <= holdIndex && holdIndex < configure.pieceSize);
+
+            bool canUseCurrent = currentIndex < configure.pieceSize;
+            if (canUseCurrent) {
+                assert(currentIndex < pieces.size());
+                auto &current = pieces[currentIndex];
+
+                moves.clear();
+                mover.move(
+                        configure, candidate, solution, moves, current, currentIndex + 1, holdIndex, false, this
+                );
+            }
+
+            if (0 <= holdIndex) {
+                assert(holdIndex < pieces.size());
+
+                // Hold exists
+                if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
+                    auto &hold = pieces[holdIndex];
+
+                    moves.clear();
+                    mover.move(
+                            configure, candidate, solution, moves, hold, currentIndex + 1, currentIndex,
+                            true, this
+                    );
+                }
+            } else {
+                assert(canUseCurrent);
+
+                // Empty hold
+                int nextIndex = currentIndex + 1;
+                assert(nextIndex < pieces.size() + 1);
+
+                if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
+                    assert(nextIndex < pieces.size());
+                    auto &next = pieces[nextIndex];
+
+                    moves.clear();
+                    mover.move(
+                            configure, candidate, solution, moves, next, nextIndex + 1, currentIndex,
+                            true, this
+                    );
+                }
+            }
+        }
+
+        void accept(const Configure &configure, const Solution &solution, const C &current) {
+            if (recorder.shouldUpdate(configure.leastLineClears, current)) {
+                recorder.update(solution, current);
+            }
+        }
+
+    private:
+        Mover<M, C> mover;
+        Recorder<C, R> recorder;
+    };
+
+    // Mover implementations
+
+    template<class M>
+    class Mover<M, PCableCandidate> {
+    public:
+        Mover<M, PCableCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        }
+
+        void move(
+                const Configure &configure,
+                const PCableCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                bool holdMove,
+                PCFindRunner<M, PCableCandidate, PCableRecord> *finder
         ) {
-            return run(field, pieces, maxDepth, maxLine, holdEmpty, 0);
+            assert(0 < candidate.leftLine);
+
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
+
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = PCableCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
+                }
+
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
+
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
+                auto nextCandidate = PCableCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                };
+                finder->search(configure, nextCandidate, solution);
+            }
         }
 
+    private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
+    template<class M>
+    class Mover<M, TSpinCandidate> {
+    public:
+        Mover<M, TSpinCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        }
+
+        void move(
+                const Configure &configure,
+                const TSpinCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                bool holdMove,
+                PCFindRunner<M, TSpinCandidate, TSpinRecord> *finder
+        ) {
+            assert(0 < candidate.leftLine);
+
+            auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
+            auto nextHoldCount = holdMove ? candidate.holdCount + 1 : candidate.holdCount;
+
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
+
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                int tSpinAttack = getAttackIfTSpin(
+                        reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                );
+
+                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
+                int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
+                bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : candidate.b2b;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = TSpinCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b, nextLeftNumOfT,
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
+                }
+
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
+
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
+                auto nextCandidate = TSpinCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                        nextTSpinAttack, nextB2b, nextLeftNumOfT,
+                };
+                finder->search(configure, nextCandidate, solution);
+            }
+        }
+
+    private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
+    template<class M>
+    class Mover<M, FastCandidate> {
+    public:
+        Mover<M, FastCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        }
+
+        void move(
+                const Configure &configure,
+                const FastCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                bool holdMove,
+                PCFindRunner<M, FastCandidate, FastRecord> *finder
+        ) {
+            assert(0 < candidate.leftLine);
+
+            auto nextHoldCount = holdMove ? candidate.holdCount + 1 : candidate.holdCount;
+
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
+
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = FastCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
+                }
+
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
+
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
+                auto nextCandidate = FastCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                        nextSoftdropCount, nextHoldCount, nextLineClearCount
+                };
+                finder->search(configure, nextCandidate, solution);
+            }
+        }
+
+    private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
+    template<class M>
+    class Mover<M, AllSpinsCandidate> {
+    public:
+        Mover<M, AllSpinsCandidate>(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
+        }
+
+        void move(
+                const Configure &configure,
+                const AllSpinsCandidate &candidate,
+                Solution &solution,
+                std::vector<core::Move> &moves,
+                core::PieceType pieceType,
+                int nextIndex,
+                int nextHoldIndex,
+                bool holdMove,
+                PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord> *finder
+        ) {
+            assert(0 < candidate.leftLine);
+
+            auto getAttack = configure.alwaysRegularAttack ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
+            auto nextHoldCount = holdMove ? candidate.holdCount + 1 : candidate.holdCount;
+
+            moveGenerator.search(moves, candidate.field, pieceType, candidate.leftLine);
+
+            auto lastDepth = candidate.depth == configure.maxDepth - 1;
+
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(candidate.field);
+                freeze.put(blocks, move.x, move.y);
+
+                int numCleared = freeze.clearLineReturnNum();
+
+                auto &operation = solution[candidate.depth];
+                operation.pieceType = pieceType;
+                operation.rotateType = move.rotateType;
+                operation.x = move.x;
+                operation.y = move.y;
+
+                int spinAttack = getAttack(
+                        factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                );
+
+                // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)
+                // However, B2B will continue, so add 1 line attack
+                if (0 < spinAttack && lastDepth) {
+                    spinAttack = 1;
+                }
+
+                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
+                int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                int nextTSpinAttack = candidate.spinAttack + spinAttack;
+                bool nextB2b = 0 < numCleared ? (spinAttack != 0 || numCleared == 4) : candidate.b2b;
+
+                auto nextDepth = candidate.depth + 1;
+
+                int nextLeftLine = candidate.leftLine - numCleared;
+                if (nextLeftLine == 0) {
+                    auto bestCandidate = AllSpinsCandidate{
+                            freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b,
+                    };
+                    finder->accept(configure, solution, bestCandidate);
+                    return;
+                }
+
+                if (configure.maxDepth <= nextDepth) {
+                    continue;
+                }
+
+                if (!validate(freeze, nextLeftLine)) {
+                    continue;
+                }
+
+                auto nextCandidate = AllSpinsCandidate{
+                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                        nextTSpinAttack, nextB2b,
+                };
+                finder->search(configure, nextCandidate, solution);
+            }
+        }
+
+    private:
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
+    };
+
+    // Recorder defines
+    template<>
+    class Recorder<PCableCandidate, PCableRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const PCableCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const PCableCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const PCableCandidate &newRecord) const;
+
+        [[nodiscard]] const PCableRecord &best() const {
+            return best_;
+        }
+
+    private:
+        PCableRecord best_;
+    };
+
+    template<>
+    class Recorder<TSpinCandidate, TSpinRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const TSpinCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const;
+
+        [[nodiscard]] const TSpinRecord &best() const {
+            return best_;
+        }
+
+    private:
+        TSpinRecord best_;
+    };
+
+    template<>
+    class Recorder<FastCandidate, FastRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const FastCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const FastCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const FastCandidate &newRecord) const;
+
+        [[nodiscard]] const FastRecord &best() const {
+            return best_;
+        }
+
+    private:
+        FastRecord best_;
+    };
+
+    template<>
+    class Recorder<AllSpinsCandidate, AllSpinsRecord> {
+    public:
+        void clear();
+
+        void update(const Solution &solution, const AllSpinsCandidate &current);
+
+        [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const AllSpinsCandidate &current) const;
+
+        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const AllSpinsCandidate &newRecord) const;
+
+        [[nodiscard]] const AllSpinsRecord &best() const {
+            return best_;
+        }
+
+    private:
+        AllSpinsRecord best_;
+    };
+
+    // Entry point to find best perfect clear
+    template<class M = core::srs::MoveGenerator>
+    class PerfectClearFinder {
+    public:
+        PerfectClearFinder<M>(const core::Factory &factory, M &moveGenerator)
+                : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
+        }
+
+        // If `alwaysRegularAttack` is true, mini spin is judged as regular attack
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty, int initCombo
+                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo,
+                SearchTypes searchTypes, bool alwaysRegularAttack
         ) {
             assert(1 <= maxDepth);
 
@@ -148,206 +565,138 @@ namespace sfinder::perfect_clear {
                 movePool[index] = std::vector<core::Move>{};
             }
 
-            // Initialize solution
-            Solution solution(maxDepth);
-            for (int index = 0; index < maxDepth; ++index) {
-                solution[index] = Operation{
-                        core::PieceType::T, core::RotateType::Spawn, -1, -1
-                };
-            }
-
             // Initialize configure
-            const Configure configure{
+            const auto configure = Configure{
                     pieces,
                     movePool,
                     maxDepth,
                     static_cast<int>(pieces.size()),
+                    leastLineClears,
+                    alwaysRegularAttack,
             };
 
-            // Count up T
-            int leftNumOfT = static_cast<int>(std::count(pieces.begin(), pieces.end(), core::PieceType::T));
+            switch (searchTypes) {
+                case SearchTypes::Fast: {
+                    // Create candidate
+                    auto candidate = holdEmpty
+                                     ? FastCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                     initCombo, initCombo}
+                                     : FastCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                     initCombo, initCombo};
+
+                    auto finder = PCFindRunner<M, FastCandidate, FastRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
+                case SearchTypes::TSpin: {
+                    assert(!alwaysRegularAttack);  // Support no mini only
+
+                    // Count up T
+                    int leftNumOfT = std::count(pieces.begin(), pieces.end(), core::PieceType::T);
+
+                    // Create candidate
+                    auto candidate = holdEmpty
+                                     ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true, leftNumOfT}
+                                     : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                      initCombo, initCombo, 0, true, leftNumOfT};
+
+                    auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
+                case SearchTypes::AllSpins: {
+                    // Create candidate
+                    auto candidate = holdEmpty
+                                     ? AllSpinsCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
+                                                         initCombo, initCombo, 0, true}
+                                     : AllSpinsCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
+                                                         initCombo, initCombo, 0, true};
+
+                    auto finder = PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord>(factory, moveGenerator, reachable);
+                    return finder.run(configure, candidate);
+                }
+                default: {
+                    assert(false);
+                    throw std::runtime_error("Illegal search types: value=" + std::to_string(searchTypes));
+                }
+            }
+        }
+
+        // searchType refers to code
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                int maxLine, bool holdEmpty, int searchType, bool leastLineClears, int initCombo
+        ) {
+            switch (searchType) {
+                case 0: {
+                    // No softdrop is top priority
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::Fast, false);
+                }
+                case 1: {
+                    // T-Spin is top priority (mini is zero attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::TSpin, false);
+                }
+                case 2: {
+                    // All-Spins is top priority (all spins are judged as regular attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                               true);
+                }
+                case 3: {
+                    // All-Spins is top priority (mini is zero attack)
+                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                               false);
+                }
+                default: {
+                    throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
+                }
+            }
+        }
+
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
+                int maxDepth, int maxLine, bool holdEmpty
+        ) {
+            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, false);
+        }
+
+        bool checks(
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
+                int maxDepth, int maxLine, bool holdEmpty
+        ) {
+            assert(1 <= maxDepth);
+
+            // Copy field
+            auto freeze = core::Field(field);
+
+            // Initialize moves
+            std::vector<std::vector<core::Move>> movePool(maxDepth);
+            for (int index = 0; index < maxDepth; ++index) {
+                movePool[index] = std::vector<core::Move>{};
+            }
+
+            // Initialize configure
+            const auto configure = Configure{
+                    pieces,
+                    movePool,
+                    maxDepth,
+                    static_cast<int>(pieces.size()),
+                    false,
+                    false,
+            };
 
             // Create candidate
-            FullCandidate candidate = holdEmpty ? FullCandidate{
-                    freeze, 0, -1, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT,
-            } : FullCandidate{
-                    freeze, 1, 0, maxLine, 0, 0, 0, 0, initCombo, initCombo, 0, true, leftNumOfT
-            };
+            auto candidate = holdEmpty
+                             ? PCableCandidate{freeze, 0, -1, maxLine, 0}
+                             : PCableCandidate{freeze, 1, 0, maxLine, 0};
 
-            // Create current record & best record
-            best_ = Record{
-                    std::vector(solution),
-                    std::numeric_limits<int>::max(),
-                    std::numeric_limits<int>::max(),
-                    std::numeric_limits<int>::max(),
-                    0,
-            };
-
-            if (comparator_.isWorseThanBest(best_, candidate)) {
-                return kNoSolution;
-            }
-            // Execute
-            search(configure, candidate, solution);
-
-            return best_.solution[0].x == -1 ? kNoSolution : std::vector<Operation>(best_.solution);
+            auto finder = PCFindRunner<M, PCableCandidate, PCableRecord>(factory, moveGenerator, reachable);
+            auto solution = finder.run(configure, candidate);
+            return !solution.empty();
         }
 
     private:
-        const core::Factory &factory_;
-        T &moveGenerator_;
-        core::srs_rotate_end::Reachable reachable_;
-        Record best_;
-        C comparator_;
-
-        template<bool UseHold = true>
-        void search(
-                const Configure &configure,
-                const FullCandidate &candidate,
-                Solution &solution
-        ) {
-            if (comparator_.isWorseThanBest(best_, candidate)) {
-                return;
-            }
-
-            auto depth = candidate.depth;
-
-            auto &pieces = configure.pieces;
-            auto &moves = configure.movePool[depth];
-
-            auto currentIndex = candidate.currentIndex;
-            assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
-            auto holdIndex = candidate.holdIndex;
-            assert(-1 <= holdIndex && holdIndex < static_cast<long long int>(configure.pieceSize));
-
-            auto holdCount = candidate.holdCount;
-
-            bool canUseCurrent = currentIndex < configure.pieceSize;
-            if (canUseCurrent) {
-                assert(static_cast<unsigned int>(currentIndex) < pieces.size());
-                auto &current = pieces[currentIndex];
-
-                moves.clear();
-                move(configure, candidate, solution, moves, current, currentIndex + 1, holdIndex, holdCount);
-            }
-
-            if constexpr (UseHold) {
-                if (0 <= holdIndex) {
-                    assert(static_cast<unsigned int>(holdIndex) < pieces.size());
-
-                    // Hold exists
-                    if (!canUseCurrent || pieces[currentIndex] != pieces[holdIndex]) {
-                        auto &hold = pieces[holdIndex];
-
-                        moves.clear();
-                        move(configure, candidate, solution, moves, hold, currentIndex + 1, currentIndex,
-                             holdCount + 1);
-                    }
-                } else {
-                    assert(canUseCurrent);
-
-                    // Empty hold
-                    auto nextIndex = currentIndex + 1;
-                    assert(static_cast<unsigned int>(nextIndex) < pieces.size() + 1);
-
-                    if (nextIndex < configure.pieceSize && pieces[currentIndex] != pieces[nextIndex]) {
-                        assert(static_cast<unsigned int>(nextIndex) < pieces.size());
-                        auto &next = pieces[nextIndex];
-
-                        moves.clear();
-                        move(configure, candidate, solution, moves, next, nextIndex + 1, currentIndex, holdCount + 1);
-                    }
-                }
-            }
-        }
-
-        void move(
-                const Configure &configure,
-                const FullCandidate &candidate,
-                Solution &solution,
-                std::vector<core::Move> &moves,
-                core::PieceType pieceType,
-                int nextIndex,
-                int nextHoldIndex,
-                int nextHoldCount
-        ) {
-            auto depth = candidate.depth;
-            auto maxDepth = configure.maxDepth;
-            auto &field = candidate.field;
-
-            auto leftLine = candidate.leftLine;
-            assert(0 < leftLine);
-
-            auto softdropCount = candidate.softdropCount;
-            auto lineClearCount = candidate.lineClearCount;
-
-            auto currentCombo = candidate.currentCombo;
-            auto maxCombo = candidate.maxCombo;
-
-            auto currentTSpinAttack = candidate.tSpinAttack;
-            auto currentB2b = candidate.b2b;
-
-            auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
-
-            moveGenerator_.search(moves, field, pieceType, leftLine);
-
-            for (const auto &move : moves) {
-                auto &blocks = factory_.get(pieceType, move.rotateType);
-
-                auto freeze = core::Field(field);
-                freeze.put(blocks, move.x, move.y);
-
-                int numCleared = freeze.clearLineReturnNum();
-
-                solution[depth].pieceType = pieceType;
-                solution[depth].rotateType = move.rotateType;
-                solution[depth].x = move.x;
-                solution[depth].y = move.y;
-
-                int tSpinAttack = getAttackIfTSpin(reachable_, factory_, field, pieceType, move, numCleared,
-                                                   currentB2b);
-
-                int nextSoftdropCount = move.harddrop ? softdropCount : softdropCount + 1;
-                int nextLineClearCount = 0 < numCleared ? lineClearCount + 1 : lineClearCount;
-                int nextCurrentCombo = 0 < numCleared ? currentCombo + 1 : 0;
-                int nextMaxCombo = maxCombo < nextCurrentCombo ? nextCurrentCombo : maxCombo;
-                int nextTSpinAttack = currentTSpinAttack + tSpinAttack;
-                bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : currentB2b;
-
-                int nextLeftLine = leftLine - numCleared;
-                if (nextLeftLine == 0) {
-                    auto record = Record{
-                            solution, nextSoftdropCount, nextHoldCount, nextLineClearCount, nextMaxCombo,
-                            nextTSpinAttack
-                    };
-                    accept(configure, record);
-                    return;
-                }
-
-                auto nextDepth = depth + 1;
-                if (maxDepth <= nextDepth) {
-                    continue;
-                }
-
-                if (!validate(freeze, nextLeftLine)) {
-                    continue;
-                }
-
-                auto nextCandidate = FullCandidate{
-                        freeze, nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
-                        nextTSpinAttack, nextB2b, nextLeftNumOfT,
-                };
-                search(configure, nextCandidate, solution);
-            }
-        }
-
-        void accept(const Configure &configure, const Record &record) {
-            assert(!best_.solution.empty());
-
-            if (best_.solution[0].x == -1 || comparator_.shouldUpdate(best_, record)) {
-                best_ = Record(record);
-            }
-        }
+        const core::Factory &factory;
+        M &moveGenerator;
+        core::srs_rotate_end::Reachable reachable;
     };
 }
 

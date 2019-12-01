@@ -55,13 +55,15 @@ namespace sfinder {
             }
 
             for (int index = 0; index < 5040; ++index) {
-                ASSERT_EQ(marker.calculated(index), false);
-                ASSERT_EQ(marker.succeed(index), false);
+                ASSERT_EQ(marker.calculated(index), true);
+                ASSERT_EQ(marker.succeed(index), true);
 
                 marker.set(index, false);
 
                 ASSERT_EQ(marker.calculated(index), true);
-                ASSERT_EQ(marker.succeed(index), false);
+
+                // Once set success, it will not be set failed
+                ASSERT_EQ(marker.succeed(index), true);
             }
         }
     }

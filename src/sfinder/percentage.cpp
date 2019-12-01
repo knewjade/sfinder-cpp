@@ -35,7 +35,7 @@ namespace sfinder {
 
             auto pieces = permutations_.pieces(value);
 
-            auto result = finder_.run(field, pieces, maxDepth, maxLine, false, 0);
+            auto result = finder_.run(field, pieces, maxDepth, maxLine, false);
 
             if (!result.empty()) {
                 marker.set(value, true);

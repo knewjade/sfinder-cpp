@@ -153,7 +153,7 @@ namespace sfinder::perfect_clear {
 
             auto move = core::Move{core::RotateType::Left, 7, 1, false};
             EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 0);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 0);
+            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 1);
         }
 
         {
@@ -208,7 +208,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XXXXX__XXX"s +
@@ -235,7 +235,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XXXXX__XXX"s +
@@ -268,7 +268,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case3) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -297,7 +297,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case4) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -332,7 +332,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case5) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -373,151 +373,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, case6) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
-
-        auto field = core::createField(
-                "XX________"s +
-                "XX________"s +
-                "XXX______X"s +
-                "XXXXXXX__X"s +
-                "XXXXXX___X"s +
-                "XXXXXXX_XX"s +
-                ""
-        );
-        auto maxDepth = 7;
-        auto maxLine = 6;
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::I, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::I, core::PieceType::J, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::S, core::PieceType::J, core::PieceType::L, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::I, core::PieceType::T
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::S, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::I, core::PieceType::J, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::S, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-    }
-
-    TEST_F(FullFinderTest, LeastSoftdrop_LeastLineClear_LeastHold) {
-        auto factory = core::Factory::create();
-        auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator, comparators::LeastSoftdrop_LeastLineClear_LeastHold>(factory, moveGenerator);
-
-        auto field = core::createField(
-                "XX________"s +
-                "XX________"s +
-                "XXX______X"s +
-                "XXXXXXX__X"s +
-                "XXXXXX___X"s +
-                "XXXXXXX_XX"s +
-                ""
-        );
-        auto maxDepth = 7;
-        auto maxLine = 6;
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::I, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::I, core::PieceType::J, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::S, core::PieceType::J, core::PieceType::L, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::I, core::PieceType::T
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::S, core::PieceType::O, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::J, core::PieceType::O, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::S, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-
-        {
-            auto pieces = std::vector{
-                    core::PieceType::I, core::PieceType::J, core::PieceType::T, core::PieceType::Z,
-                    core::PieceType::O, core::PieceType::S, core::PieceType::L
-            };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_TRUE(!result.empty());
-        }
-    }
-
-    TEST_F(FullFinderTest, LeastSoftdrop_MostCombo_MostLineClear_LeastHold) {
-        auto factory = core::Factory::create();
-        auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator, comparators::LeastSoftdrop_MostCombo_MostLineClear_LeastHold>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XX________"s +
@@ -589,7 +445,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XX________"s +
@@ -613,7 +469,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 3);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
             // Failed: 975, 2295
             if (!result.empty()) {
@@ -632,7 +488,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, longtest2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "__________"s +
@@ -656,7 +512,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
             if (!result.empty()) {
                 success += 1;
@@ -674,7 +530,7 @@ namespace sfinder::perfect_clear {
     TEST_F(FullFinderTest, longtest3) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(
                 "XXXX____XX"s +
@@ -696,7 +552,7 @@ namespace sfinder::perfect_clear {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
 
             if (!result.empty()) {
                 success += 1;

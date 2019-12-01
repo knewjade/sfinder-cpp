@@ -16,7 +16,7 @@ namespace sfinder {
     TEST_F(PercentageTest, line6case1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<7>(core::kAllPieceType, 7)
@@ -48,7 +48,7 @@ namespace sfinder {
     TEST_F(PercentageTest, line6case2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<7>(core::kAllPieceType, 7)
@@ -80,7 +80,7 @@ namespace sfinder {
     TEST_F(PercentageTest, pco) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<7>(core::kAllPieceType, 4)
@@ -110,7 +110,7 @@ namespace sfinder {
     TEST_F(PercentageTest, pcoHoldI) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<1>(std::array<core::PieceType, 1>{core::PieceType::I}, 1),
@@ -141,7 +141,7 @@ namespace sfinder {
     TEST_F(PercentageTest, graceSystem) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<1>(std::array<core::PieceType, 1>{core::PieceType::T}, 1),
@@ -172,7 +172,7 @@ namespace sfinder {
     TEST_F(PercentageTest, depth5case1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = perfect_clear::Finder<core::srs::MoveGenerator>(factory, moveGenerator);
+        auto finder = perfect_clear::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto permutationVector = std::vector{
                 Permutation::create<2>(std::array<core::PieceType, 2>{core::PieceType::L, core::PieceType::J}, 2),
