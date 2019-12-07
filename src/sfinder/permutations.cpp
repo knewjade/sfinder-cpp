@@ -1,5 +1,4 @@
 #include <cassert>
-#include <numeric>
 #include <vector>
 
 #include "permutations.hpp"
