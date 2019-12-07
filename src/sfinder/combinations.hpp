@@ -11,7 +11,7 @@ namespace sfinder {
         const int size = container.size();
 
         if (pop == size) {
-            auto elements = std::vector<valueType>(pop);
+            auto elements = std::vector<valueType>(container.cbegin(), container.cend());
             op(elements);
             return;
         }
