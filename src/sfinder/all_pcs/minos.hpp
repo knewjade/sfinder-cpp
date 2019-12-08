@@ -6,7 +6,7 @@
 #include "types.hpp"
 
 namespace sfinder::all_pcs {
-    Mino createMino(const core::Blocks &blocks, int x, int y, core::LineKey deletedKey, int height) {
+    inline Mino createMino(const core::Blocks &blocks, int x, int y, core::LineKey deletedKey, int height) {
         auto field = core::Field();
         field.put(blocks, x, y);
         field.insertWhiteLineWithKey(deletedKey);
@@ -77,26 +77,33 @@ namespace sfinder::all_pcs {
 
         // Parse to deletedLine, usingLineEachY
         LineBit deletedLine = 0L;
-        auto usingLineEachY = std::array<LineBit, 4>{0, 0, 0, 0};
         for (int iy = 0; iy < height; ++iy) {
             auto bit = core::getBitKey(iy);
             if (0 < (deletedKey & bit)) {
                 deletedLine |= 1ULL << iy;
-                usingLineEachY[iy] = usingLine;
+//                usingLineEachY[iy] = usingLine;
             }
         }
+
+//        auto usingLineEachY = std::array<LineBit, 4>{};
+//        for (int iy = 0; iy < height; ++iy) {
+//            auto bit = core::getBitKey(iy);
+//            if (0 < (deletedKey & bit)) {
+//                deletedLine |= 1ULL << iy;
+////                usingLineEachY[iy] = usingLine;
+//            }
+//        }
 
         return Mino{
                 blocks.pieceType, blocks.rotateType, x, y, deletedKey,
                 deletedLine, usingKey, usingLine,
                 field, fieldIndexes,
                 minVerticalIndex, verticalRelativeBlock,
-                usingLineEachY, usingYs,
-                scaffoldYs, headYs,
+                usingYs, scaffoldYs, headYs,
         };
     }
 
-    void putMinos(const core::Factory &factory, int width, int height, std::vector<Mino> &minos) {
+    inline void putMinos(const core::Factory &factory, int width, int height, std::vector<Mino> &minos) {
         for (const auto &pieceType : core::kAllPieceType) {
             auto piece = factory.get(pieceType);
 

@@ -69,7 +69,7 @@ namespace sfinder::all_pcs {
         std::array<int, 4> fieldIndexes;  // ascending order
         int minVerticalIndex;  // `x*height+y`
         uint64_t verticalRelativeBlock;
-        std::array<LineBit, 4> usingLineEachY;  // padding 0 when no used
+//        std::array<LineBit, Height> usingLineEachY;  // padding 0 when no used
         std::array<int, 4> usingYs;  // ascending order // padding -1 when no used
         std::array<int, 4> scaffoldYs;  // [0]=minY, increase index as to the right // padding INT_MAX when no used
         std::array<int, 4> headYs;  // [0]=minY, increase index as to the right // padding -1 when no used
