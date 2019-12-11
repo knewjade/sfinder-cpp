@@ -40,14 +40,14 @@ namespace sfinder::all_pcs {
     /**
      * Scaffold, Head
      *
-     * Example: S-Spawn, x=1, y=1, deletedKey=1048576 -> Scaffold=[0,0,2,MAX], Head=[2,4,4,-1]
+     * Example: S-Spawn, x=1, y=1, deletedKey=1048576 -> Scaffold=[0,0,2,MAX], Head=[21,22,42,43]
      * __HH_
      * __XX_
-     * _H_S_
+     * _HHS_
      * _XX__
      * _SS__
      *
-     * Example: S-Spawn, x=1, y=1, deletedKey=1048576 -> Scaffold=[0,-1,MAX,MAX], Head=[2,3,-1,-1]
+     * Example: S-Spawn, x=1, y=1, deletedKey=1048576 -> Scaffold=[0,-1,MAX,MAX], Head=[21,32,-1,-1]
      * __H_
      * _HX_
      * _XX_
@@ -72,7 +72,7 @@ namespace sfinder::all_pcs {
 //        std::array<LineBit, Height> usingLineEachY;  // padding 0 when no used
         std::array<int, 4> usingYs;  // ascending order // padding -1 when no used
         std::array<int, 4> scaffoldYs;  // [0]=minY, increase index as to the right // padding INT_MAX when no used
-        std::array<int, 4> headYs;  // [0]=minY, increase index as to the right // padding -1 when no used
+        std::array<int, 4> headFieldIndexes;  // increase index as to the right // padding -1 when no used
     };
 }
 #endif //FINDER_ALL_PCS_TYPES_HPP

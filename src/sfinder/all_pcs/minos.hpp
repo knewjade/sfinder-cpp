@@ -19,10 +19,11 @@ namespace sfinder::all_pcs {
 
         constexpr int maxInt = std::numeric_limits<int>::max();
         auto scaffoldYs = std::array<int, 4>{maxInt, maxInt, maxInt, maxInt};
-        auto headYs = std::array<int, 4>{-1, -1, -1, -1};
+        auto headFieldIndexes = std::array<int, 4>{-1, -1, -1, -1};
 
         {
             int index = 0;
+            int headIndex = 0;
             for (int iy = 0; iy < height; ++iy) {
                 for (int ix = x + blocks.minX; ix <= x + blocks.maxX; ++ix) {
                     if (!field.isEmpty(ix, iy)) {
@@ -40,8 +41,9 @@ namespace sfinder::all_pcs {
                             scaffoldYs[localX] = iy - 1;
                         }
 
-                        if (headYs[localX] < iy + 1) {
-                            headYs[localX] = iy + 1;
+                        if (field.isEmpty(ix, iy + 1)) {
+                            headFieldIndexes[headIndex] = (iy + 1) * core::kFieldWidth + ix;
+                            headIndex += 1;
                         }
                     }
                 }
@@ -81,25 +83,15 @@ namespace sfinder::all_pcs {
             auto bit = core::getBitKey(iy);
             if (0 < (deletedKey & bit)) {
                 deletedLine |= 1ULL << iy;
-//                usingLineEachY[iy] = usingLine;
             }
         }
-
-//        auto usingLineEachY = std::array<LineBit, 4>{};
-//        for (int iy = 0; iy < height; ++iy) {
-//            auto bit = core::getBitKey(iy);
-//            if (0 < (deletedKey & bit)) {
-//                deletedLine |= 1ULL << iy;
-////                usingLineEachY[iy] = usingLine;
-//            }
-//        }
 
         return Mino{
                 blocks.pieceType, blocks.rotateType, x, y, deletedKey,
                 deletedLine, usingKey, usingLine,
                 field, fieldIndexes,
                 minVerticalIndex, verticalRelativeBlock,
-                usingYs, scaffoldYs, headYs,
+                usingYs, scaffoldYs, headFieldIndexes,
         };
     }
 
@@ -148,31 +140,33 @@ namespace sfinder::all_pcs {
         }
 
         std::sort(minos.begin(), minos.end(), [](const Mino &lhs, const Mino &rhs) {
-            if (lhs.minVerticalIndex != rhs.minVerticalIndex) {
-                return lhs.minVerticalIndex < rhs.minVerticalIndex;
-            }
+//            if (lhs.minVerticalIndex != rhs.minVerticalIndex) {
+//                return lhs.minVerticalIndex < rhs.minVerticalIndex;
+//            }
+//
+//            if (lhs.deletedLine != rhs.deletedLine) {
+//                return lhs.deletedLine < rhs.deletedLine;
+//            }
+//
+//            if (lhs.pieceType != rhs.pieceType) {
+//                return lhs.pieceType < rhs.pieceType;
+//            }
+//
+//            if (lhs.rotateType != rhs.rotateType) {
+//                return lhs.rotateType < rhs.rotateType;
+//            }
+//
+//            if (lhs.x != rhs.x) {
+//                return lhs.x < rhs.x;
+//            }
+//
+//            if (lhs.y != rhs.y) {
+//                return lhs.y < rhs.y;
+//            }
+//
+//            return false;
 
-            if (lhs.deletedLine != rhs.deletedLine) {
-                return lhs.deletedLine < rhs.deletedLine;
-            }
-
-            if (lhs.pieceType != rhs.pieceType) {
-                return lhs.pieceType < rhs.pieceType;
-            }
-
-            if (lhs.rotateType != rhs.rotateType) {
-                return lhs.rotateType < rhs.rotateType;
-            }
-
-            if (lhs.x != rhs.x) {
-                return lhs.x < rhs.x;
-            }
-
-            if (lhs.y != rhs.y) {
-                return lhs.y < rhs.y;
-            }
-
-            return false;
+            return lhs.minVerticalIndex < rhs.minVerticalIndex;
         });
     }
 }

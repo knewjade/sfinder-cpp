@@ -2,6 +2,7 @@
 #define FINDER_ALL_PCS_FRONTIER_HPP
 
 #include "core/factory.hpp"
+#include "core/moves.hpp"
 
 namespace sfinder::all_pcs {
     struct IndexNode {
@@ -14,11 +15,14 @@ namespace sfinder::all_pcs {
         unsigned int id;
     };
 
+    constexpr auto uintMax = std::numeric_limits<unsigned int>::max();
+
     class Nodes {
     public:
-        explicit Nodes(unsigned int indexSize, unsigned int itemSize)
-                : indexNodes_(std::vector<IndexNode>(indexSize)),
-                  itemNodes_(std::vector<ItemNode>(itemSize))  {
+        explicit Nodes(unsigned int logIndexSize, unsigned int logItemSize)
+                : indexNodes_(std::vector<IndexNode>(1U << logIndexSize)),
+                  itemNodes_(std::vector<ItemNode>(1U << logItemSize)),
+                  logIndexSize_(logIndexSize) {
         }
 
         void jump(unsigned int nextItemId, unsigned int itemSize) {
@@ -30,8 +34,6 @@ namespace sfinder::all_pcs {
         }
 
         void skip(unsigned int nextIndexId) {
-            constexpr auto uintMax = std::numeric_limits<unsigned int>::max();
-
             assert(indexSerial_ < indexNodes_.size());
             auto &node = indexNodes_[indexSerial_];
             node.id = nextIndexId;
@@ -63,43 +65,57 @@ namespace sfinder::all_pcs {
             return indexSerial_;
         }
 
-        [[nodiscard]] unsigned int indexNodeSize() const {
+        [[nodiscard]] unsigned long long indexNodeSize() const {
             return indexNodes_.size();
+        }
+
+        [[nodiscard]] unsigned int logIndexSize() const {
+            return logIndexSize_;
+        }
+
+        IndexNode &indexNode(unsigned int index) {
+            return indexNodes_[index];
+        }
+
+        ItemNode &itemNode(unsigned int index) {
+            return itemNodes_[index];
         }
 
     private:
         std::vector<IndexNode> indexNodes_;
         std::vector<ItemNode> itemNodes_;
+        const unsigned int logIndexSize_;
         unsigned int indexSerial_ = 2;
         unsigned int itemSerial_ = 0;
     };
 
     class Hashes {
     public:
-        explicit Hashes(unsigned int logTableSize)
+        explicit Hashes(unsigned int logTableSize, unsigned int logValueSize)
                 : table_(std::vector<unsigned int>(1U << logTableSize)),
-                  logTableSize_(logTableSize), itemMask_((1U << logTableSize_) - 1U) {
+                  logValueSize_(logValueSize), itemMask_((1U << logValueSize) - 1U) {
             rotate();
         }
 
         void rotate() {
             id_ += 1;
-            prefix_ = id_ << logTableSize_;
+            prefix_ = id_ << logValueSize_;
             if (prefix_ == 0U) {
                 // Overflow
                 std::fill(table_.begin(), table_.end(), 0U);
                 id_ = 1;
-                prefix_ = id_ << logTableSize_;
+                prefix_ = id_ << logValueSize_;
             }
         }
 
         void set(unsigned int hash, unsigned int value) {
-            assert(hash <= itemMask_);
+            assert(hash < table_.size());
+            assert(value <= itemMask_);
             table_[hash] = prefix_ | value;
         }
 
         const unsigned int &operator[](unsigned int hash) const {
-            assert(hash <= itemMask_);
+            assert(hash < table_.size());
             return table_[hash];
         }
 
@@ -114,7 +130,7 @@ namespace sfinder::all_pcs {
 
     private:
         std::vector<unsigned int> table_;
-        const unsigned int logTableSize_;
+        const unsigned int logValueSize_;
         const unsigned int itemMask_;
         unsigned int id_ = 0U;
         unsigned int prefix_ = 0U;
@@ -125,7 +141,7 @@ namespace sfinder::all_pcs {
         Frontier(
                 const std::vector<Mino> &minos, Nodes &nodes, int width, int height
         ) : minos_(minos), nodes_(nodes), width_(width), height_(height),
-            hashes_(Hashes(height * 3)),
+            hashes_(Hashes(height * 3, nodes.logIndexSize())),
             frontiers_(std::vector<uint64_t>(nodes.indexNodeSize())),
             minoCounts_(std::vector<int>(height * width)) {
 
@@ -253,6 +269,509 @@ namespace sfinder::all_pcs {
         std::vector<uint64_t> frontiers_;
         std::vector<int> minoCounts_;
         int maxVerticalIndex_;
+    };
+
+    class Builder {
+    public:
+        Builder(
+                const core::Factory &factory, const std::vector<Mino> &minos, int height, int maxDepth,
+                core::srs::MoveGenerator &moveGenerator
+        ) : factory_(factory), minos_(minos), height_(height), moveGenerator_(moveGenerator),
+            visited_(Hashes(maxDepth, 1)), fields_(std::vector<core::Field>(maxDepth)),
+            minoIndexes_(std::vector<int>(maxDepth)), bitToIndex_(std::vector<int>(1U << maxDepth)) {
+
+            for (int iv = 0; iv < maxDepth; ++iv) {
+                bitToIndex_[1U << iv] = iv;
+            }
+        }
+
+        bool checks(const std::vector<int> &results) {
+            visited_.rotate();
+
+            // ざっくりdeleteLineが0のものを前にだす
+            // 成功時にざっくり早くする
+            // ソートすると精度があがると思われるが、速度面で検証したほうがよさそう
+            int l = 0;
+            int l2 = 0;
+            for (int result : results) {
+                auto &mino = minos_[result];
+                if (mino.deletedLine == 0) {
+                    minoIndexes_[l2] = minoIndexes_[l];
+                    l2 += 1;
+
+                    minoIndexes_[l] = result;
+                    l += 1;
+                } else {
+                    minoIndexes_[l2] = result;
+                    l2 += 1;
+                }
+            }
+
+            fields_[0] = core::Field();
+
+            return checks(
+                    (1U << minoIndexes_.size()) - 1, 0U, 0
+            );
+        }
+
+        bool checks(
+                unsigned int rest, unsigned int used, int depth
+        ) {
+            //
+            auto raw = visited_[used];
+            if (visited_.registered(raw)) {
+                return false;
+            }
+            visited_.set(used, 1);
+
+            auto &beforeField = fields_[depth];
+
+            auto field = core::Field(beforeField);
+            auto deletedKey = field.clearLineReturnKey();
+
+            auto rest2 = rest;
+            while (rest2 != 0) {
+                auto bit = rest2 & (-rest2);
+
+                auto nextUsed = used | bit;
+                int index = bitToIndex_[bit];
+                auto &mino = minos_[minoIndexes_[index]];
+
+                // ミノを置くためのラインがすべて削除されている
+                if ((mino.deletedKey & deletedKey) == mino.deletedKey) {
+                    int originalY = mino.y;
+                    int deletedLines = core::bitCount((core::getUsingKeyBelowY(originalY) & deletedKey));
+
+//                    std::cout << mino.minoField.toString(4) << std::endl;
+
+                    int x = mino.x;
+                    int y = originalY - deletedLines;
+                    auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
+                    if (field.isOnGround(blocks, x, y) && field.canPut(blocks, x, y)
+                        &&
+                        moveGenerator_.canReach(field, mino.pieceType, mino.rotateType, x, y, height_ - blocks.minY)) {
+                        auto nextRest = rest - bit;
+                        if (nextRest == 0) {
+                            return true;
+                        }
+
+                        auto &nextField = fields_[depth + 1];
+                        nextField = core::Field(beforeField);
+                        nextField.merge(mino.minoField);
+
+//                        std::cout << nextField.toString(4) << std::endl;
+
+                        auto exists = checks(nextRest, nextUsed, depth + 1);
+                        if (exists)
+                            return true;
+                    }
+                }
+
+                rest2 -= bit;
+            }
+
+            return false;
+        }
+
+        bool checks2(const std::vector<int> &results) {
+            visited_.rotate();
+
+            // ざっくりdeleteLineが0のものを前にだす
+            // 成功時にざっくり早くする
+            // ソートすると精度があがると思われるが、速度面で検証したほうがよさそう
+            int l = 0;
+            int l2 = 0;
+            for (int result : results) {
+                auto &mino = minos_[result];
+                if (mino.deletedLine == 0) {
+                    minoIndexes_[l2] = minoIndexes_[l];
+                    l2 += 1;
+
+                    minoIndexes_[l] = result;
+                    l += 1;
+                } else {
+                    minoIndexes_[l2] = result;
+                    l2 += 1;
+                }
+            }
+
+            fields_[0] = core::Field();
+
+            return checks2(
+                    (1U << minoIndexes_.size()) - 1, 0U, 0
+            );
+        }
+
+        bool checks2(
+                unsigned int rest, unsigned int used, int depth
+        ) {
+            //
+            auto raw = visited_[used];
+            if (visited_.registered(raw)) {
+                return false;
+            }
+            visited_.set(used, 1);
+
+            auto &beforeField = fields_[depth];
+
+            auto field = core::Field(beforeField);
+            auto deletedKey = field.clearLineReturnKey();
+
+            auto rest2 = rest;
+            while (rest2 != 0) {
+                auto bit = rest2 & (-rest2);
+
+                auto nextUsed = used | bit;
+                int index = bitToIndex_[bit];
+                auto &mino = minos_[minoIndexes_[index]];
+
+                // ミノを置くためのラインがすべて削除されている
+                if ((mino.deletedKey & deletedKey) == mino.deletedKey) {
+                    int originalY = mino.y;
+                    int deletedLines = core::bitCount((core::getUsingKeyBelowY(originalY) & deletedKey));
+
+//                    std::cout << mino.minoField.toString(4) << std::endl;
+
+                    int x = mino.x;
+                    int y = originalY - deletedLines;
+                    auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
+                    if (field.canPut(blocks, x, y)) {
+                        auto nextRest = rest - bit;
+                        if (nextRest == 0) {
+                            return true;
+                        }
+
+                        auto &nextField = fields_[depth + 1];
+                        nextField = core::Field(beforeField);
+                        nextField.merge(mino.minoField);
+
+//                        std::cout << nextField.toString(4) << std::endl;
+
+                        auto exists = checks2(nextRest, nextUsed, depth + 1);
+                        if (exists)
+                            return true;
+                    }
+                }
+
+                rest2 -= bit;
+            }
+
+            return false;
+        }
+
+    private:
+        const core::Factory &factory_;
+        const std::vector<Mino> &minos_;
+        const int height_;
+        core::srs::MoveGenerator &moveGenerator_;
+        Hashes visited_;
+        std::vector<core::Field> fields_;
+        std::vector<int> minoIndexes_;
+        std::vector<int> bitToIndex_;
+    };
+
+    class Aggregator {
+    public:
+        Aggregator(
+                const core::Factory &factory, const std::vector<Mino> &minos, int height, int maxDepth,
+                const std::vector<LineBit> &usingLineEachY, Nodes &nodes, Builder &builder
+        ) : factory_(factory), minos_(minos), height_(height), maxDepth_(maxDepth),
+            usingLineEachY_(usingLineEachY), nodes_(nodes), builder_(builder),
+            filled_(std::vector<unsigned int>((maxDepth + 1) * height)),
+            minoMap_(std::vector<unsigned int>(core::kFieldWidth * (height + 1))),
+            results_(std::vector<int>(maxDepth)),
+            changeMinoIndex_(std::vector<int>(maxDepth * maxDepth)),
+            changeMinoIndex2_(std::vector<int>(maxDepth * maxDepth)) {
+
+            assert(minos.size() <= minoMapMask);
+            std::fill(minoMap_.begin(), minoMap_.end(), uintMax);
+        }
+
+        static constexpr unsigned int minoMapFlag = 1U << 31U;
+        static constexpr unsigned int minoMapMask = minoMapFlag - 1U;
+
+        const core::Factory &factory_;
+        const std::vector<Mino> &minos_;
+        const int height_;
+        const int maxDepth_;
+        const std::vector<LineBit> &usingLineEachY_;
+        Nodes &nodes_;
+        Builder &builder_;
+        std::vector<unsigned int> filled_;
+        std::vector<unsigned int> minoMap_;
+        std::vector<int> results_;
+
+        std::vector<int> changeMinoIndex_;
+        std::vector<int> changeMinoIndex2_;
+
+        unsigned long long sum = 0;
+        unsigned long long calclated = 0;
+        unsigned long long debugcounter = 0;
+        std::vector<unsigned int> debugcounters = std::vector<unsigned int>(100);
+
+        void aggregate() {
+            aggregate(2, 0);
+        }
+
+        void aggregate(unsigned int indexId, int depth) {
+            assert(0 <= depth && depth < maxDepth_);
+            debugcounter += 1;
+            auto &indexNode = nodes_.indexNode(indexId);
+            if (indexNode.type == uintMax) {
+                // jump
+                aggregate(indexNode.id, depth);
+            } else {
+                // move
+                for (unsigned int index = indexNode.id, end = indexNode.id + indexNode.type; index < end; ++index) {
+                    auto &itemNode = nodes_.itemNode(index);
+
+                    auto minoIndex = itemNode.minoIndex;
+                    auto &mino = minos_[minoIndex];
+
+                    //
+                    auto s = 0U;
+                    for (const auto &usingY : mino.usingYs) {
+                        // 注目しているミノのブロックのあるyを取得
+                        if (usingY < 0) {
+                            break;
+                        }
+
+                        // 注目しているミノをおいたあとに初めて揃えられるライン
+                        // 前の結果 + 今回の結果
+                        s |= filled_[depth * height_ + usingY];
+                    }
+
+                    // 注目しているミノを置く前の絶対に揃えられないラインが削除されていないといけないか
+                    if (0 < (s & mino.deletedLine)) {
+                        // 使っている
+                        continue;
+                    }
+
+                    auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
+                    auto leftX = mino.x + blocks.minX;
+
+                    // Can `scaffold` be put before `mino`?
+                    int possibility = 0;  // 0=Cannot, 1=Undecided, 2=Can
+                    {
+                        auto prevRaw = uintMax;
+                        for (int dx = 0; dx < blocks.width; ++dx) {
+                            int x = leftX + dx;
+                            int scaffoldY = mino.scaffoldYs[dx];
+
+                            if (0 <= scaffoldY) {
+                                // Get mino index as a scaffold
+                                auto raw = minoMap_[scaffoldY * 10 + x];
+
+                                if (raw == uintMax) {
+                                    // No used
+                                    possibility = 1;
+                                    continue;
+                                }
+
+                                if (raw == prevRaw) {
+                                    continue;
+                                }
+
+                                auto &scaffoldMino = minos_[raw & minoMapMask];
+                                if ((scaffoldMino.deletedKey & mino.usingKey) == 0) {
+                                    // Can put `scaffoldMino` before `mino`
+                                    possibility = 2;
+                                    break;
+                                }
+
+                                prevRaw = raw;
+                            } else {
+                                // On the ground
+                                possibility = 2;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (possibility == 0) {
+                        continue;
+                    }
+
+                    int changeMinoSize = 0;
+                    {
+                        auto prevRaw = uintMax;
+                        for (int i = 0; i < 4; ++i) {
+                            int headFieldIndex = mino.headFieldIndexes[i];
+
+                            if (headFieldIndex < 0) {
+                                break;
+                            }
+
+                            auto raw = minoMap_[headFieldIndex];
+                            if (raw == prevRaw || raw == uintMax) {
+                                continue;
+                            }
+
+                            if (minoMapMask < raw) {
+                                auto headMinoIndex = raw & minoMapMask;
+
+                                bool deplicated = false;
+                                for (int j = 0; j < changeMinoSize; ++j) {
+                                    if (changeMinoIndex_[depth * maxDepth_ + j] == headMinoIndex) {
+                                        deplicated = true;
+                                        break;
+                                    }
+                                }
+
+                                if (!deplicated) {
+                                    changeMinoIndex_[depth * maxDepth_ + changeMinoSize] = headMinoIndex;
+                                    changeMinoSize += 1;
+                                }
+                            }
+
+                            prevRaw = raw;
+                        }
+                    }
+
+                    {
+                        auto flag = possibility == 2 ? 0U : minoMapFlag;
+                        for (const auto &fieldIndex : mino.fieldIndexes) {
+                            minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex) | flag;
+                        }
+                    }
+
+                    int changeMinoSize2 = 0;
+                    {
+                        bool skip = false;
+                        for (int i = 0; i < changeMinoSize; ++i) {
+                            auto minoIndex = changeMinoIndex_[depth * maxDepth_ + i];
+                            auto &mino = minos_[minoIndex];
+                            auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
+                            auto leftX = mino.x + blocks.minX;
+
+                            // Can `scaffold` be put before `mino`?
+                            int possibility = 0;  // 0=Cannot, 1=Undecided, 2=Can
+                            {
+                                auto prevRaw = uintMax;
+                                for (int dx = 0; dx < blocks.width; ++dx) {
+                                    int x = leftX + dx;
+                                    int scaffoldY = mino.scaffoldYs[dx];
+
+                                    if (0 <= scaffoldY) {
+                                        // Get mino index as a scaffold
+                                        auto raw = minoMap_[scaffoldY * 10 + x];
+
+                                        if (raw == uintMax) {
+                                            // No used
+                                            possibility = 1;
+                                            continue;
+                                        }
+
+                                        if (raw == prevRaw) {
+                                            continue;
+                                        }
+
+                                        auto &scaffoldMino = minos_[raw & minoMapMask];
+                                        if ((scaffoldMino.deletedKey & mino.usingKey) == 0) {
+                                            // Can put `scaffoldMino` before `mino`
+                                            possibility = 2;
+                                            break;
+                                        }
+
+                                        prevRaw = raw;
+                                    } else {
+                                        // On the ground
+                                        possibility = 2;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (possibility == 0) {
+                                skip = true;
+                                break;
+                            }
+
+                            if (possibility == 2) {
+                                changeMinoIndex2_[depth * maxDepth_ + changeMinoSize2] = minoIndex;
+                                changeMinoSize2 += 1;
+                            }
+                        }
+
+                        if (skip) {
+                            for (const auto &fieldIndex : mino.fieldIndexes) {
+                                minoMap_[fieldIndex] = uintMax;
+                            }
+                            continue;
+                        }
+                    }
+
+                    for (int i = 0; i < changeMinoSize2; ++i) {
+                        auto minoIndex = changeMinoIndex2_[depth * maxDepth_ + i];
+                        auto &mino = minos_[minoIndex];
+                        for (const auto &fieldIndex : mino.fieldIndexes) {
+                            minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex);
+                        }
+                    }
+
+                    results_[depth] = minoIndex;
+                    debugcounters[depth] = debugcounter;
+
+                    auto nextId = itemNode.id;
+                    if (nextId == 1U) {
+                        bool lastChecks = true;
+                        for (const auto resultMinoIndex : results_) {
+                            auto &resultMino = minos_[resultMinoIndex];
+                            if (minoMapMask < minoMap_[resultMino.fieldIndexes[0]]) {
+                                lastChecks = false;
+                                break;
+                            }
+                        }
+
+                        if (lastChecks) {
+                            calclated += 1;
+//                            auto result = builder_.checks2(results_);
+//                            if (result) {
+//                                for (int j = 0; j < results_.size(); ++j) {
+//                                    auto &mino = minos_[results_[j]];
+//                                    std::cout << mino.minoField.toString(4) << std::endl;
+//                                }
+
+                                sum++;
+                                if (sum % 5000000 == 0) {
+                                    std::cout << sum << std::endl;
+                                }
+//                            }
+                        }
+                    } else {
+                        auto nextDepth = depth + 1;
+
+                        auto ni = nextDepth * height_;
+                        auto ci = depth * height_;
+                        auto hi = minoIndex * height_;
+
+                        // 揃えられないラインを更新
+                        // temp = [y]ラインにブロックがあると、使用できないライン一覧が記録されている
+                        // ミノXの[y]がdeletedKeyに指定されていると、Xのブロックのあるラインは先に揃えられなくなる
+                        for (int j = 0; j < height_; ++j) {
+                            filled_[ni + j] = filled_[ci + j] | usingLineEachY_[hi + j];
+                        }
+
+                        aggregate(nextId, nextDepth);
+                    }
+
+                    // Restore
+                    {
+                        for (int i = 0; i < changeMinoSize2; ++i) {
+                            auto minoIndex = changeMinoIndex2_[depth * maxDepth_ + i];
+                            auto &mino = minos_[minoIndex];
+                            for (const auto &fieldIndex : mino.fieldIndexes) {
+                                minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex) | minoMapFlag;
+                            }
+                        }
+                    }
+
+                    for (const auto &fieldIndex : mino.fieldIndexes) {
+                        minoMap_[fieldIndex] = uintMax;
+                    }
+                }
+            }
+        }
     };
 }
 
