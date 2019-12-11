@@ -274,7 +274,7 @@ namespace sfinder::all_pcs {
     class Builder {
     public:
         Builder(
-                const core::Factory &factory, const std::vector<Mino> &minos, int height, int maxDepth,
+                const core::Factory &factory, const std::vector<Mino> &minos, int width, int height, int maxDepth,
                 core::srs::MoveGenerator &moveGenerator
         ) : factory_(factory), minos_(minos), height_(height), moveGenerator_(moveGenerator),
             visited_(Hashes(maxDepth, 1)), fields_(std::vector<core::Field>(maxDepth)),
@@ -282,6 +282,12 @@ namespace sfinder::all_pcs {
 
             for (int iv = 0; iv < maxDepth; ++iv) {
                 bitToIndex_[1U << iv] = iv;
+            }
+
+            for (int y = 0; y < height; ++y) {
+                for (int x = width; x < core::kFieldWidth; ++x) {
+                    initField_.setBlock(x, y);
+                }
             }
         }
 
@@ -307,7 +313,7 @@ namespace sfinder::all_pcs {
                 }
             }
 
-            fields_[0] = core::Field();
+            fields_[0] = initField_;
 
             return checks(
                     (1U << minoIndexes_.size()) - 1, 0U, 0
@@ -395,7 +401,7 @@ namespace sfinder::all_pcs {
                 }
             }
 
-            fields_[0] = core::Field();
+            fields_[0] = initField_;
 
             return checks2(
                     (1U << minoIndexes_.size()) - 1, 0U, 0
@@ -468,6 +474,7 @@ namespace sfinder::all_pcs {
         std::vector<core::Field> fields_;
         std::vector<int> minoIndexes_;
         std::vector<int> bitToIndex_;
+        core::Field initField_;
     };
 
     class Aggregator {
@@ -478,17 +485,8 @@ namespace sfinder::all_pcs {
         ) : factory_(factory), minos_(minos), height_(height), maxDepth_(maxDepth),
             usingLineEachY_(usingLineEachY), nodes_(nodes), builder_(builder),
             filled_(std::vector<unsigned int>((maxDepth + 1) * height)),
-            minoMap_(std::vector<unsigned int>(core::kFieldWidth * (height + 1))),
-            results_(std::vector<int>(maxDepth)),
-            changeMinoIndex_(std::vector<int>(maxDepth * maxDepth)),
-            changeMinoIndex2_(std::vector<int>(maxDepth * maxDepth)) {
-
-            assert(minos.size() <= minoMapMask);
-            std::fill(minoMap_.begin(), minoMap_.end(), uintMax);
+            results_(std::vector<int>(maxDepth)) {
         }
-
-        static constexpr unsigned int minoMapFlag = 1U << 31U;
-        static constexpr unsigned int minoMapMask = minoMapFlag - 1U;
 
         const core::Factory &factory_;
         const std::vector<Mino> &minos_;
@@ -498,16 +496,9 @@ namespace sfinder::all_pcs {
         Nodes &nodes_;
         Builder &builder_;
         std::vector<unsigned int> filled_;
-        std::vector<unsigned int> minoMap_;
         std::vector<int> results_;
 
-        std::vector<int> changeMinoIndex_;
-        std::vector<int> changeMinoIndex2_;
-
         unsigned long long sum = 0;
-        unsigned long long calclated = 0;
-        unsigned long long debugcounter = 0;
-        std::vector<unsigned int> debugcounters = std::vector<unsigned int>(100);
 
         void aggregate() {
             aggregate(2, 0);
@@ -515,7 +506,6 @@ namespace sfinder::all_pcs {
 
         void aggregate(unsigned int indexId, int depth) {
             assert(0 <= depth && depth < maxDepth_);
-            debugcounter += 1;
             auto &indexNode = nodes_.indexNode(indexId);
             if (indexNode.type == uintMax) {
                 // jump
@@ -547,197 +537,23 @@ namespace sfinder::all_pcs {
                         continue;
                     }
 
-                    auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
-                    auto leftX = mino.x + blocks.minX;
-
-                    // Can `scaffold` be put before `mino`?
-                    int possibility = 0;  // 0=Cannot, 1=Undecided, 2=Can
-                    {
-                        auto prevRaw = uintMax;
-                        for (int dx = 0; dx < blocks.width; ++dx) {
-                            int x = leftX + dx;
-                            int scaffoldY = mino.scaffoldYs[dx];
-
-                            if (0 <= scaffoldY) {
-                                // Get mino index as a scaffold
-                                auto raw = minoMap_[scaffoldY * 10 + x];
-
-                                if (raw == uintMax) {
-                                    // No used
-                                    possibility = 1;
-                                    continue;
-                                }
-
-                                if (raw == prevRaw) {
-                                    continue;
-                                }
-
-                                auto &scaffoldMino = minos_[raw & minoMapMask];
-                                if ((scaffoldMino.deletedKey & mino.usingKey) == 0) {
-                                    // Can put `scaffoldMino` before `mino`
-                                    possibility = 2;
-                                    break;
-                                }
-
-                                prevRaw = raw;
-                            } else {
-                                // On the ground
-                                possibility = 2;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (possibility == 0) {
-                        continue;
-                    }
-
-                    int changeMinoSize = 0;
-                    {
-                        auto prevRaw = uintMax;
-                        for (int i = 0; i < 4; ++i) {
-                            int headFieldIndex = mino.headFieldIndexes[i];
-
-                            if (headFieldIndex < 0) {
-                                break;
-                            }
-
-                            auto raw = minoMap_[headFieldIndex];
-                            if (raw == prevRaw || raw == uintMax) {
-                                continue;
-                            }
-
-                            if (minoMapMask < raw) {
-                                auto headMinoIndex = raw & minoMapMask;
-
-                                bool deplicated = false;
-                                for (int j = 0; j < changeMinoSize; ++j) {
-                                    if (changeMinoIndex_[depth * maxDepth_ + j] == headMinoIndex) {
-                                        deplicated = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!deplicated) {
-                                    changeMinoIndex_[depth * maxDepth_ + changeMinoSize] = headMinoIndex;
-                                    changeMinoSize += 1;
-                                }
-                            }
-
-                            prevRaw = raw;
-                        }
-                    }
-
-                    {
-                        auto flag = possibility == 2 ? 0U : minoMapFlag;
-                        for (const auto &fieldIndex : mino.fieldIndexes) {
-                            minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex) | flag;
-                        }
-                    }
-
-                    int changeMinoSize2 = 0;
-                    {
-                        bool skip = false;
-                        for (int i = 0; i < changeMinoSize; ++i) {
-                            auto minoIndex = changeMinoIndex_[depth * maxDepth_ + i];
-                            auto &mino = minos_[minoIndex];
-                            auto &blocks = factory_.get(mino.pieceType, mino.rotateType);
-                            auto leftX = mino.x + blocks.minX;
-
-                            // Can `scaffold` be put before `mino`?
-                            int possibility = 0;  // 0=Cannot, 1=Undecided, 2=Can
-                            {
-                                auto prevRaw = uintMax;
-                                for (int dx = 0; dx < blocks.width; ++dx) {
-                                    int x = leftX + dx;
-                                    int scaffoldY = mino.scaffoldYs[dx];
-
-                                    if (0 <= scaffoldY) {
-                                        // Get mino index as a scaffold
-                                        auto raw = minoMap_[scaffoldY * 10 + x];
-
-                                        if (raw == uintMax) {
-                                            // No used
-                                            possibility = 1;
-                                            continue;
-                                        }
-
-                                        if (raw == prevRaw) {
-                                            continue;
-                                        }
-
-                                        auto &scaffoldMino = minos_[raw & minoMapMask];
-                                        if ((scaffoldMino.deletedKey & mino.usingKey) == 0) {
-                                            // Can put `scaffoldMino` before `mino`
-                                            possibility = 2;
-                                            break;
-                                        }
-
-                                        prevRaw = raw;
-                                    } else {
-                                        // On the ground
-                                        possibility = 2;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (possibility == 0) {
-                                skip = true;
-                                break;
-                            }
-
-                            if (possibility == 2) {
-                                changeMinoIndex2_[depth * maxDepth_ + changeMinoSize2] = minoIndex;
-                                changeMinoSize2 += 1;
-                            }
-                        }
-
-                        if (skip) {
-                            for (const auto &fieldIndex : mino.fieldIndexes) {
-                                minoMap_[fieldIndex] = uintMax;
-                            }
-                            continue;
-                        }
-                    }
-
-                    for (int i = 0; i < changeMinoSize2; ++i) {
-                        auto minoIndex = changeMinoIndex2_[depth * maxDepth_ + i];
-                        auto &mino = minos_[minoIndex];
-                        for (const auto &fieldIndex : mino.fieldIndexes) {
-                            minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex);
-                        }
-                    }
-
                     results_[depth] = minoIndex;
-                    debugcounters[depth] = debugcounter;
 
                     auto nextId = itemNode.id;
                     if (nextId == 1U) {
-                        bool lastChecks = true;
-                        for (const auto resultMinoIndex : results_) {
-                            auto &resultMino = minos_[resultMinoIndex];
-                            if (minoMapMask < minoMap_[resultMino.fieldIndexes[0]]) {
-                                lastChecks = false;
-                                break;
-                            }
-                        }
-
-                        if (lastChecks) {
-                            calclated += 1;
-//                            auto result = builder_.checks2(results_);
-//                            if (result) {
-//                                for (int j = 0; j < results_.size(); ++j) {
-//                                    auto &mino = minos_[results_[j]];
-//                                    std::cout << mino.minoField.toString(4) << std::endl;
-//                                }
-
-                                sum++;
-                                if (sum % 5000000 == 0) {
-                                    std::cout << sum << std::endl;
-                                }
+//                        auto result = builder_.checks2(results_);
+//                        if (result) {
+//                            for (int j = 0; j < results_.size(); ++j) {
+//                                auto &mino = minos_[results_[j]];
+//                                std::cout << mino.minoField.toString(4) << std::endl;
 //                            }
+
+                        sum++;
+                        if (sum % 5000000 == 0) {
+                            std::cout << sum << std::endl;
                         }
+
+//                        }
                     } else {
                         auto nextDepth = depth + 1;
 
@@ -753,21 +569,6 @@ namespace sfinder::all_pcs {
                         }
 
                         aggregate(nextId, nextDepth);
-                    }
-
-                    // Restore
-                    {
-                        for (int i = 0; i < changeMinoSize2; ++i) {
-                            auto minoIndex = changeMinoIndex2_[depth * maxDepth_ + i];
-                            auto &mino = minos_[minoIndex];
-                            for (const auto &fieldIndex : mino.fieldIndexes) {
-                                minoMap_[fieldIndex] = static_cast<unsigned int>(minoIndex) | minoMapFlag;
-                            }
-                        }
-                    }
-
-                    for (const auto &fieldIndex : mino.fieldIndexes) {
-                        minoMap_[fieldIndex] = uintMax;
                     }
                 }
             }

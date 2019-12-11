@@ -101,7 +101,7 @@ namespace sfinder::all_pcs {
     }
 
     TEST_F(FrontierTest, ag1) {
-        int width = 10;
+        int width = 7;
         int height = 4;
         int maxDepth = (width * height) / 4;
 
@@ -124,7 +124,7 @@ namespace sfinder::all_pcs {
         }
 
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto builder = Builder(factory, minos, height, maxDepth, moveGenerator);
+        auto builder = Builder(factory, minos, width, height, maxDepth, moveGenerator);
         auto aggregator = Aggregator(factory, minos, height, maxDepth, usingLineEachY, nodes, builder);
 
         auto start = std::chrono::system_clock::now();
@@ -143,7 +143,7 @@ namespace sfinder::all_pcs {
     }
 
     TEST_F(FrontierTest, ag2) {
-        int width = 8;
+        int width = 2;
         int height = 6;
         int maxDepth = (width * height) / 4;
 
@@ -166,7 +166,7 @@ namespace sfinder::all_pcs {
         }
 
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto builder = Builder(factory, minos, height, maxDepth, moveGenerator);
+        auto builder = Builder(factory, minos, width, height, maxDepth, moveGenerator);
         auto aggregator = Aggregator(factory, minos, height, maxDepth, usingLineEachY, nodes, builder);
 
         auto start = std::chrono::system_clock::now();
@@ -208,7 +208,7 @@ namespace sfinder::all_pcs {
         }
 
         auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto builder = Builder(factory, minos, height, maxDepth, moveGenerator);
+        auto builder = Builder(factory, minos, width, height, maxDepth, moveGenerator);
         auto aggregator = Aggregator(factory, minos, height, maxDepth, usingLineEachY, nodes, builder);
 
         auto start = std::chrono::system_clock::now();
