@@ -177,7 +177,7 @@ namespace finder {
                 operation.y = move.y;
 
                 int tSpinAttack = getAttackIfTSpin(
-                        reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                        moveGenerator, reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
                 );
 
                 int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
@@ -339,7 +339,7 @@ namespace finder {
                 operation.y = move.y;
 
                 int spinAttack = getAttack(
-                        factory, candidate.field, pieceType, move, numCleared, candidate.b2b
+                        moveGenerator, reachable, factory, candidate.field, pieceType, move, numCleared, candidate.b2b
                 );
 
                 // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)

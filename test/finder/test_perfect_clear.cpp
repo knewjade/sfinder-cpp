@@ -569,7 +569,7 @@ namespace finder {
                 auto clearLine = freeze.clearLineReturnNum();
 
                 auto attacks = getAttackIfTSpin(
-                        reachable, factory, beforeClear, piece,
+                        moveGenerator, reachable, factory, beforeClear, piece,
                         {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
                 );
                 if (0 < attacks) {
@@ -625,7 +625,7 @@ namespace finder {
 
                 {
                     auto attacksAlwaysRegular = getAttackIfAllSpins<true>(
-                            reachable, factory, beforeClear, piece,
+                            moveGenerator, reachable, factory, beforeClear, piece,
                             {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
                     );
                     if (0 < attacksAlwaysRegular) {
@@ -635,7 +635,7 @@ namespace finder {
 
                 {
                     auto attackWithoutMini = getAttackIfAllSpins<false>(
-                            reachable, factory, beforeClear, piece,
+                            moveGenerator, reachable, factory, beforeClear, piece,
                             {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
                     );
                     if (0 < attackWithoutMini) {
@@ -676,7 +676,7 @@ namespace finder {
 
                 {
                     auto attacksAlwaysRegular = getAttackIfAllSpins<true>(
-                            reachable, factory, beforeClear, piece,
+                            moveGenerator, reachable, factory, beforeClear, piece,
                             {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
                     );
                     if (0 < attacksAlwaysRegular) {
@@ -686,7 +686,7 @@ namespace finder {
 
                 {
                     auto attackWithoutMini = getAttackIfAllSpins<false>(
-                            reachable, factory, beforeClear, piece,
+                            moveGenerator, reachable, factory, beforeClear, piece,
                             {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
                     );
                     if (0 < attackWithoutMini) {
@@ -695,8 +695,8 @@ namespace finder {
                 }
             }
 
-            EXPECT_EQ(attackCountAlwaysRegular, 2);
-            EXPECT_EQ(attackCountWithoutMini, 2);
+            EXPECT_EQ(attackCountAlwaysRegular, 3);
+            EXPECT_EQ(attackCountWithoutMini, 3);
         }
     }
 }

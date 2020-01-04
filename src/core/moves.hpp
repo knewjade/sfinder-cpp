@@ -2,7 +2,6 @@
 #define CORE_MOVE_HPP
 
 #include <vector>
-#include <cassert>
 
 #include "field.hpp"
 #include "srs.hpp"
@@ -38,15 +37,15 @@ namespace core {
     public:
         void visit(int x, int y, RotateType rotateType);
 
-        bool isVisit(int x, int y, RotateType rotateType) const;
+        [[nodiscard]] bool isVisit(int x, int y, RotateType rotateType) const;
 
         void found(int x, int y, RotateType rotateType);
 
-        bool isFound(int x, int y, RotateType rotateType) const;
+        [[nodiscard]] bool isFound(int x, int y, RotateType rotateType) const;
 
         void push(int x, int y, RotateType rotateType);
 
-        bool isPushed(int x, int y, RotateType rotateType) const;
+        [[nodiscard]] bool isPushed(int x, int y, RotateType rotateType) const;
 
         void resetTrail();
 
@@ -61,10 +60,10 @@ namespace core {
     namespace harddrop {
         class MoveGenerator {
         public:
-            MoveGenerator(const Factory &factory) : factory(factory) {
+            explicit MoveGenerator(const Factory &factory) : factory(factory) {
             }
 
-            void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);
+            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight);
 
         private:
             const Factory &factory;
@@ -80,10 +79,13 @@ namespace core {
 
         class MoveGenerator {
         public:
-            MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
+            explicit MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
-            void search(std::vector<Move> &moves, const Field &field, const PieceType pieceType, int validHeight);
+            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight);
+
+            bool
+            canReach(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);
 
         private:
             const Factory &factory;
@@ -110,7 +112,7 @@ namespace core {
 
         class Reachable {
         public:
-            Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
+            explicit Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
             bool checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);

@@ -55,7 +55,8 @@ namespace finder {
 
     //  Caution: mini attack is 0
     inline int getAttackIfTSpin(
-            core::srs_rotate_end::Reachable &reachable, const core::Factory &factory, const core::Field &field,
+            core::srs::MoveGenerator &moveGenerator, core::srs_rotate_end::Reachable &reachable,
+            const core::Factory &factory, const core::Field &field,
             core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
     ) {
         if (pieceType != core::PieceType::T) {
@@ -115,7 +116,7 @@ namespace finder {
                 int srsResult = core::srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
                 if (srsResult == lastOffsetIndex) {
                     // T-Spin Regular if come back to the place
-                    if (reachable.checks(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
+                    if (moveGenerator.canReach(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
                     }
@@ -151,7 +152,7 @@ namespace finder {
                 int srsResult = core::srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
                 if (srsResult == lastOffsetIndex) {
                     // T-Spin Regular if come back to the place
-                    if (reachable.checks(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
+                    if (moveGenerator.canReach(field, pieceType, fromRotate, fromX, fromY, kFieldHeight)) {
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
                     }
@@ -166,6 +167,7 @@ namespace finder {
 
     template<bool AlwaysRegularAttack>
     inline int getAttackIfAllSpins(
+            core::srs::MoveGenerator &moveGenerator, core::srs_rotate_end::Reachable &reachable,
             const core::Factory &factory, const core::Field &field,
             core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
     ) {
@@ -177,32 +179,91 @@ namespace finder {
             return 0;
         }
 
+        auto rotateType = move.rotateType;
+        if (!reachable.checks(field, pieceType, rotateType, move.x, move.y, kFieldHeight)) {
+            return 0;
+        }
+
         auto &blocks = factory.get(pieceType, move.rotateType);
 
         auto x = move.x;
         auto y = move.y;
-        if (
+        if (!(
                 (x + blocks.minX - 1 < 0 || !field.canPut(blocks, x - 1, y))
                 && (kFieldWidth <= x + blocks.maxX + 1 || !field.canPut(blocks, x + 1, y))
                 && !field.canPut(blocks, x, y + 1)
-                ) {
-            // It's spin
-            int baseAttack = numCleared * 2;
+        )) {
+            // It's not immobile
+            return 0;
+        }
 
-            if constexpr (!AlwaysRegularAttack) {
-                // If `AlwaysRegularAttack` is false, mini attack is 0.
-                // Judged as mini if doesn't clear every line it occupies.
-                if (numCleared != blocks.height) {
-                    return b2b ? 1 : 0;
+        // It's spin
+        int baseAttack = numCleared * 2;
+
+        if constexpr (!AlwaysRegularAttack) {
+            auto &piece = factory.get(pieceType);
+
+            // Rotate right
+            {
+                // Direction before right rotation
+                auto fromRotate = static_cast<core::RotateType>((rotateType + 3) % 4);
+                auto &fromBlocks = factory.get(pieceType, fromRotate);
+
+                // Last SRS offset
+                int lastOffsetIndex = fromRotate * 5;
+                auto &offset = piece.rightOffsets[lastOffsetIndex];
+
+                if (offset.x == 0 && offset.y == 0) {
+                    if (0 <= x + fromBlocks.minX &&
+                        x + fromBlocks.maxX < kFieldWidth &&
+                        0 <= y + fromBlocks.minY &&
+                        field.canPut(fromBlocks, x, y) &&
+                        moveGenerator.canReach(field, pieceType, fromRotate, x, y, kFieldHeight)) {
+                        // NOT kicked
+                        // Regular is enable or regular spin
+                        return b2b ? baseAttack + 1 : baseAttack;
+                    }
                 }
             }
 
-            // If `AlwaysRegularAttack` is true, all spins attack is judged as regular
-            // Regular is enable or regular spin
-            return b2b ? baseAttack + 1 : baseAttack;
+            // Rotate left
+            {
+                // Direction before left rotation
+                auto fromRotate = static_cast<core::RotateType>((rotateType + 1) % 4);
+                auto &fromBlocks = factory.get(pieceType, fromRotate);
+
+                // Last SRS offset
+                int lastOffsetIndex = fromRotate * 5;
+                auto &offset = piece.leftOffsets[lastOffsetIndex];
+
+                if (offset.x == 0 && offset.y == 0) {
+                    if (0 <= x + fromBlocks.minX &&
+                        x + fromBlocks.maxX < kFieldWidth &&
+                        0 <= y + fromBlocks.minY &&
+                        field.canPut(fromBlocks, x, y) &&
+                        moveGenerator.canReach(field, pieceType, fromRotate, x, y, kFieldHeight)) {
+                        // NOT kicked
+                        // Regular is enable or regular spin
+                        return b2b ? baseAttack + 1 : baseAttack;
+                    }
+                }
+            }
+
+            // Need kick
+
+            // If `AlwaysRegularAttack` is false, mini attack is 0.
+            // Judged as mini if doesn't clear every line it occupies.
+            if (numCleared != blocks.height) {
+                // mini
+                return b2b ? 1 : 0;
+            }
+
+            // NOT mini
         }
 
-        return 0;
+        // If `AlwaysRegularAttack` is true, all spins attack is judged as regular
+        // Regular is enable or regular spin
+        return b2b ? baseAttack + 1 : baseAttack;
     }
 }
 

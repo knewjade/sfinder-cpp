@@ -57,6 +57,7 @@ namespace finder {
 
     TEST_F(SpinsTest, getAttackIfTSpin) {
         auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
         auto reachable = core::srs_rotate_end::Reachable(factory);
 
         {
@@ -67,8 +68,8 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::S, move, 2, false), 0);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::S, move, 2, true), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::S, move, 2, false), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::S, move, 2, true), 0);
         }
 
         {
@@ -81,17 +82,17 @@ namespace finder {
 
             {
                 auto move = core::Move{core::RotateType::Reverse, 2, 1, false};
-                EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 4);
-                EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 5);
+                EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, false), 4);
+                EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, true), 5);
             }
             {
                 auto move = core::Move{core::RotateType::Left, 2, 1, false};
-                EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 1, false), 2);
-                EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 1, true), 3);
+                EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 1, false), 2);
+                EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 1, true), 3);
             }
             {
                 auto move = core::Move{core::RotateType::Spawn, 2, 1, false};
-                EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 1, false), 0);
+                EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 1, false), 0);
             }
         }
 
@@ -104,7 +105,7 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 9, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 1, false), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 1, false), 0);
         }
 
         {
@@ -116,7 +117,7 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Spawn, 8, 0, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 1, false), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 1, false), 0);
         }
 
         {
@@ -131,8 +132,8 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 8, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, false), 6);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, true), 7);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 3, false), 6);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 3, true), 7);
         }
 
         {
@@ -147,8 +148,8 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 7, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 0);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 1);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, false), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, true), 1);
         }
 
         {
@@ -163,8 +164,8 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 7, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 4);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 5);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, false), 4);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, true), 5);
         }
 
         {
@@ -179,8 +180,8 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 2, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, false), 4);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 2, true), 5);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, false), 4);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 2, true), 5);
         }
 
         {
@@ -194,13 +195,15 @@ namespace finder {
             );
 
             auto move = core::Move{core::RotateType::Left, 8, 1, false};
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, false), 0);
-            EXPECT_EQ(getAttackIfTSpin(reachable, factory, field, core::PieceType::T, move, 3, true), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 3, false), 0);
+            EXPECT_EQ(getAttackIfTSpin(moveGenerator, reachable, factory, field, core::PieceType::T, move, 3, true), 0);
         }
     }
 
     TEST_F(SpinsTest, getAttackIfAllSpins) {
         auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto reachable = core::srs_rotate_end::Reachable(factory);
 
         {
             auto field = core::createField(""s +
@@ -212,10 +215,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
             int numCleared = 2;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, false), 4);
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, true), 5);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, false), 4);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, true), 5);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, false), 4);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, true), 5);
         }
 
         {
@@ -228,10 +231,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Spawn, 3, 0, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::S, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::S, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::S, move, numCleared, true), 1);
         }
 
         {
@@ -246,10 +249,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 2, 0, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::I, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::I, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::I, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::I, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::I, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::I, move, numCleared, true), 3);
         }
 
         {
@@ -264,10 +267,10 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 1, 1, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::J, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::J, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::J, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::J, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::J, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::J, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::J, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::J, move, numCleared, true), 3);
         }
 
         {
@@ -282,10 +285,28 @@ namespace finder {
             auto move = core::Move{core::RotateType::Reverse, 8, 1, false};
             int numCleared = 1;
 
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::L, move, numCleared, false), 2);
-            EXPECT_EQ(getAttackIfAllSpins<true>(factory, field, core::PieceType::L, move, numCleared, true), 3);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::L, move, numCleared, false), 0);
-            EXPECT_EQ(getAttackIfAllSpins<false>(factory, field, core::PieceType::L, move, numCleared, true), 1);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::L, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::L, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::L, move, numCleared, false), 0);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::L, move, numCleared, true), 1);
+        }
+
+        {
+            auto field = core::createField(""s +
+                                           "XXXXXXX__X"s +
+                                           "XXXXXXX__X"s +
+                                           "XXXXXX___X"s +
+                                           "XXXXXXX__X"s +
+                                           ""
+            );
+
+            auto move = core::Move{core::RotateType::Reverse, 7, 1, false};
+            int numCleared = 1;
+
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::T, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<true>(moveGenerator, reachable, factory, field, core::PieceType::T, move, numCleared, true), 3);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::T, move, numCleared, false), 2);
+            EXPECT_EQ(getAttackIfAllSpins<false>(moveGenerator, reachable, factory, field, core::PieceType::T, move, numCleared, true), 3);
         }
     }
 }
