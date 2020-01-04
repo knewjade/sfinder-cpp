@@ -126,8 +126,8 @@ namespace finder {
         }
 
         void accept(const Configure &configure, const Solution &solution, const C &current) {
-            if (recorder.shouldUpdate(configure.leastLineClears, current)) {
-                recorder.update(solution, current);
+            if (recorder.shouldUpdate(configure, current)) {
+                recorder.update(configure, solution, current);
             }
         }
 
@@ -397,11 +397,11 @@ namespace finder {
     public:
         void clear();
 
-        void update(const Solution &solution, const TSpinCandidate &current);
+        void update(const Configure &configure, const Solution &solution, const TSpinCandidate &current);
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const;
 
-        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const TSpinCandidate &newRecord) const;
+        [[nodiscard]] bool shouldUpdate(const Configure &configure, const TSpinCandidate &newRecord) const;
 
         [[nodiscard]] const TSpinRecord &best() const {
             return best_;
@@ -416,11 +416,11 @@ namespace finder {
     public:
         void clear();
 
-        void update(const Solution &solution, const FastCandidate &current);
+        void update(const Configure &configure, const Solution &solution, const FastCandidate &current);
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const FastCandidate &current) const;
 
-        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const FastCandidate &newRecord) const;
+        [[nodiscard]] bool shouldUpdate(const Configure &configure, const FastCandidate &newRecord) const;
 
         [[nodiscard]] const FastRecord &best() const {
             return best_;
@@ -435,11 +435,11 @@ namespace finder {
     public:
         void clear();
 
-        void update(const Solution &solution, const AllSpinsCandidate &current);
+        void update(const Configure &configure, const Solution &solution, const AllSpinsCandidate &current);
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const AllSpinsCandidate &current) const;
 
-        [[nodiscard]] bool shouldUpdate(bool leastLineClears, const AllSpinsCandidate &newRecord) const;
+        [[nodiscard]] bool shouldUpdate(const Configure &configure, const AllSpinsCandidate &newRecord) const;
 
         [[nodiscard]] const AllSpinsRecord &best() const {
             return best_;
@@ -461,7 +461,7 @@ namespace finder {
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo,
-                SearchTypes searchTypes, bool alwaysRegularAttack
+                SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority
         ) {
             assert(1 <= maxDepth);
 
@@ -482,6 +482,7 @@ namespace finder {
                     static_cast<int>(pieces.size()),
                     leastLineClears,
                     alwaysRegularAttack,
+                    lastHoldPriority,
             };
 
             switch (searchTypes) {
@@ -535,22 +536,35 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears, int initCombo
         ) {
+            auto lastHoldPriority = 0b11111111;
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::Fast, false);
+                    return run(
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::Fast,
+                            false, lastHoldPriority
+                    );
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::TSpin, false);
+                    return run(
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::TSpin,
+                            false, lastHoldPriority
+                    );
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins, true);
+                    return run(
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                            true, lastHoldPriority
+                    );
                 }
                 case 3: {
                     // All-Spins is top priority (mini is zero attack)
-                    return run(field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins, false);
+                    return run(
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                            false, lastHoldPriority
+                    );
                 }
                 default: {
                     throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
@@ -562,7 +576,11 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
-            return run(field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin, false);
+            auto lastHoldPriority = 0b11111111;
+            return run(
+                    field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin,
+                    false, lastHoldPriority
+            );
         }
 
     private:

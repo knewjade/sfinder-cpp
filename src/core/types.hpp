@@ -8,6 +8,7 @@ namespace core {
     using LineKey = uint64_t;
 
     enum PieceType {
+        Empty = -1,
         T = 0,
         I = 1,
         L = 2,

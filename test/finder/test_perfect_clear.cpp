@@ -1,4 +1,5 @@
 #include <chrono>
+#include <numeric>
 
 #include "gtest/gtest.h"
 
@@ -330,7 +331,8 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, SearchTypes::TSpin, false);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, SearchTypes::TSpin, false,
+                                     0b11111111);
 
             // Failed: 975, 2295
             if (!result.empty()) {
@@ -372,7 +374,8 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, SearchTypes::TSpin, false);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, SearchTypes::TSpin, false,
+                                     0b11111111);
 
             if (!result.empty()) {
                 success += 1;
@@ -385,6 +388,68 @@ namespace finder {
         std::cout << totalTime / static_cast<double>(max) << " milli seconds" << std::endl;
 
         EXPECT_EQ(success, 3248);
+    }
+
+    TEST_F(PerfectClearTest, checkLastHold) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        auto field = core::createField(
+                ""s
+        );
+        auto maxDepth = 10;
+        auto maxLine = 4;
+
+        auto pieces = std::vector{
+                core::PieceType::S, core::PieceType::T, core::PieceType::Z,
+                core::PieceType::L, core::PieceType::O, core::PieceType::J, core::PieceType::I,
+                core::PieceType::Z, core::PieceType::L, core::PieceType::I, core::PieceType::T,
+        };
+
+        {
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    SearchTypes::Fast, false, 0b10000000
+            );
+            int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
+                return a + b.pieceType + 1;
+            });
+            EXPECT_EQ(sum, 40 - 1);  // empty; not use last T
+        }
+
+        {
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    SearchTypes::Fast, false, 0b00000001
+            );
+            int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
+                return a + b.pieceType + 1;
+            });
+            EXPECT_EQ(sum, 40 - 1);
+        }
+
+        {
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    SearchTypes::Fast, false, 0b00001000
+            );
+            int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
+                return a + b.pieceType + 1;
+            });
+            EXPECT_EQ(sum, 40 - 4);
+        }
+
+        {
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    SearchTypes::Fast, false, 0b01000000
+            );
+            int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
+                return a + b.pieceType + 1;
+            });
+            EXPECT_EQ(sum, 40 - 7);
+        }
     }
 }
 
@@ -400,7 +465,8 @@ namespace finder {
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
-        auto field = core::createField(""s +
+        auto field = core::createField(
+                ""s +
                 "XXXXX__XXX"s +
                 "XXXX__XXXX"s +
                 ""
@@ -438,8 +504,10 @@ namespace finder {
         auto maxLine = 4;
 
         {
-            auto pieces = std::vector{core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
-                                      core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J};
+            auto pieces = std::vector{
+                    core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
+                    core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
+            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
@@ -476,8 +544,10 @@ namespace finder {
         auto maxLine = 4;
 
         {
-            auto pieces = std::vector{core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
-                                      core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J};
+            auto pieces = std::vector{
+                    core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
+                    core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
+            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, true, 1, true, 0);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
@@ -498,7 +568,10 @@ namespace finder {
                 freeze.put(blocks, x, y);
                 auto clearLine = freeze.clearLineReturnNum();
 
-                auto attacks = getAttackIfTSpin(reachable, factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                auto attacks = getAttackIfTSpin(
+                        reachable, factory, beforeClear, piece,
+                        {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
+                );
                 if (0 < attacks) {
                     attackCount += 1;
                 }
@@ -511,6 +584,7 @@ namespace finder {
     TEST_F(PerfectClearTest2, searchAllSpins) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto reachable = core::srs_rotate_end::Reachable(factory);
         auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
 
         auto field = core::createField(""s +
@@ -525,8 +599,10 @@ namespace finder {
 
         // no mini (all spins are judged as regular attack)
         {
-            auto pieces = std::vector{core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
-                                      core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J};
+            auto pieces = std::vector{
+                    core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
+                    core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
+            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, true, 2, true, 0);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
@@ -548,14 +624,20 @@ namespace finder {
                 auto clearLine = freeze.clearLineReturnNum();
 
                 {
-                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(
+                            reachable, factory, beforeClear, piece,
+                            {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
+                    );
                     if (0 < attacksAlwaysRegular) {
                         attackCountAlwaysRegular += 1;
                     }
                 }
 
                 {
-                    auto attackWithoutMini = getAttackIfAllSpins<false>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    auto attackWithoutMini = getAttackIfAllSpins<false>(
+                            reachable, factory, beforeClear, piece,
+                            {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
+                    );
                     if (0 < attackWithoutMini) {
                         attackCountWithoutMini += 1;
                     }
@@ -568,8 +650,10 @@ namespace finder {
 
         // with mini (mini is zero attack)
         {
-            auto pieces = std::vector{core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
-                                      core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J};
+            auto pieces = std::vector{
+                    core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
+                    core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
+            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, true, 3, true, 0);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
@@ -591,14 +675,20 @@ namespace finder {
                 auto clearLine = freeze.clearLineReturnNum();
 
                 {
-                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    auto attacksAlwaysRegular = getAttackIfAllSpins<true>(
+                            reachable, factory, beforeClear, piece,
+                            {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
+                    );
                     if (0 < attacksAlwaysRegular) {
                         attackCountAlwaysRegular += 1;
                     }
                 }
 
                 {
-                    auto attackWithoutMini = getAttackIfAllSpins<false>(factory, beforeClear, piece, {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false);
+                    auto attackWithoutMini = getAttackIfAllSpins<false>(
+                            reachable, factory, beforeClear, piece,
+                            {rotate, x, y, freeze.canReachOnHarddrop(blocks, x, y)}, clearLine, false
+                    );
                     if (0 < attackWithoutMini) {
                         attackCountWithoutMini += 1;
                     }

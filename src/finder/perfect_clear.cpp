@@ -1,25 +1,55 @@
 #include "perfect_clear.hpp"
 
 namespace finder {
+    int extractLastHoldPriority(uint8_t priority, core::PieceType hold) {
+        int slide = hold != core::PieceType::Empty ? hold : 7;
+        uint8_t bit = priority >> static_cast<unsigned>(slide);
+        return bit & 1U;
+    }
+
+    int compareToLastHoldPriority(uint8_t priority, int bestBit, core::PieceType newHold) {
+        // Priority is given when the least significant bit is 1
+
+        int newBit = extractLastHoldPriority(priority, newHold);
+
+        // When the least significant bits are different
+        if (0 < (newBit ^ bestBit)) {
+            // Return true when giving priority to new
+            return 0 < newBit ? 1 : -1;
+        }
+
+        return 0;
+    }
+
     // For fast search
     void Recorder<FastCandidate, FastRecord>::clear() {
         best_ = FastRecord{
                 std::vector<Operation>{},
+                core::PieceType::Empty,
                 INT_MAX,
                 INT_MAX,
                 INT_MAX,
         };
     }
 
-    void Recorder<FastCandidate, FastRecord>::update(const Solution &solution, const FastCandidate &current) {
+    void Recorder<FastCandidate, FastRecord>::update(
+            const Configure &configure, const Solution &solution, const FastCandidate &current
+    ) {
+        auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = FastRecord{
-                solution, current.softdropCount, current.holdCount, current.lineClearCount, current.maxCombo
+                solution, hold,
+                current.softdropCount, current.holdCount, current.lineClearCount, current.maxCombo,
+                extractLastHoldPriority(configure.lastHoldPriority, hold)
         };
     }
 
     bool Recorder<FastCandidate, FastRecord>::isWorseThanBest(
             bool leastLineClears, const FastCandidate &current
     ) const {
+        if (best_.holdPriority == 0) {
+            return false;
+        }
+
         return best_.softdropCount < current.softdropCount;
     }
 
@@ -56,13 +86,21 @@ namespace finder {
     }
 
     bool Recorder<FastCandidate, FastRecord>::shouldUpdate(
-            bool leastLineClears, const FastCandidate &newRecord
+            const Configure &configure, const FastCandidate &newRecord
     ) const {
         if (best_.solution.empty()) {
             return true;
         }
 
-        if (leastLineClears) {
+        core::PieceType newHold = 0 <= newRecord.holdIndex
+                                  ? configure.pieces[newRecord.holdIndex]
+                                  : core::PieceType::Empty;
+        auto compare = compareToLastHoldPriority(configure.lastHoldPriority, best_.holdPriority, newHold);
+        if (compare != 0) {
+            return 0 < compare;
+        }
+
+        if (configure.leastLineClears) {
             return shouldUpdateLeastLineClear(best_, newRecord);
         } else {
             return shouldUpdateMostLineClear(best_, newRecord);
@@ -74,6 +112,7 @@ namespace finder {
     void Recorder<TSpinCandidate, TSpinRecord>::clear() {
         best_ = TSpinRecord{
                 std::vector<Operation>{},
+                core::PieceType::Empty,
                 INT_MAX,
                 INT_MAX,
                 INT_MAX,
@@ -81,16 +120,24 @@ namespace finder {
         };
     }
 
-    void Recorder<TSpinCandidate, TSpinRecord>::update(const Solution &solution, const TSpinCandidate &current) {
+    void Recorder<TSpinCandidate, TSpinRecord>::update(
+            const Configure &configure, const Solution &solution, const TSpinCandidate &current
+    ) {
+        auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = TSpinRecord{
-                solution, current.softdropCount, current.holdCount, current.lineClearCount,
-                current.maxCombo, current.tSpinAttack
+                solution, 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty,
+                current.softdropCount, current.holdCount, current.lineClearCount,
+                current.maxCombo, current.tSpinAttack, extractLastHoldPriority(configure.lastHoldPriority, hold)
         };
     }
 
     bool Recorder<TSpinCandidate, TSpinRecord>::isWorseThanBest(
             bool leastLineClears, const TSpinCandidate &current
     ) const {
+        if (best_.holdPriority == 0) {
+            return false;
+        }
+
         if (current.leftNumOfT == 0) {
             if (current.tSpinAttack != best_.tSpinAttack) {
                 return current.tSpinAttack < best_.tSpinAttack;
@@ -143,13 +190,21 @@ namespace finder {
     }
 
     bool Recorder<TSpinCandidate, TSpinRecord>::shouldUpdate(
-            bool leastLineClears, const TSpinCandidate &newRecord
+            const Configure &configure, const TSpinCandidate &newRecord
     ) const {
         if (best_.solution.empty()) {
             return true;
         }
 
-        if (leastLineClears) {
+        core::PieceType newHold = 0 <= newRecord.holdIndex
+                                  ? configure.pieces[newRecord.holdIndex]
+                                  : core::PieceType::Empty;
+        auto compare = compareToLastHoldPriority(configure.lastHoldPriority, best_.holdPriority, newHold);
+        if (compare != 0) {
+            return 0 < compare;
+        }
+
+        if (configure.leastLineClears) {
             return shouldUpdateLeastLineClear(best_, newRecord);
         } else {
             return shouldUpdateMostLineClear(best_, newRecord);
@@ -161,6 +216,7 @@ namespace finder {
     void Recorder<AllSpinsCandidate, AllSpinsRecord>::clear() {
         best_ = AllSpinsRecord{
                 std::vector<Operation>{},
+                core::PieceType::Empty,
                 INT_MAX,
                 INT_MAX,
                 INT_MAX,
@@ -169,10 +225,14 @@ namespace finder {
         };
     }
 
-    void Recorder<AllSpinsCandidate, AllSpinsRecord>::update(const Solution &solution, const AllSpinsCandidate &current) {
+    void Recorder<AllSpinsCandidate, AllSpinsRecord>::update(
+            const Configure &configure, const Solution &solution, const AllSpinsCandidate &current
+    ) {
+        auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = AllSpinsRecord{
-                solution, current.softdropCount, current.holdCount, current.lineClearCount,
-                current.maxCombo, current.spinAttack
+                solution, 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty,
+                current.softdropCount, current.holdCount, current.lineClearCount,
+                current.maxCombo, current.spinAttack, extractLastHoldPriority(configure.lastHoldPriority, hold)
         };
     }
 
@@ -224,17 +284,24 @@ namespace finder {
     }
 
     bool Recorder<AllSpinsCandidate, AllSpinsRecord>::shouldUpdate(
-            bool leastLineClears, const AllSpinsCandidate &newRecord
+            const Configure &configure, const AllSpinsCandidate &newRecord
     ) const {
         if (best_.solution.empty()) {
             return true;
         }
 
-        if (leastLineClears) {
+        core::PieceType newHold = 0 <= newRecord.holdIndex
+                                  ? configure.pieces[newRecord.holdIndex]
+                                  : core::PieceType::Empty;
+        auto compare = compareToLastHoldPriority(configure.lastHoldPriority, best_.holdPriority, newHold);
+        if (compare != 0) {
+            return 0 < compare;
+        }
+
+        if (configure.leastLineClears) {
             return shouldUpdateLeastLineClear(best_, newRecord);
         } else {
             return shouldUpdateMostLineClear(best_, newRecord);
         }
     }
-
 }
