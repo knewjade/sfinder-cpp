@@ -538,6 +538,7 @@ namespace finder {
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
                 int initCombo, bool initB2b, bool twoLineFollowUp
         ) {
+            // Check last hold that can take 2 PC
             uint8_t lastHoldPriority = 0U;
             if (maxDepth + 5 <= pieces.size() && twoLineFollowUp) {
                 std::vector<core::PieceType> nextPieces(pieces.cbegin() + maxDepth, pieces.cend());
@@ -557,6 +558,7 @@ namespace finder {
                 lastHoldPriority = 0b11111111U;
             }
 
+            // Decide parameters
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
