@@ -331,7 +331,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, SearchTypes::TSpin, false,
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, true, SearchTypes::TSpin, false,
                                      0b11111111);
 
             // Failed: 975, 2295
@@ -374,7 +374,7 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, SearchTypes::TSpin, false,
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, true, SearchTypes::TSpin, false,
                                      0b11111111);
 
             if (!result.empty()) {
@@ -409,7 +409,7 @@ namespace finder {
 
         {
             auto result = finder.run(
-                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    field, pieces, maxDepth, maxLine, true, true, 0, true,
                     SearchTypes::Fast, false, 0b10000000
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
@@ -420,7 +420,7 @@ namespace finder {
 
         {
             auto result = finder.run(
-                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    field, pieces, maxDepth, maxLine, true, true, 0, true,
                     SearchTypes::Fast, false, 0b00000001
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
@@ -431,7 +431,7 @@ namespace finder {
 
         {
             auto result = finder.run(
-                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    field, pieces, maxDepth, maxLine, true, true, 0, true,
                     SearchTypes::Fast, false, 0b00001000
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
@@ -442,13 +442,63 @@ namespace finder {
 
         {
             auto result = finder.run(
-                    field, pieces, maxDepth, maxLine, true, true, 0,
+                    field, pieces, maxDepth, maxLine, true, true, 0, true,
                     SearchTypes::Fast, false, 0b01000000
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
                 return a + b.pieceType + 1;
             });
             EXPECT_EQ(sum, 40 - 7);
+        }
+    }
+
+    TEST_F(PerfectClearTest, twoLineFollowUp) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+
+        {
+            auto field = core::createField(
+                    "XXXX___XXX"s +
+                    "XXXX___XXX"s +
+                    "XXXX__XXXX"s +
+                    ""
+            );
+            auto maxDepth = 2;
+            auto maxLine = 3;
+
+            auto pieces = std::vector{
+                    core::PieceType::L, core::PieceType::J, core::PieceType::S,
+                    core::PieceType::J, core::PieceType::I, core::PieceType::O, core::PieceType::O,
+            };
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, true, SearchTypes::Fast, true, 0, true, true
+            );
+            EXPECT_TRUE(!result.empty());
+            verify(factory, field, result);
+
+            EXPECT_EQ(result[0].pieceType, core::PieceType::J);
+            EXPECT_EQ(result[1].pieceType, core::PieceType::S);
+        }
+
+        {
+            auto field = core::createField(
+                    "__________"s +
+                    "__________"s +
+                    ""
+            );
+            auto maxDepth = 5;
+            auto maxLine = 2;
+
+            auto pieces = std::vector{
+                    core::PieceType::L,
+                    core::PieceType::J, core::PieceType::I, core::PieceType::O, core::PieceType::O,
+            };
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, false, SearchTypes::Fast, true, 0, true, true
+            );
+            EXPECT_TRUE(!result.empty());
+            verify(factory, field, result);
         }
     }
 }
@@ -476,14 +526,14 @@ namespace finder {
 
         {
             auto pieces = std::vector{core::PieceType::S};
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0, true, false);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
         }
 
         {
             auto pieces = std::vector{core::PieceType::Z};
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0, true, false);
             EXPECT_FALSE(!result.empty());
         }
     }
@@ -508,7 +558,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
                     core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
             };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 0, true, 0, true, false);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
 
@@ -548,7 +598,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
                     core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
             };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 1, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 1, true, 0, true, false);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
 
@@ -603,7 +653,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
                     core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
             };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 2, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 2, true, 0, true, false);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
 
@@ -654,7 +704,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::O, core::PieceType::J,
                     core::PieceType::L, core::PieceType::I, core::PieceType::Z, core::PieceType::T, core::PieceType::J
             };
-            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 3, true, 0);
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true, 3, true, 0, true, false);
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
 

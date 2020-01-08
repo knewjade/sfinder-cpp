@@ -3,6 +3,7 @@
 
 #include "types.hpp"
 #include "spins.hpp"
+#include "two_lines_pc.hpp"
 
 #include "../core/piece.hpp"
 #include "../core/moves.hpp"
@@ -460,7 +461,7 @@ namespace finder {
         // If `alwaysRegularAttack` is true, mini spin is judged as regular attack
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo,
+                int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, bool initB2b,
                 SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority
         ) {
             assert(1 <= maxDepth);
@@ -506,9 +507,9 @@ namespace finder {
                     // Create candidate
                     auto candidate = holdEmpty
                                      ? TSpinCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                                      initCombo, initCombo, 0, true, leftNumOfT}
+                                                      initCombo, initCombo, 0, initB2b, leftNumOfT}
                                      : TSpinCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                                      initCombo, initCombo, 0, true, leftNumOfT};
+                                                      initCombo, initCombo, 0, initB2b, leftNumOfT};
 
                     auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
@@ -517,9 +518,9 @@ namespace finder {
                     // Create candidate
                     auto candidate = holdEmpty
                                      ? AllSpinsCandidate{freeze, 0, -1, maxLine, 0, 0, 0, 0,
-                                                         initCombo, initCombo, 0, true}
+                                                         initCombo, initCombo, 0, initB2b}
                                      : AllSpinsCandidate{freeze, 1, 0, maxLine, 0, 0, 0, 0,
-                                                         initCombo, initCombo, 0, true};
+                                                         initCombo, initCombo, 0, initB2b};
 
                     auto finder = PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord>(factory, moveGenerator, reachable);
                     return finder.run(configure, candidate);
@@ -534,35 +535,56 @@ namespace finder {
         // searchType refers to code
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
-                int maxLine, bool holdEmpty, int searchType, bool leastLineClears, int initCombo
+                int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
+                int initCombo, bool initB2b, bool twoLineFollowUp
         ) {
-            auto lastHoldPriority = 0b11111111;
+            uint8_t lastHoldPriority = 0U;
+            if (maxDepth + 5 <= pieces.size() && twoLineFollowUp) {
+                std::vector<core::PieceType> nextPieces(pieces.cbegin() + maxDepth, pieces.cend());
+                if (holdEmpty && canTake2LinePC(nextPieces)) {
+                    lastHoldPriority |= 0b10000000U;
+                }
+
+                for (unsigned int pieceType = 0; pieceType < 7; ++pieceType) {
+                    nextPieces[0] = static_cast<core::PieceType>(pieceType);
+                    if (canTake2LinePC(nextPieces)) {
+                        lastHoldPriority |= 1U << pieceType;
+                    }
+                }
+            }
+
+            if (lastHoldPriority == 0U) {
+                lastHoldPriority = 0b11111111U;
+            }
+
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::Fast,
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::Fast,
                             false, lastHoldPriority
                     );
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::TSpin,
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::TSpin,
                             false, lastHoldPriority
                     );
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::AllSpins,
                             true, lastHoldPriority
                     );
                 }
                 case 3: {
                     // All-Spins is top priority (mini is zero attack)
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, SearchTypes::AllSpins,
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::AllSpins,
                             false, lastHoldPriority
                     );
                 }
@@ -576,10 +598,8 @@ namespace finder {
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty
         ) {
-            auto lastHoldPriority = 0b11111111;
             return run(
-                    field, pieces, maxDepth, maxLine, holdEmpty, true, 0, SearchTypes::TSpin,
-                    false, lastHoldPriority
+                    field, pieces, maxDepth, maxLine, holdEmpty, SearchTypes::TSpin, true, 0, true, false
             );
         }
 

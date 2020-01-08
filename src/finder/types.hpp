@@ -12,7 +12,7 @@ namespace finder {
         const int pieceSize;
         const bool leastLineClears;
         bool alwaysRegularAttack;
-        uint8_t lastHoldPriority;  // 0b11000000 -> Give high priority to solutions that last hold is  Empty,O
+        uint8_t lastHoldPriority;  // 0bEOZSJLIT // 0b11000000 -> Give high priority to solutions that last hold is Empty,O
     };
 
     struct Operation {
@@ -46,7 +46,7 @@ namespace finder {
         int holdCount;
         int lineClearCount;
         int maxCombo;
-        int holdPriority;  // Priority is given when the least significant bit is 1
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
     };
 
     // For T-Spin search
@@ -74,7 +74,7 @@ namespace finder {
         int lineClearCount;
         int maxCombo;
         int tSpinAttack;
-        int holdPriority;  // Priority is given when the least significant bit is 1
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
     };
 
     // For all spins search
@@ -101,7 +101,7 @@ namespace finder {
         int lineClearCount;
         int maxCombo;
         int spinAttack;
-        int holdPriority;  // Priority is given when the least significant bit is 1
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
     };
 }
 
