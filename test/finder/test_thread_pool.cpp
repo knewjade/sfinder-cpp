@@ -19,7 +19,7 @@ namespace finder {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
-    auto sleep200msCallable(int i) {
+    std::function<int(const TaskStatus &)> sleep200msCallable(int i) {
         return [i](const TaskStatus &status) {
             if (status.aborted()) {
                 return -i;
@@ -66,11 +66,11 @@ namespace finder {
     TEST_F(ThreadPoolTest, reusability) {
         auto pool = ThreadPool(3);
 
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 1000; ++i) {
+            std::cout << "#" << i << std::endl;
             auto futures = std::vector<std::future<int>>(7);
             for (int j = 0; j < futures.size(); ++j) {
-                Callable<int> callable = sleep200msCallable(j);
-                futures[j] = pool.execute(callable);
+                futures[j] = pool.execute(sleep200msCallable(j));
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(100));

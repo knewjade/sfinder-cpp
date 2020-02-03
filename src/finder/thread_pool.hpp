@@ -36,8 +36,8 @@ namespace finder {
         }
 
     private:
-        bool isTerminated_ = false;
-        bool isAborted_ = false;
+        std::atomic<bool> isTerminated_ = false;
+        std::atomic<bool> isAborted_ = false;
     };
 
     using Runnable = std::function<void(const TaskStatus &)>;
@@ -52,14 +52,16 @@ namespace finder {
                 throw std::runtime_error("Not working");
             }
 
-            counter += 1;
-
             {
-                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                std::lock(mutexForQueue_, mutexForAbort_);
+                std::lock_guard<std::mutex> lk1(mutexForQueue_, std::adopt_lock);
+                std::lock_guard<std::mutex> lk2(mutexForAbort_, std::adopt_lock);
                 queue_.push(runnable);
+                counter += 1;
             }
 
             conditionForQueue_.notify_one();
+            conditionForSleep_.notify_one();
         }
 
         void execute() {
@@ -70,15 +72,25 @@ namespace finder {
                     std::unique_lock<std::mutex> guard(mutexForQueue_);
                     conditionForQueue_.wait(guard, [this] { return !status_.working() || !queue_.empty(); });
 
-                    if (!status_.working() && queue_.empty()) {
-                        if (status_.terminated()) {
-                            return;
+                    if (queue_.empty()) {
+                        if (!status_.working()) {
+                            if (status_.terminated()) {
+                                // All tasks completed, so finish pool
+                                return;
+                            }
+
+                            // All tasks completed, so go to sleep
+                            conditionForAbort_.notify_all();
+                            conditionForSleep_.wait(guard, [this] {
+                                return status_.working() || status_.terminated();
+                            });
                         }
 
-                        conditionForAbort_.notify_all();
-                        conditionForQueue_.wait(guard, [this] { return status_.working() || status_.terminated(); });
+                        // Working but not found task or after sleeping
                         continue;
                     }
+
+                    // Execute task
 
                     runnable = queue_.front();
                     queue_.pop();
@@ -86,7 +98,10 @@ namespace finder {
 
                 runnable(status_);
 
-                counter -= 1;
+                {
+                    std::lock_guard<std::mutex> guard(mutexForAbort_);
+                    counter -= 1;
+                }
             }
         }
 
@@ -96,31 +111,40 @@ namespace finder {
             // sleep until completed all tasks
             {
                 std::unique_lock<std::mutex> guard(mutexForAbort_);
-                conditionForAbort_.wait(guard, [this] { return counter == 0; });
+                conditionForAbort_.wait(guard, [this] {
+//                    std::cout << counter << std::endl;
+                    return counter == 0;
+                });
             }
 
             status_.resume();
             conditionForQueue_.notify_all();
+            conditionForSleep_.notify_all();
         }
 
         void shutdown() {
             status_.terminate();
             conditionForQueue_.notify_all();
+            conditionForSleep_.notify_all();
+            conditionForAbort_.notify_all();
         }
 
         void shutdownNow() {
             status_.abort();
             status_.terminate();
             conditionForQueue_.notify_all();
+            conditionForSleep_.notify_all();
+            conditionForAbort_.notify_all();
         }
 
     private:
         TaskStatus status_{};
-        std::atomic<int> counter = std::atomic<int>(0);
+        int counter = 0;
         std::queue<Runnable> queue_{};
 
         std::mutex mutexForQueue_;
         std::condition_variable conditionForQueue_{};
+        std::condition_variable conditionForSleep_{};
 
         std::mutex mutexForAbort_;
         std::condition_variable conditionForAbort_{};
@@ -134,6 +158,10 @@ namespace finder {
                     tasks_.execute();
                 }));
             }
+        }
+
+        ~ThreadPool() {
+            shutdown();
         }
 
         void execute(const Runnable &runnable) {
@@ -156,14 +184,18 @@ namespace finder {
         void shutdown() {
             tasks_.shutdown();
             for (auto &thread : threads_) {
-                thread.join();
+                if (thread.joinable()) {
+                    thread.join();
+                }
             }
         }
 
         void shutdownNow() {
             tasks_.shutdownNow();
             for (auto &thread : threads_) {
-                thread.join();
+                if (thread.joinable()) {
+                    thread.join();
+                }
             }
         }
 
@@ -174,4 +206,3 @@ namespace finder {
 }
 
 #endif //FINDER_THREAD_POOLS_HPP
-
