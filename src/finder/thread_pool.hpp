@@ -32,7 +32,11 @@ namespace finder {
         }
 
         [[nodiscard]] bool working() const {
-            return !(isAborted_ || isTerminated_);
+            return !notWorking();
+        }
+
+        [[nodiscard]] bool notWorking() const {
+            return isAborted_ || isTerminated_;
         }
 
     private:
@@ -48,7 +52,7 @@ namespace finder {
     class Tasks {
     public:
         void push(const Runnable &runnable) {
-            if (!status_.working()) {
+            if (status_.notWorking()) {
                 throw std::runtime_error("Not working");
             }
 
@@ -70,10 +74,10 @@ namespace finder {
 
                 {
                     std::unique_lock<std::mutex> guard(mutexForQueue_);
-                    conditionForQueue_.wait(guard, [this] { return !status_.working() || !queue_.empty(); });
+                    conditionForQueue_.wait(guard, [this] { return status_.notWorking() || !queue_.empty(); });
 
                     if (queue_.empty()) {
-                        if (!status_.working()) {
+                        if (status_.notWorking()) {
                             if (status_.terminated()) {
                                 // All tasks completed, so finish pool
                                 return;
@@ -112,7 +116,6 @@ namespace finder {
             {
                 std::unique_lock<std::mutex> guard(mutexForAbort_);
                 conditionForAbort_.wait(guard, [this] {
-//                    std::cout << counter << std::endl;
                     return counter == 0;
                 });
             }
@@ -159,6 +162,8 @@ namespace finder {
                 }));
             }
         }
+
+        ThreadPool(const ThreadPool &rhs) = delete;
 
         ~ThreadPool() {
             shutdown();
