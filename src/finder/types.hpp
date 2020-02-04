@@ -22,12 +22,20 @@ namespace finder {
         int y;
     };
 
+    template<typename C>
+    struct PreOperation {
+        C candidate;
+        core::PieceType pieceType;
+        core::RotateType rotateType;
+        int x;
+        int y;
+    };
+
     using Solution = std::vector<Operation>;
     inline const Solution kNoSolution = std::vector<Operation>();
 
     // For fast search
     struct FastCandidate {
-        const core::Field &field;
         const int currentIndex;
         const int holdIndex;
         const int leftLine;
@@ -40,18 +48,26 @@ namespace finder {
     };
 
     struct FastRecord {
+        // new
         Solution solution;
         core::PieceType hold;
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
+        core::Field field;
+
+        // from candidate
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
         int softdropCount;
         int holdCount;
         int lineClearCount;
+        int currentCombo;
         int maxCombo;
-        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
     };
 
     // For T-Spin search
     struct TSpinCandidate {
-        const core::Field &field;
         const int currentIndex;
         const int holdIndex;
         const int leftLine;
@@ -67,19 +83,29 @@ namespace finder {
     };
 
     struct TSpinRecord {
+        // new
         Solution solution;
         core::PieceType hold;
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
+        core::Field field;
+
+        // from candidate
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
         int softdropCount;
         int holdCount;
         int lineClearCount;
+        int currentCombo;
         int maxCombo;
         int tSpinAttack;
-        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
+        bool b2b;
+        int leftNumOfT;
     };
 
     // For all spins search
     struct AllSpinsCandidate {
-        const core::Field &field;
         const int currentIndex;
         const int holdIndex;
         const int leftLine;
@@ -94,14 +120,24 @@ namespace finder {
     };
 
     struct AllSpinsRecord {
+        // new
         Solution solution;
         core::PieceType hold;
+        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
+        core::Field field;
+
+        // candidate
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
         int softdropCount;
         int holdCount;
         int lineClearCount;
+        int currentCombo;
         int maxCombo;
         int spinAttack;
-        int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
+        bool b2b;
     };
 }
 
