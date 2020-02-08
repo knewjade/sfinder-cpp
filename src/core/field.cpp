@@ -313,4 +313,16 @@ namespace core {
 
         return field;
     }
+
+    int Field::getNumOfHole() {
+        auto field = core::Field(xBoardLow, xBoardMidLow, xBoardMidHigh, xBoardHigh);
+        field.deleteLine_(1ULL, 0ULL, 0ULL, 0ULL);
+
+        auto low = ~xBoardLow & field.xBoardLow;
+        auto midLow = ~xBoardMidLow & field.xBoardMidLow;
+        auto midHigh = ~xBoardMidHigh & field.xBoardMidHigh;
+        auto high = ~xBoardHigh & field.xBoardHigh;
+
+        return bitCount(low) + bitCount(midLow) + bitCount(midHigh) + bitCount(high);
+    }
 }

@@ -20,6 +20,9 @@ namespace core {
 
         Field() : xBoardLow(0), xBoardMidLow(0), xBoardMidHigh(0), xBoardHigh(0) {};
 
+        Field(Bitboard low, Bitboard midLow, Bitboard midHigh, Bitboard high)
+                : xBoardLow(low), xBoardMidLow(midLow), xBoardMidHigh(midHigh), xBoardHigh(high) {};
+
         void setBlock(int x, int y);
 
         void removeBlock(int x, int y);
@@ -55,6 +58,8 @@ namespace core {
         bool isWallBetween(int x, int maxY) const;
 
         std::string toString(int height) const;
+
+        int getNumOfHole();
 
     private:
         void deleteLine_(LineKey low, LineKey midLow, LineKey midHigh, LineKey high);

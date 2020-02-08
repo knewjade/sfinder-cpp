@@ -102,4 +102,28 @@ namespace core {
         EXPECT_FALSE(field.canPut(blocks, 5, 4));
         EXPECT_FALSE(field.canPut(blocks, 6, 5));
     }
+
+    TEST_F(FieldTest, getNumOfHole) {
+        {
+            auto field = createField(
+                    "XXXXXXXXXX"s +
+                    "XXXXXXXXXX"s +
+                    "XXXXXXXXXX"s +
+                    ""
+            );
+            auto result = field.getNumOfHole();
+            EXPECT_EQ(result, 0);
+        }
+
+        {
+            auto field = createField(
+                    "__XXXX__XX"s +
+                    "_XXXXX____"s +
+                    "XXXXX____X"s +
+                    ""
+            );
+            auto result = field.getNumOfHole();
+            EXPECT_EQ(result, 3);
+        }
+    }
 }
