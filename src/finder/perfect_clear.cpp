@@ -27,7 +27,6 @@ namespace finder {
                 std::vector<Operation>{},
                 core::PieceType::Empty,
                 INT_MAX,
-                core::Field(),
                 INT_MAX,
                 INT_MAX,
                 0,
@@ -41,14 +40,14 @@ namespace finder {
     }
 
     void Recorder<FastCandidate, FastRecord>::update(
-            const Configure &configure, const core::Field &field, const FastCandidate &current, const Solution &solution
+            const Configure &configure, const FastCandidate &current, const Solution &solution
     ) {
         auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = FastRecord{
                 // new
                 solution, hold, extractLastHoldPriority(configure.lastHoldPriority, hold),
                 // from candidate
-                core::Field(field), current.currentIndex, current.holdIndex, current.leftLine, current.depth,
+                current.currentIndex, current.holdIndex, current.leftLine, current.depth,
                 current.softdropCount, current.holdCount, current.lineClearCount,
                 current.currentCombo, current.maxCombo,
         };
@@ -125,7 +124,6 @@ namespace finder {
                 std::vector<Operation>{},
                 core::PieceType::Empty,
                 INT_MAX,
-                core::Field(),
                 INT_MAX,
                 INT_MAX,
                 0,
@@ -142,8 +140,7 @@ namespace finder {
     }
 
     void Recorder<TSpinCandidate, TSpinRecord>::update(
-            const Configure &configure, const core::Field &field, const TSpinCandidate &current,
-            const Solution &solution
+            const Configure &configure, const TSpinCandidate &current, const Solution &solution
     ) {
         auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = TSpinRecord{
@@ -151,7 +148,7 @@ namespace finder {
                 solution, 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty,
                 extractLastHoldPriority(configure.lastHoldPriority, hold),
                 // from candidate
-                core::Field(field), current.currentIndex, current.holdIndex, current.leftLine, current.depth,
+                current.currentIndex, current.holdIndex, current.leftLine, current.depth,
                 current.softdropCount, current.holdCount, current.lineClearCount,
                 current.currentCombo, current.maxCombo, current.tSpinAttack, current.b2b, current.leftNumOfT,
         };
@@ -244,7 +241,6 @@ namespace finder {
                 std::vector<Operation>{},
                 core::PieceType::Empty,
                 INT_MAX,
-                core::Field(),
                 INT_MAX,
                 INT_MAX,
                 0,
@@ -260,8 +256,7 @@ namespace finder {
     }
 
     void Recorder<AllSpinsCandidate, AllSpinsRecord>::update(
-            const Configure &configure, const core::Field &field, const AllSpinsCandidate &current,
-            const Solution &solution
+            const Configure &configure, const AllSpinsCandidate &current, const Solution &solution
     ) {
         auto hold = 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty;
         best_ = AllSpinsRecord{
@@ -269,7 +264,7 @@ namespace finder {
                 solution, 0 <= current.holdIndex ? configure.pieces[current.holdIndex] : core::PieceType::Empty,
                 extractLastHoldPriority(configure.lastHoldPriority, hold),
                 // from candidate
-                core::Field(field), current.currentIndex, current.holdIndex, current.leftLine, current.depth,
+                current.currentIndex, current.holdIndex, current.leftLine, current.depth,
                 current.softdropCount, current.holdCount, current.lineClearCount,
                 current.currentCombo, current.maxCombo, current.spinAttack, current.b2b,
         };

@@ -155,9 +155,9 @@ namespace finder {
             }
         }
 
-        void accept(const Configure &configure, const core::Field &field, const C &current, const Solution &solution) {
+        void accept(const Configure &configure, const C &current, const Solution &solution) {
             if (recorder.shouldUpdate(configure, current)) {
-                recorder.update(configure, field, current, solution);
+                recorder.update(configure, current, solution);
             }
         }
 
@@ -228,7 +228,7 @@ namespace finder {
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b, nextLeftNumOfT,
                     };
-                    finder->accept(configure, field, bestCandidate, solution);
+                    finder->accept(configure, bestCandidate, solution);
                     return;
                 }
 
@@ -363,7 +363,7 @@ namespace finder {
                             nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                             nextSoftdropCount, nextHoldCount, nextLineClearCount
                     };
-                    finder->accept(configure, field, bestCandidate, solution);
+                    finder->accept(configure, bestCandidate, solution);
                     return;
                 }
 
@@ -506,7 +506,7 @@ namespace finder {
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b,
                     };
-                    finder->accept(configure, field, bestCandidate, solution);
+                    finder->accept(configure, bestCandidate, solution);
                     return;
                 }
 
@@ -608,8 +608,7 @@ namespace finder {
         void clear();
 
         void update(
-                const Configure &configure, const core::Field &field, const TSpinCandidate &current,
-                const Solution &solution
+                const Configure &configure, const TSpinCandidate &current, const Solution &solution
         );
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const;
@@ -630,8 +629,7 @@ namespace finder {
         void clear();
 
         void update(
-                const Configure &configure, const core::Field &field, const FastCandidate &current,
-                const Solution &solution
+                const Configure &configure, const FastCandidate &current, const Solution &solution
         );
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const FastCandidate &current) const;
@@ -652,8 +650,7 @@ namespace finder {
         void clear();
 
         void update(
-                const Configure &configure, const core::Field &field, const AllSpinsCandidate &current,
-                const Solution &solution
+                const Configure &configure, const AllSpinsCandidate &current, const Solution &solution
         );
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const AllSpinsCandidate &current) const;

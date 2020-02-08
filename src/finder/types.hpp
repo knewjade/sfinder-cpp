@@ -52,7 +52,6 @@ namespace finder {
         Solution solution;
         core::PieceType hold;
         int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
-        core::Field field;
 
         // from candidate
         int currentIndex;
@@ -87,7 +86,6 @@ namespace finder {
         Solution solution;
         core::PieceType hold;
         int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
-        core::Field field;
 
         // from candidate
         int currentIndex;
@@ -124,7 +122,6 @@ namespace finder {
         Solution solution;
         core::PieceType hold;
         int holdPriority;  // Priority is given when the least significant bit is 1  // 0bEOZSJLIT
-        core::Field field;
 
         // candidate
         int currentIndex;
