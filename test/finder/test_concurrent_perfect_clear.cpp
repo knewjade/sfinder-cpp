@@ -1,9 +1,6 @@
-//#include <chrono>
-//#include <numeric>
-//
 #include "gtest/gtest.h"
-//
-//#include "core/field.hpp"
+
+#include "core/field.hpp"
 #include "core/moves.hpp"
 #include "finder/concurrent_perfect_clear.hpp"
 #include "finder/thread_pool.hpp"
@@ -11,7 +8,7 @@
 namespace finder {
     using namespace std::literals::string_literals;
 
-    class PerfectClear2Test : public ::testing::Test {
+    class ConcurrentPerfectClearTest : public ::testing::Test {
     };
 
     template<class F>
@@ -56,7 +53,7 @@ namespace finder {
     }
 
     // depth = 1 && piece = 1 && first hold is empty
-    TEST_F(PerfectClear2Test, case1) {
+    TEST_F(ConcurrentPerfectClearTest, case1) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
         auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
@@ -64,13 +61,13 @@ namespace finder {
     }
 
     // depth = 1 && piece = 1 && first hold is empty
-    TEST_F(PerfectClear2Test, case1abort) {
+    TEST_F(ConcurrentPerfectClearTest, case1abort) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(6);
         auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
 
         auto thread = std::thread([&]() {
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
             std::cout << "abort" << std::endl;
             finder.abort();
         });
@@ -81,7 +78,7 @@ namespace finder {
     }
 
     // depth = 1 && piece = 1 && first hold is empty
-    TEST_F(PerfectClear2Test, case1_2) {
+    TEST_F(ConcurrentPerfectClearTest, case1_2) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
         auto finder = PerfectClearFinder<>(factory, moveGenerator);
