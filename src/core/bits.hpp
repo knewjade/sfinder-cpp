@@ -23,6 +23,10 @@ namespace core {
     bool isWallBetweenLeft(int x, int maxY, Bitboard board);
 
     int bitCount(uint64_t b);
+
+    int mostSignificantDigit(uint64_t b);
+
+    uint64_t fillVertical(uint64_t b);
 }
 
 #endif //CORE_BITS_HPP

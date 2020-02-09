@@ -103,7 +103,7 @@ namespace core {
         EXPECT_FALSE(field.canPut(blocks, 6, 5));
     }
 
-    TEST_F(FieldTest, getNumOfHole) {
+    TEST_F(FieldTest, getNumOfVerticalTransitions) {
         {
             auto field = createField(
                     "XXXXXXXXXX"s +
@@ -111,8 +111,7 @@ namespace core {
                     "XXXXXXXXXX"s +
                     ""
             );
-            auto result = field.getNumOfHole();
-            EXPECT_EQ(result, 0);
+            EXPECT_EQ(field.getNumOfVerticalTransitions(), 0);
         }
 
         {
@@ -122,8 +121,105 @@ namespace core {
                     "XXXXX____X"s +
                     ""
             );
-            auto result = field.getNumOfHole();
-            EXPECT_EQ(result, 3);
+            EXPECT_EQ(field.getNumOfVerticalTransitions(), 3);
+        }
+
+        for (int y = 1; y < 24; ++y) {
+            auto field = core::Field();
+            field.setBlock(0, y);
+            field.setBlock(9, y);
+
+            EXPECT_EQ(field.getNumOfVerticalTransitions(), 2);
+        }
+    }
+
+    TEST_F(FieldTest, getNumOfHoles) {
+        {
+            auto field = createField(
+                    "XXXXXXXXXX"s +
+                    "XXXXXXXXXX"s +
+                    "XXXXXXXXXX"s +
+                    ""
+            );
+            EXPECT_EQ(field.getNumOfHoles(), 0);
+        }
+
+        {
+            auto field = createField(
+                    "__XXXX__XX"s +
+                    "_XXXXX____"s +
+                    "XXXXX____X"s +
+                    ""
+            );
+            EXPECT_EQ(field.getNumOfHoles(), 4);
+        }
+
+        for (int y = 1; y < 24; ++y) {
+            auto field = core::Field();
+            field.setBlock(0, y);
+            field.setBlock(9, y);
+
+            EXPECT_EQ(field.getNumOfHoles(), 2 * y);
+        }
+    }
+
+    TEST_F(FieldTest, getMaxY) {
+        {
+            auto field = core::Field();
+            EXPECT_EQ(field.getMaxY(), -1);
+        }
+
+        for (int y = 0; y < 24; ++y) {
+            {
+                auto field = core::Field();
+                field.setBlock(9, y);
+                EXPECT_EQ(field.getMaxY(), y);
+            }
+
+            {
+                auto field = core::Field();
+                field.setBlock(0, y);
+                EXPECT_EQ(field.getMaxY(), y);
+            }
+        }
+
+        {
+            auto field = createField(
+                    "__XXXX__XX"s +
+                    "_XXXXX____"s +
+                    "XXXXX____X"s +
+                    ""
+            );
+            EXPECT_EQ(field.getMaxY(), 2);
+        }
+    }
+
+    TEST_F(FieldTest, fillBelowSurface) {
+        {
+            auto field = createField(
+                    "__XXXX__XX"s +
+                    "_XXXXX____"s +
+                    "XXXXX____X"s +
+                    ""
+            );
+            auto expected = createField(
+                    "__XXXX__XX"s +
+                    "_XXXXX__XX"s +
+                    "XXXXXX__XX"s +
+                    ""
+            );
+
+            field.fillBelowSurface();
+            EXPECT_EQ(field, expected);
+        }
+
+        for (int y = 0; y < 24; ++y) {
+            auto field = core::Field();
+            field.setBlock(0, y);
+            field.setBlock(9, y);
+
+            field.fillBelowSurface();
+            EXPECT_EQ(field.getNumOfBlocks(), 2 * (y + 1));
         }
     }
 }

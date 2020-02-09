@@ -59,7 +59,15 @@ namespace core {
 
         std::string toString(int height) const;
 
-        int getNumOfHole();
+        int getNumOfBlocks() const;
+
+        int getNumOfVerticalTransitions() const;
+
+        int getMaxY() const;
+
+        void fillBelowSurface();
+
+        int getNumOfHoles() const;
 
     private:
         void deleteLine_(LineKey low, LineKey midLow, LineKey midHigh, LineKey high);

@@ -458,4 +458,26 @@ namespace core {
         b = ((b >> 4) + b) & 0x0F0F0F0F0F0F0F0FULL;
         return static_cast<int>((b * 0x0101010101010101ULL) >> 56);
     }
+
+    // 0b000000 => 0
+    // 0b000001 => 1
+    // 0b000010 => 2
+    // ...
+    // 0b100000 => 6
+    int mostSignificantDigit(uint64_t b) {
+        b |= b >> 1U;
+        b |= b >> 2U;
+        b |= b >> 4U;
+        b |= b >> 8U;
+        b |= b >> 16U;
+        b |= b >> 32U;
+        return bitCount(b);
+    }
+
+    uint64_t fillVertical(uint64_t b) {
+        b |= b >> 10U;
+        b |= b >> 10U;
+        b |= b >> 30U;
+        return b;
+    }
 }
