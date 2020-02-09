@@ -14,6 +14,13 @@ namespace core {
         bool harddrop;
     };
 
+    struct ScoredMove {
+        core::Field field;
+        core::Move move;
+        int numCleared;
+        int score;
+    };
+
     enum MoveResults {
         No = 0,
         Harddrop = 1,

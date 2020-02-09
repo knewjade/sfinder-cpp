@@ -11,7 +11,7 @@
 
 namespace finder {
     namespace {
-        bool validate(const core::Field &field, int maxLine) {
+        inline bool validate(const core::Field &field, int maxLine) {
             int sum = maxLine - field.getBlockOnX(0, maxLine);
             for (int x = 1; x < core::FIELD_WIDTH; x++) {
                 int emptyCountInColumn = maxLine - field.getBlockOnX(x, maxLine);
@@ -25,6 +25,10 @@ namespace finder {
             }
 
             return sum % 4 == 0;
+        }
+
+        inline int calcScore(const core::Field &field, const bool harddrop) {
+            return field.getNumOfHoles() * 10 + !harddrop;
         }
     }
 
@@ -93,6 +97,21 @@ namespace finder {
             return recorder.best();
         }
 
+        R runRecord(const Configure &configure, const core::Field &field, const C &candidate, const R &initRecord) {
+            recorder.update(initRecord);
+
+            // Initialize solution
+            Solution solution(configure.maxDepth);
+            std::fill(solution.begin(), solution.end(), Operation{
+                    core::PieceType::T, core::RotateType::Spawn, -1, -1
+            });
+
+            // Execute
+            search(configure, field, candidate, solution);
+
+            return recorder.best();
+        }
+
         void search(const Configure &configure, const core::Field &field, const C &candidate, Solution &solution) {
             if (status.aborted() || recorder.isWorseThanBest(configure.leastLineClears, candidate)) {
                 return;
@@ -102,6 +121,7 @@ namespace finder {
 
             auto &pieces = configure.pieces;
             auto &moves = configure.movePool[depth];
+            auto &scoredMoves = configure.scoredMovePool[depth];
 
             auto currentIndex = candidate.currentIndex;
             assert(0 <= currentIndex && currentIndex <= configure.pieceSize);
@@ -116,9 +136,10 @@ namespace finder {
                 auto &current = pieces[currentIndex];
 
                 moves.clear();
+                scoredMoves.clear();
                 mover.move(
                         configure, field, candidate, solution,
-                        moves, current, currentIndex + 1, holdIndex, holdCount, this
+                        moves, scoredMoves, current, currentIndex + 1, holdIndex, holdCount, this
                 );
             }
 
@@ -130,9 +151,10 @@ namespace finder {
                     auto &hold = pieces[holdIndex];
 
                     moves.clear();
+                    scoredMoves.clear();
                     mover.move(
                             configure, field, candidate, solution,
-                            moves, hold, currentIndex + 1, currentIndex, holdCount + 1, this
+                            moves, scoredMoves, hold, currentIndex + 1, currentIndex, holdCount + 1, this
                     );
                 }
             } else {
@@ -147,9 +169,10 @@ namespace finder {
                     auto &next = pieces[nextIndex];
 
                     moves.clear();
+                    scoredMoves.clear();
                     mover.move(
                             configure, field, candidate, solution,
-                            moves, next, nextIndex + 1, currentIndex, holdCount + 1, this
+                            moves, scoredMoves, next, nextIndex + 1, currentIndex, holdCount + 1, this
                     );
                 }
             }
@@ -182,6 +205,7 @@ namespace finder {
                 const TSpinCandidate &candidate,
                 Solution &solution,
                 std::vector<core::Move> &moves,
+                std::vector<core::ScoredMove> &scoredMoves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex,
@@ -190,62 +214,134 @@ namespace finder {
         ) {
             assert(0 < candidate.leftLine);
 
+            auto lastDepth = candidate.depth == configure.maxDepth - 1;
             auto nextLeftNumOfT = pieceType == core::PieceType::T ? candidate.leftNumOfT - 1 : candidate.leftNumOfT;
 
             moveGenerator.search(moves, field, pieceType, candidate.leftLine);
 
-            for (const auto &move : moves) {
-                auto &blocks = factory.get(pieceType, move.rotateType);
+            if (configure.maxDepth - candidate.depth <= configure.scoringMinDepth) {
+                for (const auto &move : moves) {
+                    auto &blocks = factory.get(pieceType, move.rotateType);
 
-                auto freeze = core::Field(field);
-                freeze.put(blocks, move.x, move.y);
+                    auto freeze = core::Field(field);
+                    freeze.put(blocks, move.x, move.y);
 
-                int numCleared = freeze.clearLineReturnNum();
+                    int numCleared = freeze.clearLineReturnNum();
 
-                auto &operation = solution[candidate.depth];
-                operation.pieceType = pieceType;
-                operation.rotateType = move.rotateType;
-                operation.x = move.x;
-                operation.y = move.y;
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = move.rotateType;
+                    operation.x = move.x;
+                    operation.y = move.y;
 
-                int tSpinAttack = getAttackIfTSpin(
-                        moveGenerator, reachable, factory, field, pieceType, move, numCleared, candidate.b2b
-                );
+                    int tSpinAttack = !lastDepth ? getAttackIfTSpin(
+                            moveGenerator, reachable, factory, field, pieceType, move, numCleared, candidate.b2b
+                    ) : 0;
 
-                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
-                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
-                int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
-                int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
-                int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
-                bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : candidate.b2b;
+                    int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
+                    int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                    int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
+                    bool nextB2b = 0 < numCleared ? (tSpinAttack != 0 || numCleared == 4) : candidate.b2b;
 
-                auto nextDepth = candidate.depth + 1;
+                    auto nextDepth = candidate.depth + 1;
 
-                int nextLeftLine = candidate.leftLine - numCleared;
-                if (nextLeftLine == 0) {
-                    auto bestCandidate = TSpinCandidate{
+                    int nextLeftLine = candidate.leftLine - numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = TSpinCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                                nextTSpinAttack, nextB2b, nextLeftNumOfT,
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(freeze, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = TSpinCandidate{
                             nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b, nextLeftNumOfT,
                     };
-                    finder->accept(configure, bestCandidate, solution);
-                    return;
+                    finder->search(configure, freeze, nextCandidate, solution);
+                }
+            } else {
+                for (const auto &move : moves) {
+                    auto &blocks = factory.get(pieceType, move.rotateType);
+
+                    auto freeze = core::Field(field);
+                    freeze.put(blocks, move.x, move.y);
+
+                    int score = calcScore(freeze, move.harddrop);
+                    int numCleared = freeze.clearLineReturnNum();
+
+                    scoredMoves.push_back({
+                                                  freeze,
+                                                  move,
+                                                  numCleared,
+                                                  score,
+                                          });
                 }
 
-                if (configure.maxDepth <= nextDepth) {
-                    continue;
-                }
+                std::sort(scoredMoves.begin(), scoredMoves.end(),
+                          [](const core::ScoredMove &first, const core::ScoredMove &second) {
+                              return first.score < second.score;
+                          });
 
-                if (!validate(freeze, nextLeftLine)) {
-                    continue;
-                }
+                for (const auto &k : scoredMoves) {
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = k.move.rotateType;
+                    operation.x = k.move.x;
+                    operation.y = k.move.y;
 
-                auto nextCandidate = TSpinCandidate{
-                        nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
-                        nextTSpinAttack, nextB2b, nextLeftNumOfT,
-                };
-                finder->search(configure, freeze, nextCandidate, solution);
+                    int tSpinAttack = !lastDepth ? getAttackIfTSpin(
+                            moveGenerator, reachable, factory, field, pieceType, k.move, k.numCleared, candidate.b2b
+                    ) : 0;
+
+                    int nextSoftdropCount = k.move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < k.numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextCurrentCombo = 0 < k.numCleared ? candidate.currentCombo + 1 : 0;
+                    int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                    int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
+                    bool nextB2b = 0 < k.numCleared ? (tSpinAttack != 0 || k.numCleared == 4) : candidate.b2b;
+
+                    auto nextDepth = candidate.depth + 1;
+
+                    int nextLeftLine = candidate.leftLine - k.numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = TSpinCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                                nextTSpinAttack, nextB2b, nextLeftNumOfT,
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(k.field, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = TSpinCandidate{
+                            nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b, nextLeftNumOfT,
+                    };
+                    finder->search(configure, k.field, nextCandidate, solution);
+                }
             }
         }
 
@@ -293,7 +389,9 @@ namespace finder {
                     continue;
                 }
 
+                int score = calcScore(freeze, move.harddrop);
                 auto operation = PreOperation<TSpinCandidate>{
+                        freeze,
                         {
                                 nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                                 nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
@@ -303,6 +401,9 @@ namespace finder {
                         move.rotateType,
                         move.x,
                         move.y,
+                        move.harddrop,
+                        numCleared,
+                        score,
                 };
                 output.push_back(operation);
             }
@@ -328,6 +429,7 @@ namespace finder {
                 const FastCandidate &candidate,
                 Solution &solution,
                 std::vector<core::Move> &moves,
+                std::vector<core::ScoredMove> &scoredMoves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex,
@@ -418,7 +520,9 @@ namespace finder {
                     continue;
                 }
 
+                int score = calcScore(freeze, move.harddrop);
                 auto operation = PreOperation<FastCandidate>{
+                        freeze,
                         {
                                 nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                                 nextSoftdropCount, nextHoldCount, nextLineClearCount
@@ -427,6 +531,9 @@ namespace finder {
                         move.rotateType,
                         move.x,
                         move.y,
+                        move.harddrop,
+                        numCleared,
+                        score,
                 };
                 output.push_back(operation);
             }
@@ -452,6 +559,7 @@ namespace finder {
                 const AllSpinsCandidate &candidate,
                 Solution &solution,
                 std::vector<core::Move> &moves,
+                std::vector<core::ScoredMove> &scoredMoves,
                 core::PieceType pieceType,
                 int nextIndex,
                 int nextHoldIndex,
@@ -580,7 +688,9 @@ namespace finder {
                     continue;
                 }
 
+                int score = calcScore(freeze, move.harddrop);
                 auto operation = PreOperation<AllSpinsCandidate>{
+                        freeze,
                         {
                                 nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                                 nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
@@ -590,6 +700,9 @@ namespace finder {
                         move.rotateType,
                         move.x,
                         move.y,
+                        move.harddrop,
+                        numCleared,
+                        score,
                 };
                 output.push_back(operation);
             }
@@ -610,6 +723,8 @@ namespace finder {
         void update(
                 const Configure &configure, const TSpinCandidate &current, const Solution &solution
         );
+
+        void update(const TSpinRecord &record);
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const TSpinCandidate &current) const;
 
@@ -632,6 +747,8 @@ namespace finder {
                 const Configure &configure, const FastCandidate &current, const Solution &solution
         );
 
+        void update(const FastRecord &record);
+
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const FastCandidate &current) const;
 
         [[nodiscard]] bool shouldUpdate(const Configure &configure, const FastCandidate &newRecord) const;
@@ -652,6 +769,8 @@ namespace finder {
         void update(
                 const Configure &configure, const AllSpinsCandidate &current, const Solution &solution
         );
+
+        void update(const AllSpinsRecord &record);
 
         [[nodiscard]] bool isWorseThanBest(bool leastLineClears, const AllSpinsCandidate &current) const;
 
@@ -690,11 +809,18 @@ namespace finder {
                 movePool[index] = std::vector<core::Move>{};
             }
 
+            std::vector<std::vector<core::ScoredMove>> scoredMovePool(maxDepth);
+            for (int index = 0; index < maxDepth; ++index) {
+                scoredMovePool[index] = std::vector<core::ScoredMove>{};
+            }
+
             // Initialize configure
             const auto configure = Configure{
                     pieces,
                     movePool,
+                    scoredMovePool,
                     maxDepth,
+                    INT_MAX,
                     static_cast<int>(pieces.size()),
                     leastLineClears,
                     alwaysRegularAttack,

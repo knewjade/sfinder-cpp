@@ -8,7 +8,9 @@ namespace finder {
     struct Configure {
         const std::vector<core::PieceType> &pieces;
         std::vector<std::vector<core::Move>> &movePool;
+        std::vector<std::vector<core::ScoredMove>> &scoredMovePool;
         const int maxDepth;
+        const int scoringMinDepth;
         const int pieceSize;
         const bool leastLineClears;
         bool alwaysRegularAttack;
@@ -24,11 +26,15 @@ namespace finder {
 
     template<typename C>
     struct PreOperation {
+        core::Field field;
         C candidate;
         core::PieceType pieceType;
         core::RotateType rotateType;
         int x;
         int y;
+        bool harddrop;
+        int numCleared;
+        int score;
     };
 
     using Solution = std::vector<Operation>;
@@ -36,15 +42,15 @@ namespace finder {
 
     // For fast search
     struct FastCandidate {
-        const int currentIndex;
-        const int holdIndex;
-        const int leftLine;
-        const int depth;
-        const int softdropCount;
-        const int holdCount;
-        const int lineClearCount;
-        const int currentCombo;
-        const int maxCombo;
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
+        int softdropCount;
+        int holdCount;
+        int lineClearCount;
+        int currentCombo;
+        int maxCombo;
     };
 
     struct FastRecord {
@@ -67,18 +73,18 @@ namespace finder {
 
     // For T-Spin search
     struct TSpinCandidate {
-        const int currentIndex;
-        const int holdIndex;
-        const int leftLine;
-        const int depth;
-        const int softdropCount;
-        const int holdCount;
-        const int lineClearCount;
-        const int currentCombo;
-        const int maxCombo;
-        const int tSpinAttack;
-        const bool b2b;
-        const int leftNumOfT;
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
+        int softdropCount;
+        int holdCount;
+        int lineClearCount;
+        int currentCombo;
+        int maxCombo;
+        int tSpinAttack;
+        bool b2b;
+        int leftNumOfT;
     };
 
     struct TSpinRecord {
@@ -104,17 +110,17 @@ namespace finder {
 
     // For all spins search
     struct AllSpinsCandidate {
-        const int currentIndex;
-        const int holdIndex;
-        const int leftLine;
-        const int depth;
-        const int softdropCount;
-        const int holdCount;
-        const int lineClearCount;
-        const int currentCombo;
-        const int maxCombo;
-        const int spinAttack;
-        const bool b2b;
+        int currentIndex;
+        int holdIndex;
+        int leftLine;
+        int depth;
+        int softdropCount;
+        int holdCount;
+        int lineClearCount;
+        int currentCombo;
+        int maxCombo;
+        int spinAttack;
+        bool b2b;
     };
 
     struct AllSpinsRecord {

@@ -53,6 +53,10 @@ namespace finder {
         };
     }
 
+    void Recorder<FastCandidate, FastRecord>::update(const FastRecord &record) {
+        best_ = FastRecord{record};
+    }
+
     bool Recorder<FastCandidate, FastRecord>::isWorseThanBest(
             bool leastLineClears, const FastCandidate &current
     ) const {
@@ -152,6 +156,10 @@ namespace finder {
                 current.softdropCount, current.holdCount, current.lineClearCount,
                 current.currentCombo, current.maxCombo, current.tSpinAttack, current.b2b, current.leftNumOfT,
         };
+    }
+
+    void Recorder<TSpinCandidate, TSpinRecord>::update(const TSpinRecord &record) {
+        best_ = TSpinRecord{record};
     }
 
     bool Recorder<TSpinCandidate, TSpinRecord>::isWorseThanBest(
@@ -268,6 +276,10 @@ namespace finder {
                 current.softdropCount, current.holdCount, current.lineClearCount,
                 current.currentCombo, current.maxCombo, current.spinAttack, current.b2b,
         };
+    }
+
+    void Recorder<AllSpinsCandidate, AllSpinsRecord>::update(const AllSpinsRecord &record) {
+        best_ = AllSpinsRecord{record};
     }
 
     bool Recorder<AllSpinsCandidate, AllSpinsRecord>::isWorseThanBest(
