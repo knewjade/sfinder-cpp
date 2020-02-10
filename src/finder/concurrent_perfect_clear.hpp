@@ -15,7 +15,8 @@ namespace finder {
     class ConcurrentPerfectClearFinder {
     public:
         ConcurrentPerfectClearFinder<M>(const core::Factory &factory, ThreadPool &threadPool)
-                : factory_(factory), threadPool_(threadPool) {
+                : factory_(factory), threadPool_(threadPool),
+                  moveGenerator_(M(factory)), reachable_(core::srs_rotate_end::Reachable(factory)) {
         }
 
         // If `alwaysRegularAttack` is true, mini spin is judged as regular attack
@@ -34,6 +35,8 @@ namespace finder {
             }
 
             assert(1 < maxDepth);
+
+            abort();
 
             // Copy field
             auto freeze = core::Field(field);
@@ -70,9 +73,12 @@ namespace finder {
                                                  initCombo, initCombo};
 
                     // premove
-                    auto moves = std::vector<core::Move>();
-                    auto preOperations = std::vector<PreOperation<Candidate>>();
-                    premove(alwaysRegularAttack, maxDepth, freeze, candidate, moves, pieces, preOperations);
+                    auto moves = std::vector<core::Move>{};
+                    auto preOperations = std::vector<PreOperation<Candidate>>{};
+                    premove(
+                            alwaysRegularAttack, maxDepth, freeze, candidate,
+                            moveGenerator_, reachable_, moves, pieces, preOperations
+                    );
 
                     // Find solution by concurrent
                     Recorder<Candidate, Record> recorder{};
@@ -186,9 +192,12 @@ namespace finder {
                                                  initCombo, initCombo, 0, initB2b, leftNumOfT};
 
                     // premove
-                    auto moves = std::vector<core::Move>();
-                    auto firstCandidates = std::vector<PreOperation<Candidate>>();
-                    premove(alwaysRegularAttack, maxDepth, freeze, candidate, moves, pieces, firstCandidates);
+                    auto moves = std::vector<core::Move>{};
+                    auto firstCandidates = std::vector<PreOperation<Candidate>>{};
+                    premove(
+                            alwaysRegularAttack, maxDepth, freeze, candidate,
+                            moveGenerator_, reachable_, moves, pieces, firstCandidates
+                    );
 
                     // Find solution by concurrent
                     Recorder<Candidate, Record> recorder{};
@@ -202,7 +211,6 @@ namespace finder {
                             if (taskStatus.notWorking()) {
                                 return false;
                             }
-                            std::cout << "hello" << std::endl;
 
                             // Initialize moves
                             auto movePool = std::vector<std::vector<core::Move>>{};
@@ -298,9 +306,12 @@ namespace finder {
                                                  initCombo, initCombo, 0, initB2b};
 
                     // premove
-                    auto moves = std::vector<core::Move>();
-                    auto firstCandidates = std::vector<PreOperation<Candidate>>();
-                    premove(alwaysRegularAttack, maxDepth, freeze, candidate, moves, pieces, firstCandidates);
+                    auto moves = std::vector<core::Move>{};
+                    auto firstCandidates = std::vector<PreOperation<Candidate>>{};
+                    premove(
+                            alwaysRegularAttack, maxDepth, freeze, candidate,
+                            moveGenerator_, reachable_, moves, pieces, firstCandidates
+                    );
 
                     // Find solution by concurrent
                     Recorder<Candidate, Record> recorder{};
@@ -485,24 +496,18 @@ namespace finder {
 
     private:
         template<class C>
-        Mover<M, C> createMover() const {
-            thread_local auto moveGenerator = M(factory_);
-            thread_local auto reachable = core::srs_rotate_end::Reachable(factory_);
-            auto mover = Mover<M, C>(factory_, moveGenerator, reachable);
-            return mover;
-        }
-
-        template<class C>
         void premove(
                 bool alwaysRegularAttack,
                 int maxDepth,
                 const core::Field &field,
                 const C &candidate,
+                M &moveGenerator,
+                core::srs_rotate_end::Reachable &reachable,
                 std::vector<core::Move> &moves,
                 const std::vector<core::PieceType> &pieces,
                 std::vector<PreOperation<C>> &output
         ) const {
-            auto mover = createMover<C>();
+            auto mover = Mover<M, C>(factory_, moveGenerator, reachable);
 
             int pieceSize = pieces.size();
 
@@ -557,13 +562,15 @@ namespace finder {
                 }
             }
 
-            std::sort(output.begin(), output.end(), [](PreOperation<C> &left, PreOperation<C> &right) {
+            std::sort(output.begin(), output.end(), [](const PreOperation<C> &left, const PreOperation<C> &right) {
                 return left.score < right.score;
             });
         }
 
         const core::Factory &factory_;
         ThreadPool &threadPool_;
+        M moveGenerator_;
+        core::srs_rotate_end::Reachable reachable_;
         RunnerStatus runnerStatus_{};
     };
 }
