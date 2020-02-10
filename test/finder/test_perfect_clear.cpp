@@ -7,22 +7,22 @@
 #include "core/moves.hpp"
 #include "finder/perfect_clear.hpp"
 
-void verify(const core::Factory &factory, const core::Field &field, const finder::Solution &solution) {
-    auto freeze = core::Field(field);
+namespace finder {
+    namespace {
+        void verify(const core::Factory &factory, const core::Field &field, const finder::Solution &solution) {
+            auto freeze = core::Field(field);
 
-    for (const auto &operation : solution) {
-        auto &blocks = factory.get(operation.pieceType, operation.rotateType);
-        EXPECT_TRUE(freeze.canPut(blocks, operation.x, operation.y));
-        freeze.put(blocks, operation.x, operation.y);
-        freeze.clearLine();
+            for (const auto &operation : solution) {
+                auto &blocks = factory.get(operation.pieceType, operation.rotateType);
+                EXPECT_TRUE(freeze.canPut(blocks, operation.x, operation.y));
+                freeze.put(blocks, operation.x, operation.y);
+                freeze.clearLine();
+            }
 
-//        std::cout << freeze.toString(4) << std::endl;
+            EXPECT_EQ(freeze, core::Field{});
+        }
     }
 
-    EXPECT_EQ(freeze, core::Field{});
-}
-
-namespace finder {
     using namespace std::literals::string_literals;
 
     class PerfectClearTest : public ::testing::Test {

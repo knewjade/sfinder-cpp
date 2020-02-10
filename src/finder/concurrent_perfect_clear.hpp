@@ -24,7 +24,16 @@ namespace finder {
                 int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, bool initB2b,
                 SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority
         ) {
-            assert(1 <= maxDepth);
+            if (maxDepth == 1) {
+                auto moveGenerator = M(factory_);
+                auto finder = PerfectClearFinder<M>(factory_, moveGenerator);
+                return finder.run(
+                        field, pieces, maxDepth, maxLine, holdEmpty, leastLineClears, initCombo, initB2b,
+                        searchTypes, alwaysRegularAttack, lastHoldPriority
+                );
+            }
+
+            assert(1 < maxDepth);
 
             // Copy field
             auto freeze = core::Field(field);

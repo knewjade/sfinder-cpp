@@ -6,6 +6,21 @@
 #include "finder/thread_pool.hpp"
 
 namespace finder {
+    namespace {
+        void verify(const core::Factory &factory, const core::Field &field, const finder::Solution &solution) {
+            auto freeze = core::Field(field);
+
+            for (const auto &operation : solution) {
+                auto &blocks = factory.get(operation.pieceType, operation.rotateType);
+                EXPECT_TRUE(freeze.canPut(blocks, operation.x, operation.y));
+                freeze.put(blocks, operation.x, operation.y);
+                freeze.clearLine();
+            }
+
+            EXPECT_EQ(freeze, core::Field{});
+        }
+    }
+
     using namespace std::literals::string_literals;
 
     class ConcurrentPerfectClearTest : public ::testing::Test {
@@ -54,6 +69,40 @@ namespace finder {
 
     // depth = 1 && piece = 1 && first hold is empty
     TEST_F(ConcurrentPerfectClearTest, case1) {
+        auto factory = core::Factory::create();
+        auto threadPool = ThreadPool(4);
+        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+
+        auto field = core::createField(
+                "XXXXX__XXX"s +
+                "XXXX__XXXX"s +
+                ""
+        );
+        auto maxDepth = 1;
+        auto maxLine = 2;
+
+        {
+            auto pieces = std::vector{core::PieceType::S};
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true);
+            EXPECT_TRUE(!result.empty());
+            verify(factory, field, result);
+        }
+
+        {
+            auto pieces = std::vector{core::PieceType::Z};
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true);
+            EXPECT_FALSE(!result.empty());
+        }
+    }
+
+
+
+
+
+
+
+    // depth = 1 && piece = 1 && first hold is empty
+    TEST_F(ConcurrentPerfectClearTest, case3) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
         auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
