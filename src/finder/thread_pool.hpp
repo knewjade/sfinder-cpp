@@ -52,14 +52,15 @@ namespace finder {
     class Tasks {
     public:
         void push(const Runnable &runnable) {
-            if (status_.notWorking()) {
-                throw std::runtime_error("Not working");
-            }
-
             {
                 std::lock(mutexForQueue_, mutexForAbort_);
                 std::lock_guard<std::mutex> lk1(mutexForQueue_, std::adopt_lock);
                 std::lock_guard<std::mutex> lk2(mutexForAbort_, std::adopt_lock);
+
+                if (status_.notWorking()) {
+                    throw std::runtime_error("Not working");
+                }
+
                 queue_.push(runnable);
                 counter += 1;
             }
@@ -135,9 +136,18 @@ namespace finder {
         void shutdownNow() {
             status_.abort();
             status_.terminate();
+            {
+                std::lock_guard<std::mutex> lk1(mutexForQueue_);
+                std::queue<Runnable> empty{};
+                std::swap(queue_, empty);
+            }
             conditionForQueue_.notify_all();
             conditionForSleep_.notify_all();
             conditionForAbort_.notify_all();
+        }
+
+        bool terminated() const {
+            return status_.terminated();
         }
 
     private:
@@ -166,7 +176,7 @@ namespace finder {
         ThreadPool(const ThreadPool &rhs) = delete;
 
         ~ThreadPool() {
-            shutdown();
+            shutdownNow();
         }
 
         void execute(const Runnable &runnable) {
@@ -187,6 +197,10 @@ namespace finder {
         }
 
         void shutdown() {
+            if (tasks_.terminated()) {
+                return;
+            }
+
             tasks_.shutdown();
             for (auto &thread : threads_) {
                 if (thread.joinable()) {
@@ -196,6 +210,10 @@ namespace finder {
         }
 
         void shutdownNow() {
+            if (tasks_.terminated()) {
+                return;
+            }
+
             tasks_.shutdownNow();
             for (auto &thread : threads_) {
                 if (thread.joinable()) {
