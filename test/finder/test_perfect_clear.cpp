@@ -331,8 +331,10 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, false, 3, true, SearchTypes::TSpin, false,
-                                     0b11111111);
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, false, false, 3, true, SearchTypes::TSpin, false,
+                    0b11111111, 2
+            );
 
             // Failed: 975, 2295
             if (!result.empty()) {
@@ -374,8 +376,10 @@ namespace finder {
 
             auto start = std::chrono::system_clock::now();
 
-            auto result = finder.run(field, pieces, maxDepth, maxLine, false, true, 0, true, SearchTypes::TSpin, false,
-                                     0b11111111);
+            auto result = finder.run(
+                    field, pieces, maxDepth, maxLine, false, true, 0, true, SearchTypes::TSpin, false,
+                    0b11111111, 2
+            );
 
             if (!result.empty()) {
                 success += 1;
@@ -410,7 +414,7 @@ namespace finder {
         {
             auto result = finder.run(
                     field, pieces, maxDepth, maxLine, true, true, 0, true,
-                    SearchTypes::Fast, false, 0b10000000
+                    SearchTypes::Fast, false, 0b10000000, 2
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
                 return a + b.pieceType + 1;
@@ -421,7 +425,7 @@ namespace finder {
         {
             auto result = finder.run(
                     field, pieces, maxDepth, maxLine, true, true, 0, true,
-                    SearchTypes::Fast, false, 0b00000001
+                    SearchTypes::Fast, false, 0b00000001, 2
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
                 return a + b.pieceType + 1;
@@ -432,7 +436,7 @@ namespace finder {
         {
             auto result = finder.run(
                     field, pieces, maxDepth, maxLine, true, true, 0, true,
-                    SearchTypes::Fast, false, 0b00001000
+                    SearchTypes::Fast, false, 0b00001000, 2
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
                 return a + b.pieceType + 1;
@@ -443,7 +447,7 @@ namespace finder {
         {
             auto result = finder.run(
                     field, pieces, maxDepth, maxLine, true, true, 0, true,
-                    SearchTypes::Fast, false, 0b01000000
+                    SearchTypes::Fast, false, 0b01000000, 2
             );
             int sum = std::accumulate(result.cbegin(), result.cend(), 0, [](int a, Operation b) {
                 return a + b.pieceType + 1;

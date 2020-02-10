@@ -8,8 +8,6 @@
 #include "../core/moves.hpp"
 
 namespace finder {
-    constexpr int scoringMinDepth = 6;
-
     // Entry point to find best perfect clear
     template<class M = core::srs::MoveGenerator>
     class ConcurrentPerfectClearFinder {
@@ -23,14 +21,14 @@ namespace finder {
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, bool initB2b,
-                SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority
+                SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority, int fastSearchStartDepth
         ) {
             if (maxDepth == 1) {
                 auto moveGenerator = M(factory_);
                 auto finder = PerfectClearFinder<M>(factory_, moveGenerator);
                 return finder.run(
                         field, pieces, maxDepth, maxLine, holdEmpty, leastLineClears, initCombo, initB2b,
-                        searchTypes, alwaysRegularAttack, lastHoldPriority
+                        searchTypes, alwaysRegularAttack, lastHoldPriority, fastSearchStartDepth
                 );
             }
 
@@ -50,7 +48,7 @@ namespace finder {
                     movePool,
                     scoredMovePool,
                     maxDepth,
-                    scoringMinDepth,
+                    fastSearchStartDepth,
                     static_cast<int>(pieces.size()),
                     leastLineClears,
                     alwaysRegularAttack,
@@ -229,7 +227,7 @@ namespace finder {
                                     movePool,
                                     scoredMovePool,
                                     maxDepth,
-                                    scoringMinDepth,
+                                    fastSearchStartDepth,
                                     static_cast<int>(pieces.size()),
                                     leastLineClears,
                                     alwaysRegularAttack,
@@ -343,7 +341,7 @@ namespace finder {
                                     movePool,
                                     scoredMovePool,
                                     maxDepth,
-                                    scoringMinDepth,
+                                    fastSearchStartDepth,
                                     static_cast<int>(pieces.size()),
                                     leastLineClears,
                                     alwaysRegularAttack,
@@ -420,7 +418,7 @@ namespace finder {
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
-                int initCombo, bool initB2b, bool twoLineFollowUp
+                int initCombo, bool initB2b, bool twoLineFollowUp, int numApplyFastSearch
         ) {
             // Check last hold that can take 2 PC
             uint8_t lastHoldPriority = 0U;
@@ -442,42 +440,53 @@ namespace finder {
                 lastHoldPriority = 0b11111111U;
             }
 
+            int fastSearchStartDepth = numApplyFastSearch < maxDepth ? maxDepth - numApplyFastSearch : 0;
+
             // Decide parameters
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::Fast,
-                            false, lastHoldPriority
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::Fast, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::TSpin,
-                            false, lastHoldPriority
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::TSpin, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
                     return run(
                             field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
-                            SearchTypes::AllSpins,
-                            true, lastHoldPriority
+                            SearchTypes::AllSpins, true, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 3: {
                     // All-Spins is top priority (mini is zero attack)
                     return run(
                             field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
-                            SearchTypes::AllSpins,
-                            false, lastHoldPriority
+                            SearchTypes::AllSpins, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 default: {
                     throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
                 }
             }
+        }
+
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
+                int initCombo, bool initB2b, bool twoLineFollowUp
+        ) {
+            return run(
+                    field, pieces, maxDepth, maxLine, holdEmpty, searchType, leastLineClears,
+                    initCombo, initB2b, twoLineFollowUp, INT_MAX
+            );
         }
 
         Solution run(

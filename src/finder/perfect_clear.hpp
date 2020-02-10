@@ -30,6 +30,34 @@ namespace finder {
         inline int calcScore(const core::Field &field, const bool harddrop) {
             return field.getNumOfHoles() * 10 + !harddrop;
         }
+
+        inline void toScoredMove(
+                const std::vector<core::Move> &moves,
+                const core::Factory &factory, const core::PieceType pieceType, const core::Field &field,
+                std::vector<core::ScoredMove> &scoredMoves
+        ) {
+            for (const auto &move : moves) {
+                auto &blocks = factory.get(pieceType, move.rotateType);
+
+                auto freeze = core::Field(field);
+                freeze.put(blocks, move.x, move.y);
+
+                int score = calcScore(freeze, move.harddrop);
+                int numCleared = freeze.clearLineReturnNum();
+
+                scoredMoves.push_back({
+                                              freeze,
+                                              move,
+                                              numCleared,
+                                              score,
+                                      });
+            }
+
+            std::sort(scoredMoves.begin(), scoredMoves.end(),
+                      [](const core::ScoredMove &first, const core::ScoredMove &second) {
+                          return first.score < second.score;
+                      });
+        }
     }
 
     enum SearchTypes {
@@ -219,7 +247,7 @@ namespace finder {
 
             moveGenerator.search(moves, field, pieceType, candidate.leftLine);
 
-            if (configure.maxDepth - candidate.depth <= configure.scoringMinDepth) {
+            if (configure.fastSearchStartDepth <= candidate.depth) {
                 for (const auto &move : moves) {
                     auto &blocks = factory.get(pieceType, move.rotateType);
 
@@ -274,49 +302,29 @@ namespace finder {
                     finder->search(configure, freeze, nextCandidate, solution);
                 }
             } else {
-                for (const auto &move : moves) {
-                    auto &blocks = factory.get(pieceType, move.rotateType);
+                toScoredMove(moves, factory, pieceType, field, scoredMoves);
 
-                    auto freeze = core::Field(field);
-                    freeze.put(blocks, move.x, move.y);
-
-                    int score = calcScore(freeze, move.harddrop);
-                    int numCleared = freeze.clearLineReturnNum();
-
-                    scoredMoves.push_back({
-                                                  freeze,
-                                                  move,
-                                                  numCleared,
-                                                  score,
-                                          });
-                }
-
-                std::sort(scoredMoves.begin(), scoredMoves.end(),
-                          [](const core::ScoredMove &first, const core::ScoredMove &second) {
-                              return first.score < second.score;
-                          });
-
-                for (const auto &k : scoredMoves) {
+                for (const auto &s : scoredMoves) {
                     auto &operation = solution[candidate.depth];
                     operation.pieceType = pieceType;
-                    operation.rotateType = k.move.rotateType;
-                    operation.x = k.move.x;
-                    operation.y = k.move.y;
+                    operation.rotateType = s.move.rotateType;
+                    operation.x = s.move.x;
+                    operation.y = s.move.y;
 
                     int tSpinAttack = !lastDepth ? getAttackIfTSpin(
-                            moveGenerator, reachable, factory, field, pieceType, k.move, k.numCleared, candidate.b2b
+                            moveGenerator, reachable, factory, field, pieceType, s.move, s.numCleared, candidate.b2b
                     ) : 0;
 
-                    int nextSoftdropCount = k.move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
-                    int nextLineClearCount = 0 < k.numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
-                    int nextCurrentCombo = 0 < k.numCleared ? candidate.currentCombo + 1 : 0;
+                    int nextSoftdropCount = s.move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < s.numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextCurrentCombo = 0 < s.numCleared ? candidate.currentCombo + 1 : 0;
                     int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
                     int nextTSpinAttack = candidate.tSpinAttack + tSpinAttack;
-                    bool nextB2b = 0 < k.numCleared ? (tSpinAttack != 0 || k.numCleared == 4) : candidate.b2b;
+                    bool nextB2b = 0 < s.numCleared ? (tSpinAttack != 0 || s.numCleared == 4) : candidate.b2b;
 
                     auto nextDepth = candidate.depth + 1;
 
-                    int nextLeftLine = candidate.leftLine - k.numCleared;
+                    int nextLeftLine = candidate.leftLine - s.numCleared;
                     if (nextLeftLine == 0) {
                         auto bestCandidate = TSpinCandidate{
                                 nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
@@ -331,7 +339,7 @@ namespace finder {
                         continue;
                     }
 
-                    if (!validate(k.field, nextLeftLine)) {
+                    if (!validate(s.field, nextLeftLine)) {
                         continue;
                     }
 
@@ -340,7 +348,7 @@ namespace finder {
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b, nextLeftNumOfT,
                     };
-                    finder->search(configure, k.field, nextCandidate, solution);
+                    finder->search(configure, s.field, nextCandidate, solution);
                 }
             }
         }
@@ -440,48 +448,89 @@ namespace finder {
 
             moveGenerator.search(moves, field, pieceType, candidate.leftLine);
 
-            for (const auto &move : moves) {
-                auto &blocks = factory.get(pieceType, move.rotateType);
+            if (configure.fastSearchStartDepth <= candidate.depth) {
+                for (const auto &move : moves) {
+                    auto &blocks = factory.get(pieceType, move.rotateType);
 
-                auto freeze = core::Field(field);
-                freeze.put(blocks, move.x, move.y);
+                    auto freeze = core::Field(field);
+                    freeze.put(blocks, move.x, move.y);
 
-                int numCleared = freeze.clearLineReturnNum();
+                    int numCleared = freeze.clearLineReturnNum();
 
-                auto &operation = solution[candidate.depth];
-                operation.pieceType = pieceType;
-                operation.rotateType = move.rotateType;
-                operation.x = move.x;
-                operation.y = move.y;
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = move.rotateType;
+                    operation.x = move.x;
+                    operation.y = move.y;
 
-                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
-                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
 
-                auto nextDepth = candidate.depth + 1;
+                    auto nextDepth = candidate.depth + 1;
 
-                int nextLeftLine = candidate.leftLine - numCleared;
-                if (nextLeftLine == 0) {
-                    auto bestCandidate = FastCandidate{
+                    int nextLeftLine = candidate.leftLine - numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = FastCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(freeze, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = FastCandidate{
                             nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                             nextSoftdropCount, nextHoldCount, nextLineClearCount
                     };
-                    finder->accept(configure, bestCandidate, solution);
-                    return;
+                    finder->search(configure, freeze, nextCandidate, solution);
                 }
+            } else {
+                toScoredMove(moves, factory, pieceType, field, scoredMoves);
 
-                if (configure.maxDepth <= nextDepth) {
-                    continue;
+                for (const auto &s : scoredMoves) {
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = s.move.rotateType;
+                    operation.x = s.move.x;
+                    operation.y = s.move.y;
+
+                    int nextSoftdropCount = s.move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < s.numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+
+                    auto nextDepth = candidate.depth + 1;
+
+                    int nextLeftLine = candidate.leftLine - s.numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = FastCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(s.field, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = FastCandidate{
+                            nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount
+                    };
+                    finder->search(configure, s.field, nextCandidate, solution);
                 }
-
-                if (!validate(freeze, nextLeftLine)) {
-                    continue;
-                }
-
-                auto nextCandidate = FastCandidate{
-                        nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                        nextSoftdropCount, nextHoldCount, nextLineClearCount
-                };
-                finder->search(configure, freeze, nextCandidate, solution);
             }
         }
 
@@ -574,64 +623,121 @@ namespace finder {
 
             auto lastDepth = candidate.depth == configure.maxDepth - 1;
 
-            for (const auto &move : moves) {
-                auto &blocks = factory.get(pieceType, move.rotateType);
+            if (configure.fastSearchStartDepth <= candidate.depth) {
+                for (const auto &move : moves) {
+                    auto &blocks = factory.get(pieceType, move.rotateType);
 
-                auto freeze = core::Field(field);
-                freeze.put(blocks, move.x, move.y);
+                    auto freeze = core::Field(field);
+                    freeze.put(blocks, move.x, move.y);
 
-                int numCleared = freeze.clearLineReturnNum();
+                    int numCleared = freeze.clearLineReturnNum();
 
-                auto &operation = solution[candidate.depth];
-                operation.pieceType = pieceType;
-                operation.rotateType = move.rotateType;
-                operation.x = move.x;
-                operation.y = move.y;
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = move.rotateType;
+                    operation.x = move.x;
+                    operation.y = move.y;
 
-                int spinAttack = getAttack(
-                        moveGenerator, reachable, factory, field, pieceType, move, numCleared, candidate.b2b
-                );
+                    int spinAttack = getAttack(
+                            moveGenerator, reachable, factory, field, pieceType, move, numCleared, candidate.b2b
+                    );
 
-                // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)
-                // However, B2B will continue, so add 1 line attack
-                if (0 < spinAttack && lastDepth) {
-                    spinAttack = 1;
-                }
+                    // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)
+                    // However, B2B will continue, so add 1 line attack
+                    if (0 < spinAttack && lastDepth) {
+                        spinAttack = 1;
+                    }
 
-                int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
-                int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
-                int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
-                int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
-                int nextTSpinAttack = candidate.spinAttack + spinAttack;
-                bool nextB2b = 0 < numCleared ? (spinAttack != 0 || numCleared == 4) : candidate.b2b;
+                    int nextSoftdropCount = move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextCurrentCombo = 0 < numCleared ? candidate.currentCombo + 1 : 0;
+                    int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                    int nextTSpinAttack = candidate.spinAttack + spinAttack;
+                    bool nextB2b = 0 < numCleared ? (spinAttack != 0 || numCleared == 4) : candidate.b2b;
 
-                auto nextDepth = candidate.depth + 1;
+                    auto nextDepth = candidate.depth + 1;
 
-                int nextLeftLine = candidate.leftLine - numCleared;
-                if (nextLeftLine == 0) {
-                    auto bestCandidate = AllSpinsCandidate{
+                    int nextLeftLine = candidate.leftLine - numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = AllSpinsCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                                nextTSpinAttack, nextB2b,
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(freeze, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = AllSpinsCandidate{
                             nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
                             nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
                             nextTSpinAttack, nextB2b,
                     };
-                    finder->accept(configure, bestCandidate, solution);
-                    return;
+                    finder->search(configure, freeze, nextCandidate, solution);
                 }
+            } else {
+                toScoredMove(moves, factory, pieceType, field, scoredMoves);
 
-                if (configure.maxDepth <= nextDepth) {
-                    continue;
+                for (const auto &s : scoredMoves) {
+                    auto &operation = solution[candidate.depth];
+                    operation.pieceType = pieceType;
+                    operation.rotateType = s.move.rotateType;
+                    operation.x = s.move.x;
+                    operation.y = s.move.y;
+
+                    int spinAttack = getAttack(
+                            moveGenerator, reachable, factory, field, pieceType, s.move, s.numCleared, candidate.b2b
+                    );
+
+                    // Even if spin with the final piece, the attack is not actually sent (Send only 10 lines by PC; for PPT)
+                    // However, B2B will continue, so add 1 line attack
+                    if (0 < spinAttack && lastDepth) {
+                        spinAttack = 1;
+                    }
+
+                    int nextSoftdropCount = s.move.harddrop ? candidate.softdropCount : candidate.softdropCount + 1;
+                    int nextLineClearCount = 0 < s.numCleared ? candidate.lineClearCount + 1 : candidate.lineClearCount;
+                    int nextCurrentCombo = 0 < s.numCleared ? candidate.currentCombo + 1 : 0;
+                    int nextMaxCombo = candidate.maxCombo < nextCurrentCombo ? nextCurrentCombo : candidate.maxCombo;
+                    int nextTSpinAttack = candidate.spinAttack + spinAttack;
+                    bool nextB2b = 0 < s.numCleared ? (spinAttack != 0 || s.numCleared == 4) : candidate.b2b;
+
+                    auto nextDepth = candidate.depth + 1;
+
+                    int nextLeftLine = candidate.leftLine - s.numCleared;
+                    if (nextLeftLine == 0) {
+                        auto bestCandidate = AllSpinsCandidate{
+                                nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                                nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                                nextTSpinAttack, nextB2b,
+                        };
+                        finder->accept(configure, bestCandidate, solution);
+                        return;
+                    }
+
+                    if (configure.maxDepth <= nextDepth) {
+                        continue;
+                    }
+
+                    if (!validate(s.field, nextLeftLine)) {
+                        continue;
+                    }
+
+                    auto nextCandidate = AllSpinsCandidate{
+                            nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
+                            nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
+                            nextTSpinAttack, nextB2b,
+                    };
+                    finder->search(configure, s.field, nextCandidate, solution);
                 }
-
-                if (!validate(freeze, nextLeftLine)) {
-                    continue;
-                }
-
-                auto nextCandidate = AllSpinsCandidate{
-                        nextIndex, nextHoldIndex, nextLeftLine, nextDepth,
-                        nextSoftdropCount, nextHoldCount, nextLineClearCount, nextCurrentCombo, nextMaxCombo,
-                        nextTSpinAttack, nextB2b,
-                };
-                finder->search(configure, freeze, nextCandidate, solution);
             }
         }
 
@@ -796,7 +902,7 @@ namespace finder {
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo, bool initB2b,
-                SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority
+                SearchTypes searchTypes, bool alwaysRegularAttack, uint8_t lastHoldPriority, int fastSearchStartDepth
         ) {
             assert(1 <= maxDepth);
 
@@ -820,7 +926,7 @@ namespace finder {
                     movePool,
                     scoredMovePool,
                     maxDepth,
-                    INT_MAX,
+                    fastSearchStartDepth,
                     static_cast<int>(pieces.size()),
                     leastLineClears,
                     alwaysRegularAttack,
@@ -886,7 +992,7 @@ namespace finder {
         Solution run(
                 const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
-                int initCombo, bool initB2b, bool twoLineFollowUp
+                int initCombo, bool initB2b, bool twoLineFollowUp, int numApplyFastSearch
         ) {
             // Check last hold that can take 2 PC
             uint8_t lastHoldPriority = 0U;
@@ -908,42 +1014,53 @@ namespace finder {
                 lastHoldPriority = 0b11111111U;
             }
 
+            int fastSearchStartDepth = numApplyFastSearch < maxDepth ? maxDepth - numApplyFastSearch : 0;
+
             // Decide parameters
             switch (searchType) {
                 case 0: {
                     // No softdrop is top priority
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::Fast,
-                            false, lastHoldPriority
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::Fast, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 1: {
                     // T-Spin is top priority (mini is zero attack)
                     return run(
-                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b, SearchTypes::TSpin,
-                            false, lastHoldPriority
+                            field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
+                            SearchTypes::TSpin, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 2: {
                     // All-Spins is top priority (all spins are judged as regular attack)
                     return run(
                             field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
-                            SearchTypes::AllSpins,
-                            true, lastHoldPriority
+                            SearchTypes::AllSpins, true, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 case 3: {
                     // All-Spins is top priority (mini is zero attack)
                     return run(
                             field, pieces, maxDepth, maxLine, holdEmpty, true, initCombo, initB2b,
-                            SearchTypes::AllSpins,
-                            false, lastHoldPriority
+                            SearchTypes::AllSpins, false, lastHoldPriority, fastSearchStartDepth
                     );
                 }
                 default: {
                     throw std::runtime_error("Illegal search type: value=" + std::to_string(searchType));
                 }
             }
+        }
+
+        Solution run(
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
+                int initCombo, bool initB2b, bool twoLineFollowUp
+        ) {
+            return run(
+                    field, pieces, maxDepth, maxLine, holdEmpty, searchType, leastLineClears,
+                    initCombo, initB2b, twoLineFollowUp, INT_MAX
+            );
         }
 
         Solution run(

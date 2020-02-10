@@ -10,7 +10,7 @@ namespace finder {
         std::vector<std::vector<core::Move>> &movePool;
         std::vector<std::vector<core::ScoredMove>> &scoredMovePool;
         const int maxDepth;
-        const int scoringMinDepth;
+        const int fastSearchStartDepth;
         const int pieceSize;
         const bool leastLineClears;
         bool alwaysRegularAttack;
