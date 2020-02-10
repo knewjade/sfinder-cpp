@@ -21,6 +21,32 @@ namespace finder {
 
             EXPECT_EQ(freeze, core::Field{});
         }
+
+        template<int N>
+        std::array<core::PieceType, N> toPieces(int value) {
+            int arr[N];
+
+            for (int index = N - 1; 0 <= index; --index) {
+                int scale = 7 - index;
+                arr[index] = value % scale;
+                value /= scale;
+            }
+
+            for (int select = N - 2; 0 <= select; --select) {
+                for (int adjust = select + 1; adjust < N; ++adjust) {
+                    if (arr[select] <= arr[adjust]) {
+                        arr[adjust] += 1;
+                    }
+                }
+            }
+
+            std::array<core::PieceType, N> pieces = {};
+            for (int index = 0; index < N; ++index) {
+                pieces[index] = static_cast<core::PieceType>(arr[index]);
+            }
+
+            return pieces;
+        }
     }
 
     using namespace std::literals::string_literals;
@@ -277,32 +303,6 @@ namespace finder {
             EXPECT_TRUE(!result.empty());
             verify(factory, field, result);
         }
-    }
-
-    template<int N>
-    std::array<core::PieceType, N> toPieces(int value) {
-        int arr[N];
-
-        for (int index = N - 1; 0 <= index; --index) {
-            int scale = 7 - index;
-            arr[index] = value % scale;
-            value /= scale;
-        }
-
-        for (int select = N - 2; 0 <= select; --select) {
-            for (int adjust = select + 1; adjust < N; ++adjust) {
-                if (arr[select] <= arr[adjust]) {
-                    arr[adjust] += 1;
-                }
-            }
-        }
-
-        std::array<core::PieceType, N> pieces = {};
-        for (int index = 0; index < N; ++index) {
-            pieces[index] = static_cast<core::PieceType>(arr[index]);
-        }
-
-        return pieces;
     }
 
     TEST_F(PerfectClearTest, longtest1) {
