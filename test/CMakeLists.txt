@@ -7,7 +7,11 @@ set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")  # -march=native -s
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3 -flto -march=native -DNDEBUG")
 
-file(GLOB SRC ${CMAKE_CURRENT_LIST_DIR}/*/test*.cpp ${CMAKE_CURRENT_LIST_DIR}/*/*.hpp)
+file(GLOB SRC
+        ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/*/test*.cpp
+        ${CMAKE_CURRENT_LIST_DIR}/*/*.hpp
+        )
 
 include_directories(${googletest_SOURCE_DIR}/include)
 include_directories(${googlemock_SOURCE_DIR}/include)
