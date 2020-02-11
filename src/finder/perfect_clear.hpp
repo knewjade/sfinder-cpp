@@ -61,9 +61,9 @@ namespace finder {
     }
 
     enum SearchTypes {
-        Fast,
-        TSpin,
-        AllSpins,
+        Fast = 0,
+        TSpin = 1,
+        AllSpins = 2,
     };
 
     template<class M, class C>
@@ -990,10 +990,17 @@ namespace finder {
 
         // searchType refers to code
         Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
                 int initCombo, bool initB2b, bool twoLineFollowUp, int numApplyFastSearch
         ) {
+            int numOfSpace = core::FIELD_WIDTH * maxLine - field.getNumOfBlocks();
+            if (numOfSpace % 4 != 0) {
+                return kNoSolution;
+            }
+
+            int maxDepth = numOfSpace / 4;
+
             // Check last hold that can take 2 PC
             uint8_t lastHoldPriority = 0U;
             if (maxDepth + 5 <= pieces.size() && twoLineFollowUp) {
@@ -1053,22 +1060,21 @@ namespace finder {
         }
 
         Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxDepth,
+                const core::Field &field, const std::vector<core::PieceType> &pieces,
                 int maxLine, bool holdEmpty, int searchType, bool leastLineClears,
                 int initCombo, bool initB2b, bool twoLineFollowUp
         ) {
             return run(
-                    field, pieces, maxDepth, maxLine, holdEmpty, searchType, leastLineClears,
+                    field, pieces, maxLine, holdEmpty, searchType, leastLineClears,
                     initCombo, initB2b, twoLineFollowUp, INT_MAX
             );
         }
 
         Solution run(
-                const core::Field &field, const std::vector<core::PieceType> &pieces,
-                int maxDepth, int maxLine, bool holdEmpty
+                const core::Field &field, const std::vector<core::PieceType> &pieces, int maxLine, bool holdEmpty
         ) {
             return run(
-                    field, pieces, maxDepth, maxLine, holdEmpty, SearchTypes::TSpin, true, 0, true, false
+                    field, pieces, maxLine, holdEmpty, SearchTypes::TSpin, true, 0, true, false
             );
         }
 
