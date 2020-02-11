@@ -19,6 +19,10 @@ namespace finder {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }
 
+    void sleep200msWithoutAborting(const TaskStatus &status) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
     std::function<int(const TaskStatus &)> sleep200msCallable(int i) {
         return [i](const TaskStatus &status) {
             if (status.aborted()) {
@@ -38,44 +42,17 @@ namespace finder {
             pool.execute(sleep200ms);
         }
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         pool.shutdown();
 
         auto end = std::chrono::system_clock::now();
         auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-        ASSERT_GE(time, 600);
-        ASSERT_LT(time, 615);
-    }
-
-    TEST_F(ThreadPoolTest, shutdownNow) {
-        auto pool = ThreadPool(3);
-
-        auto start = std::chrono::system_clock::now();
-
-        for (int i = 0; i < 7; ++i) {
-            pool.execute(sleep200ms);
-        }
-
-        pool.shutdownNow();
-
-        auto end = std::chrono::system_clock::now();
-        auto time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         ASSERT_GE(time, 200);
-        ASSERT_LT(time, 215);
+        ASSERT_LT(time, 220);
     }
 
     TEST_F(ThreadPoolTest, reusability) {
         auto pool = ThreadPool(3);
-
-        std::atomic<bool> isDone = false;
-        auto thread = std::thread([&]() {
-            int count = 1;
-            while (!isDone) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(2222));
-                pool.changeThreadCount(count);
-                count %= 8;
-                count += 1;
-            }
-        });
 
         for (int i = 0; i < 1000; ++i) {
             std::cout << "#" << i << std::endl;
@@ -96,12 +73,7 @@ namespace finder {
             }
         }
 
-        isDone = true;
         pool.shutdown();
-
-        if (thread.joinable()) {
-            thread.join();
-        }
     }
 
     TEST_F(ThreadPoolTest, executeAfterShutdown) {

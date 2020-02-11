@@ -111,7 +111,10 @@ namespace finder {
         }
 
         void abort() {
-            status_.abort();
+            {
+                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                status_.abort();
+            }
 
             conditionForQueue_.notify_all();
             conditionForSleep_.notify_all();
@@ -124,27 +127,53 @@ namespace finder {
                 });
             }
 
-            status_.resume();
+            {
+                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                status_.resume();
+            }
+
             conditionForQueue_.notify_all();
             conditionForSleep_.notify_all();
         }
 
         void shutdown() {
-            status_.terminate();
+            {
+                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                status_.abort();
+            }
+
+            conditionForQueue_.notify_all();
+            conditionForSleep_.notify_all();
+
+            // sleep until completed all tasks
+            {
+                std::unique_lock<std::mutex> guard(mutexForAbort_);
+                conditionForAbort_.wait(guard, [this] {
+                    return counter == 0;
+                });
+            }
+
+            {
+                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                status_.terminate();
+            }
+
             conditionForQueue_.notify_all();
             conditionForSleep_.notify_all();
             conditionForAbort_.notify_all();
         }
 
         void shutdownNow() {
-            status_.terminate();
             {
                 std::lock_guard<std::mutex> guard(mutexForQueue_);
+                status_.terminate();
+
                 counter -= queue_.size();
 
                 std::queue<Runnable> empty{};
                 std::swap(queue_, empty);
             }
+
             conditionForQueue_.notify_all();
             conditionForSleep_.notify_all();
             conditionForAbort_.notify_all();
@@ -155,15 +184,16 @@ namespace finder {
         }
 
     private:
+        std::mutex mutexForQueue_;
+        std::mutex mutexForAbort_;
+
         TaskStatus status_{};
+
         int counter = 0;
         std::queue<Runnable> queue_{};
 
-        std::mutex mutexForQueue_;
         std::condition_variable conditionForQueue_{};
         std::condition_variable conditionForSleep_{};
-
-        std::mutex mutexForAbort_;
         std::condition_variable conditionForAbort_{};
     };
 
@@ -177,7 +207,17 @@ namespace finder {
         }
 
         ~ThreadPool() {
-            shutdownNow();
+            if (tasks_->terminated()) {
+                return;
+            }
+
+            tasks_->shutdownNow();
+            for (auto &thread : threads_) {
+                if (thread.joinable()) {
+                    thread.join();
+                }
+            }
+            threads_.clear();
         }
 
         // Execute the task
@@ -221,29 +261,13 @@ namespace finder {
                 return;
             }
 
-            tasks_->abort();
             tasks_->shutdown();
             for (auto &thread : threads_) {
                 if (thread.joinable()) {
                     thread.join();
                 }
             }
-        }
-
-        // After skip tasks forcibly, change current status to "Terminated".
-        // Calling this method may cause the task to not execute.
-        // Thread pool cannot be operated after shutdown.
-        void shutdownNow() {
-            if (tasks_->terminated()) {
-                return;
-            }
-
-            tasks_->shutdownNow();
-            for (auto &thread : threads_) {
-                if (thread.joinable()) {
-                    thread.join();
-                }
-            }
+            threads_.clear();
         }
 
         // Change the number of threads.
@@ -256,6 +280,7 @@ namespace finder {
 
     private:
         void start(int n) {
+            assert(0 < n);
             threads_.clear();
             for (int count = 0; count < n; ++count) {
                 threads_.emplace_back(std::thread([this]() {
