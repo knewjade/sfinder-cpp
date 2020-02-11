@@ -66,6 +66,17 @@ namespace finder {
     TEST_F(ThreadPoolTest, reusability) {
         auto pool = ThreadPool(3);
 
+        std::atomic<bool> isDone = false;
+        auto thread = std::thread([&]() {
+            int count = 1;
+            while (!isDone) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2222));
+                pool.changeThreadCount(count);
+                count %= 8;
+                count += 1;
+            }
+        });
+
         for (int i = 0; i < 1000; ++i) {
             std::cout << "#" << i << std::endl;
             auto futures = std::vector<std::future<int>>(7);
@@ -85,9 +96,12 @@ namespace finder {
             }
         }
 
+        isDone = true;
         pool.shutdown();
 
-        EXPECT_EQ(1, 1);
+        if (thread.joinable()) {
+            thread.join();
+        }
     }
 
     TEST_F(ThreadPoolTest, executeAfterShutdown) {
@@ -95,5 +109,34 @@ namespace finder {
         pool.shutdown();
 
         ASSERT_THROW(pool.execute(sleep200ms), std::runtime_error);
+    }
+
+    TEST_F(ThreadPoolTest, changeThreadCount) {
+        int threadCount = 1;
+        auto pool = ThreadPool(threadCount);
+
+        for (int i = 0; i < 1000; ++i) {
+            std::cout << "#" << i << std::endl;
+            auto futures = std::vector<std::future<int>>(7);
+            for (int j = 0; j < futures.size(); ++j) {
+                futures[j] = pool.execute(sleep200msCallable(j));
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            pool.abort();
+
+            for (auto &future : futures) {
+                int n = future.get();  // Check finished
+                EXPECT_EQ(n - n, 0);
+            }
+
+            if (i % 10 == 0) {
+                std::cout << "> change" << std::endl;
+                pool.changeThreadCount(threadCount);
+                threadCount = ((threadCount + 1) % 5) + 1;
+            }
+        }
+
+        pool.shutdown();
     }
 }

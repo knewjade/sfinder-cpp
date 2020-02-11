@@ -113,6 +113,9 @@ namespace finder {
         void abort() {
             status_.abort();
 
+            conditionForQueue_.notify_all();
+            conditionForSleep_.notify_all();
+
             // sleep until completed all tasks
             {
                 std::unique_lock<std::mutex> guard(mutexForAbort_);
@@ -134,10 +137,11 @@ namespace finder {
         }
 
         void shutdownNow() {
-            status_.abort();
             status_.terminate();
             {
-                std::lock_guard<std::mutex> lk1(mutexForQueue_);
+                std::lock_guard<std::mutex> guard(mutexForQueue_);
+                counter -= queue_.size();
+
                 std::queue<Runnable> empty{};
                 std::swap(queue_, empty);
             }
@@ -163,45 +167,62 @@ namespace finder {
         std::condition_variable conditionForAbort_{};
     };
 
+    /**
+     * This class is NOT thread-safe.
+     */
     class ThreadPool {
     public:
-        explicit ThreadPool(int n) {
-            for (int count = 0; count < n; ++count) {
-                threads_.emplace_back(std::thread([this]() {
-                    tasks_.execute();
-                }));
-            }
+        explicit ThreadPool(int n) : tasks_(std::make_unique<Tasks>()) {
+            start(n);
         }
-
-        ThreadPool(const ThreadPool &rhs) = delete;
 
         ~ThreadPool() {
             shutdownNow();
         }
 
+        // Execute the task
         void execute(const Runnable &runnable) {
-            tasks_.push(runnable);
+            if (tasks_->terminated()) {
+                throw std::runtime_error("Thread pool is terminated");
+            }
+
+            tasks_->push(runnable);
         }
 
+        // Execute the task returning result.
         template<typename R>
         std::future<R> execute(const Callable<R> &callable) {
+            if (tasks_->terminated()) {
+                throw std::runtime_error("Thread pool is terminated");
+            }
+
             auto task = std::make_shared<std::packaged_task<R(const TaskStatus &)>>(callable);
-            tasks_.push([task](const TaskStatus &status) {
+            tasks_->push([task](const TaskStatus &status) {
                 (*task)(status);
             });
             return std::move(task->get_future());
         }
 
+        // Change current status to "aborted" and wait all tasks is completed.
+        // The task is notified of the "aborted" status via TaskStatus, but attempts to complete all processing.
+        // How long the task ends depends on the task implementation.
         void abort() {
-            tasks_.abort();
+            if (tasks_->terminated()) {
+                return;
+            }
+
+            tasks_->abort();
         }
 
+        // After abort tasks and wait they are completed, change current status to "Terminated".
+        // Thread pool cannot be operated after shutdown.
         void shutdown() {
-            if (tasks_.terminated()) {
+            if (tasks_->terminated()) {
                 return;
             }
 
-            tasks_.shutdown();
+            tasks_->abort();
+            tasks_->shutdown();
             for (auto &thread : threads_) {
                 if (thread.joinable()) {
                     thread.join();
@@ -209,22 +230,42 @@ namespace finder {
             }
         }
 
+        // After skip tasks forcibly, change current status to "Terminated".
+        // Calling this method may cause the task to not execute.
+        // Thread pool cannot be operated after shutdown.
         void shutdownNow() {
-            if (tasks_.terminated()) {
+            if (tasks_->terminated()) {
                 return;
             }
 
-            tasks_.shutdownNow();
+            tasks_->shutdownNow();
             for (auto &thread : threads_) {
                 if (thread.joinable()) {
                     thread.join();
                 }
             }
+        }
+
+        // Change the number of threads.
+        // Running tasks are aborted and wait for changes to complete.
+        void changeThreadCount(int n) {
+            shutdown();
+            tasks_ = std::make_unique<Tasks>();
+            start(n);
         }
 
     private:
+        void start(int n) {
+            threads_.clear();
+            for (int count = 0; count < n; ++count) {
+                threads_.emplace_back(std::thread([this]() {
+                    tasks_->execute();
+                }));
+            }
+        }
+
         std::vector<std::thread> threads_{};
-        Tasks tasks_{};
+        std::unique_ptr<Tasks> tasks_;
     };
 }
 
