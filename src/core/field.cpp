@@ -313,4 +313,63 @@ namespace core {
 
         return field;
     }
+
+    int Field::getNumOfBlocks() const {
+        return bitCount(xBoardLow) + bitCount(xBoardMidLow) + bitCount(xBoardMidHigh) + bitCount(xBoardHigh);
+    }
+
+    int Field::getNumOfVerticalTransitions() const {
+        auto field = core::Field(xBoardLow, xBoardMidLow, xBoardMidHigh, xBoardHigh);
+        field.deleteLine_(1ULL, 0ULL, 0ULL, 0ULL);
+
+        auto low = ~xBoardLow & field.xBoardLow;
+        auto midLow = ~xBoardMidLow & field.xBoardMidLow;
+        auto midHigh = ~xBoardMidHigh & field.xBoardMidHigh;
+        auto high = ~xBoardHigh & field.xBoardHigh;
+
+        return bitCount(low) + bitCount(midLow) + bitCount(midHigh) + bitCount(high);
+    }
+
+    int Field::getNumOfHoles() const {
+        auto field = core::Field(xBoardLow, xBoardMidLow, xBoardMidHigh, xBoardHigh);
+        field.fillBelowSurface();
+
+        auto low = ~xBoardLow & field.xBoardLow;
+        auto midLow = ~xBoardMidLow & field.xBoardMidLow;
+        auto midHigh = ~xBoardMidHigh & field.xBoardMidHigh;
+        auto high = ~xBoardHigh & field.xBoardHigh;
+
+        return bitCount(low) + bitCount(midLow) + bitCount(midHigh) + bitCount(high);
+    }
+
+    int Field::getMaxY() const {
+        if (0ULL < xBoardHigh) {
+            return (mostSignificantDigit(xBoardHigh) - 1) / 10 + 18;
+        } else if (0ULL < xBoardMidHigh) {
+            return (mostSignificantDigit(xBoardMidHigh) - 1) / 10 + 12;
+        } else if (0ULL < xBoardMidLow) {
+            return (mostSignificantDigit(xBoardMidLow) - 1) / 10 + 6;
+        } else if (0ULL < xBoardLow) {
+            return (mostSignificantDigit(xBoardLow) - 1) / 10;
+        }
+        return -1;
+    }
+
+    void Field::fillBelowSurface() {
+        if (0ULL < xBoardHigh) {
+            xBoardHigh = fillVertical(xBoardHigh);
+            xBoardMidHigh = fillVertical(xBoardMidHigh | ((xBoardHigh << 50UL) & VALID_BOARD_RANGE));
+            xBoardMidLow = fillVertical(xBoardMidLow | ((xBoardMidHigh << 50UL) & VALID_BOARD_RANGE));
+            xBoardLow = fillVertical(xBoardLow | ((xBoardMidLow << 50UL) & VALID_BOARD_RANGE));
+        } else if (0ULL < xBoardMidHigh) {
+            xBoardMidHigh = fillVertical(xBoardMidHigh);
+            xBoardMidLow = fillVertical(xBoardMidLow | ((xBoardMidHigh << 50UL) & VALID_BOARD_RANGE));
+            xBoardLow = fillVertical(xBoardLow | ((xBoardMidLow << 50UL) & VALID_BOARD_RANGE));
+        } else if (0ULL < xBoardMidLow) {
+            xBoardMidLow = fillVertical(xBoardMidLow);
+            xBoardLow = fillVertical(xBoardLow | ((xBoardMidLow << 50UL) & VALID_BOARD_RANGE));
+        } else if (0ULL < xBoardLow) {
+            xBoardLow = fillVertical(xBoardLow);
+        }
+    }
 }
