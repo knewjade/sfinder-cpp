@@ -108,7 +108,7 @@ namespace finder {
                                     movePool,
                                     scoredMovePool,
                                     maxDepth,
-                                    10,
+                                    fastSearchStartDepth,
                                     static_cast<int>(pieces.size()),
                                     leastLineClears,
                                     alwaysRegularAttack,
