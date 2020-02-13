@@ -98,7 +98,8 @@ namespace core {
                 const int32_t uniqueRotate,
                 const std::array<int32_t, 4> sameShapeRotates
         ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
-            offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
+            offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate),
+            sameShapeRotates(sameShapeRotates) {
         };
     };
 
@@ -111,8 +112,7 @@ namespace core {
         const Blocks &get(PieceType piece, RotateType rotate) const;
 
     private:
-        Factory(const std::array<Piece, 7> pieces, const std::array<Blocks, 28> blocks)
-                : pieces(pieces), blocks(blocks) {
+        Factory(std::array<Piece, 7> &pieces, std::array<Blocks, 28> &blocks) : pieces(pieces), blocks(blocks) {
         };
 
         const std::array<Piece, 7> pieces;

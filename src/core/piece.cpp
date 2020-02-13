@@ -275,33 +275,34 @@ namespace core {
                 Transform{Offset{-1, 0}, RotateType::Spawn},
         });
 
-        return Factory(
-                std::array<Piece, 7>{
-                        t, i, l, j, s, z, o
-                },
-                std::array<Blocks, 4 * 7>{
-                        t.blocks[RotateType::Spawn], t.blocks[RotateType::Right],
-                        t.blocks[RotateType::Reverse], t.blocks[RotateType::Left],
+        auto pieces = std::array<Piece, 7>{
+                t, i, l, j, s, z, o
+        };
 
-                        i.blocks[RotateType::Spawn], i.blocks[RotateType::Right],
-                        i.blocks[RotateType::Reverse], i.blocks[RotateType::Left],
+        auto blocks = std::array<Blocks, 4 * 7>{
+                t.blocks[RotateType::Spawn], t.blocks[RotateType::Right],
+                t.blocks[RotateType::Reverse], t.blocks[RotateType::Left],
 
-                        l.blocks[RotateType::Spawn], l.blocks[RotateType::Right],
-                        l.blocks[RotateType::Reverse], l.blocks[RotateType::Left],
+                i.blocks[RotateType::Spawn], i.blocks[RotateType::Right],
+                i.blocks[RotateType::Reverse], i.blocks[RotateType::Left],
 
-                        j.blocks[RotateType::Spawn], j.blocks[RotateType::Right],
-                        j.blocks[RotateType::Reverse], j.blocks[RotateType::Left],
+                l.blocks[RotateType::Spawn], l.blocks[RotateType::Right],
+                l.blocks[RotateType::Reverse], l.blocks[RotateType::Left],
 
-                        s.blocks[RotateType::Spawn], s.blocks[RotateType::Right],
-                        s.blocks[RotateType::Reverse], s.blocks[RotateType::Left],
+                j.blocks[RotateType::Spawn], j.blocks[RotateType::Right],
+                j.blocks[RotateType::Reverse], j.blocks[RotateType::Left],
 
-                        z.blocks[RotateType::Spawn], z.blocks[RotateType::Right],
-                        z.blocks[RotateType::Reverse], z.blocks[RotateType::Left],
+                s.blocks[RotateType::Spawn], s.blocks[RotateType::Right],
+                s.blocks[RotateType::Reverse], s.blocks[RotateType::Left],
 
-                        o.blocks[RotateType::Spawn], o.blocks[RotateType::Right],
-                        o.blocks[RotateType::Reverse], o.blocks[RotateType::Left],
-                }
-        );
+                z.blocks[RotateType::Spawn], z.blocks[RotateType::Right],
+                z.blocks[RotateType::Reverse], z.blocks[RotateType::Left],
+
+                o.blocks[RotateType::Spawn], o.blocks[RotateType::Right],
+                o.blocks[RotateType::Reverse], o.blocks[RotateType::Left],
+        };
+
+        return Factory(pieces, blocks);
     }
 
     const Piece &Factory::get(PieceType piece) const {
