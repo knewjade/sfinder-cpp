@@ -78,7 +78,7 @@ namespace core {
             Left,
         };
 
-        template<bool Allow180=false>
+        template<bool Allow180 = false>
         class MoveGenerator {
         public:
             MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
@@ -209,7 +209,7 @@ namespace core {
                 auto &piece = targetObject.piece;
                 auto &field = targetObject.field;
 
-                // Direction before right rotation
+                // Direction before 180 rotation
                 auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 2) % 4);
                 auto &fromBlocks = piece.blocks[fromRotate];
 
@@ -313,7 +313,7 @@ namespace core {
                     }
                 }
 
-                // Move the place where there is a possibility of rotating left
+                // Move the place where there is a possibility of rotating 180
                 if constexpr (Allow180) {
                     auto result = check180Rotation(targetObject, blocks, x, y);
                     if (result != MoveResults::No) {
@@ -333,12 +333,53 @@ namespace core {
             Left,
         };
 
+        template<bool Allow180 = false>
         class Reachable {
         public:
             Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
-            bool checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight);
+            bool checks(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight) {
+                assert(field.canPut(factory.get(pieceType, rotateType), x, y));
+
+                appearY = validHeight;
+
+                cache.clear();
+
+                auto &piece = factory.get(pieceType);
+
+                auto &transform = piece.transforms[rotateType];
+                auto currentRotateType = transform.toRotate;
+                auto currentX = x + transform.offset.x;
+                auto currentY = y + transform.offset.y;
+
+                auto bit = piece.sameShapeRotates[currentRotateType];
+                assert(bit != 0);
+
+                auto target = TargetObject{field, piece};
+
+                do {
+                    auto next = bit & (bit - 1);
+                    RotateType nextRotateType = rotateBitToVal[bit & ~next];
+
+                    auto &blocks = factory.get(pieceType, nextRotateType);
+
+                    auto &nextTransform = piece.transforms[nextRotateType];
+
+                    assert(currentRotateType == nextTransform.toRotate);
+
+                    auto nextX = currentX - nextTransform.offset.x;
+                    auto nextY = currentY - nextTransform.offset.y;
+
+                    if (firstCheck(target, blocks, nextX, nextY)) {
+                        return true;
+                    }
+
+                    bit = next;
+                } while (bit != 0);
+
+                return false;
+            }
 
         private:
             const Factory &factory;
@@ -346,13 +387,230 @@ namespace core {
             Cache cache;
             int appearY;
 
-            MoveResults checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
+            MoveResults checkLeftRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+                auto &piece = targetObject.piece;
+                auto &field = targetObject.field;
 
-            MoveResults checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY);
+                // Direction before left rotation
+                auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 1) % 4);
+                auto &fromBlocks = piece.blocks[fromRotate];
 
-            MoveResults firstCheck(const TargetObject &targetObject, const Blocks &blocks, int x, int y);
+                // Change the direction to `from`
+                int toLeftX = toX + fromBlocks.minX;
+                int toLowerY = toY + fromBlocks.minY;
 
-            MoveResults check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from);
+                auto head = fromRotate * Piece::MaxOffsetRotate90;
+                int width = FIELD_WIDTH - fromBlocks.width;
+                for (int index = head; index < head + piece.offsetsSize; ++index) {
+                    auto &offset = piece.leftOffsets[index];
+                    int fromLeftX = toLeftX - offset.x;
+                    int fromLowerY = toLowerY - offset.y;
+                    if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                        field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                        int fromX = toX - offset.x;
+                        int fromY = toY - offset.y;
+                        int srsResult = srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        if (srsResult == -1) {
+                            continue;
+                        }
+
+                        auto &kicks = piece.leftOffsets[srsResult];
+                        if (offset.x == kicks.x && offset.y == kicks.y) {
+                            auto result = check(targetObject, fromBlocks, fromX, fromY, From::None);
+                            if (result != MoveResults::No) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+
+                return MoveResults::No;
+            }
+
+            MoveResults checkRightRotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+                auto &piece = targetObject.piece;
+                auto &field = targetObject.field;
+
+                // Direction before right rotation
+                auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 3) % 4);
+                auto &fromBlocks = piece.blocks[fromRotate];
+
+                // Change the direction to `from`
+                int toLeftX = toX + fromBlocks.minX;
+                int toLowerY = toY + fromBlocks.minY;
+
+                auto head = fromRotate * Piece::MaxOffsetRotate90;
+                int width = FIELD_WIDTH - fromBlocks.width;
+                for (int index = head; index < head + piece.offsetsSize; ++index) {
+                    auto &offset = piece.rightOffsets[index];
+                    int fromLeftX = toLeftX - offset.x;
+                    int fromLowerY = toLowerY - offset.y;
+                    if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                        field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                        int fromX = toX - offset.x;
+                        int fromY = toY - offset.y;
+                        int srsResult = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        if (srsResult == -1) {
+                            continue;
+                        }
+
+                        auto &kicks = piece.rightOffsets[srsResult];
+                        if (offset.x == kicks.x && offset.y == kicks.y) {
+                            auto result = check(targetObject, fromBlocks, fromX, fromY, From::None);
+                            if (result != MoveResults::No) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+
+                return MoveResults::No;
+            }
+
+            MoveResults check180Rotation(const TargetObject &targetObject, const Blocks &toBlocks, int toX, int toY) {
+                auto &piece = targetObject.piece;
+                auto &field = targetObject.field;
+
+                // Direction before 180 rotation
+                auto fromRotate = static_cast<RotateType>((toBlocks.rotateType + 2) % 4);
+                auto &fromBlocks = piece.blocks[fromRotate];
+
+                // Change the direction to `from`
+                int toLeftX = toX + fromBlocks.minX;
+                int toLowerY = toY + fromBlocks.minY;
+
+                auto head = fromRotate * Piece::MaxOffsetRotate180;
+                int width = FIELD_WIDTH - fromBlocks.width;
+                for (int index = head; index < head + piece.rotate180OffsetsSize; ++index) {
+                    auto &offset = piece.rotate180Offsets[index];
+                    int fromLeftX = toLeftX - offset.x;
+                    int fromLowerY = toLowerY - offset.y;
+                    if (0 <= fromLeftX && fromLeftX <= width && 0 <= fromLowerY &&
+                        field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
+                        int fromX = toX - offset.x;
+                        int fromY = toY - offset.y;
+                        int srsResult = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        if (srsResult == -1) {
+                            continue;
+                        }
+
+                        auto &kicks = piece.rotate180Offsets[srsResult];
+                        if (offset.x == kicks.x && offset.y == kicks.y) {
+                            auto result = check(targetObject, fromBlocks, fromX, fromY, From::None, false);
+                            if (result != MoveResults::No) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+
+                return MoveResults::No;
+            }
+
+            MoveResults firstCheck(const TargetObject &targetObject, const Blocks &blocks, int x, int y) {
+                // Move the place where there is a possibility of rotating right
+                {
+                    auto result = checkRightRotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move the place where there is a possibility of rotating left
+                {
+                    auto result = checkLeftRotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move the place where there is a possibility of rotating 180
+                if constexpr (Allow180) {
+                    auto result = check180Rotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                return MoveResults::No;
+            }
+
+            MoveResults check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
+                auto &field = targetObject.field;
+
+                // When reach by harddrop
+                if (field.canReachOnHarddrop(blocks, x, y)) {
+                    return MoveResults::Softdrop;
+                }
+
+                // When reach the top
+                if (appearY <= y) {
+                    return MoveResults::Softdrop;
+                }
+
+                RotateType rotate = blocks.rotateType;
+
+                // Visited already
+                if (cache.isVisit(x, y, rotate)) {
+                    // Return no when it has been visited and not found because it can be covered by other path
+                    return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+                }
+
+                cache.visit(x, y, rotate);
+
+                // Move up
+                int upY = y + 1;
+                if (upY < appearY && field.canPut(blocks, x, upY)) {
+                    auto result = check(targetObject, blocks, x, upY, From::None);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move left
+                int leftX = x - 1;
+                if (from != From::Left && -blocks.minX <= leftX && field.canPut(blocks, leftX, y)) {
+                    auto result = check(targetObject, blocks, leftX, y, From::Right);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move right
+                int rightX = x + 1;
+                if (from != From::Right && rightX < FIELD_WIDTH - blocks.maxX && field.canPut(blocks, rightX, y)) {
+                    auto result = check(targetObject, blocks, rightX, y, From::Left);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move the place where there is a possibility of rotating right
+                {
+                    auto result = checkRightRotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move the place where there is a possibility of rotating left
+                {
+                    auto result = checkLeftRotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                // Move the place where there is a possibility of rotating 180
+                if constexpr (Allow180) {
+                    auto result = check180Rotation(targetObject, blocks, x, y);
+                    if (result != MoveResults::No) {
+                        return result;
+                    }
+                }
+
+                return MoveResults::No;
+            }
         };
     }
 }
