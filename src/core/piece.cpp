@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "piece.hpp"
 
 namespace core {
@@ -160,8 +162,8 @@ namespace core {
         const PieceType pieceType,
         const std::string &name,
         const std::array<Point, 4> &points,
-        const std::array<Offset, 20> &rightOffsets,
-        const std::array<Offset, 20> &leftOffsets,
+        const std::array<Offset, 20> &cwOffsets,
+        const std::array<Offset, 20> &ccwOffsets,
         const std::array<Transform, 4> &transforms
     ) {
         const Blocks &spawn = Blocks::create(RotateType::Spawn, points);
@@ -197,7 +199,7 @@ namespace core {
 
         return Piece(pieceType, name, std::array<Blocks, 4>{
             spawn, right, reverse, left
-        }, rightOffsets, leftOffsets, N, transforms, uniqueRotate, sameShapeRotates);
+        }, cwOffsets, ccwOffsets, N, transforms, uniqueRotate, sameShapeRotates);
     }
 
     BlocksMask Blocks::mask(int leftX, int lowerY) const {
@@ -234,52 +236,121 @@ namespace core {
     Factory Factory::create() {
         using namespace std::literals::string_literals;
 
-        auto iOffsets = std::array<std::array<Offset, 5>, 4>{
+        constexpr auto iOffsets = std::array<std::array<Offset, 5>, 4>{
                 std::array<Offset, 5>{Offset{0, 0}, {-1, 0}, {2, 0}, {-1, 0}, {2, 0}},
                 std::array<Offset, 5>{Offset{-1, 0}, {0, 0}, {0, 0}, {0, 1}, {0, -2}},
                 std::array<Offset, 5>{Offset{-1, 1}, {1, 1}, {-2, 1}, {1, 0}, {-2, 0}},
                 std::array<Offset, 5>{Offset{0, 1}, {0, 1}, {0, 1}, {0, -1}, {0, 2}},
         };
 
-        auto oOffsets = std::array<std::array<Offset, 1>, 4>{
+        constexpr auto oOffsets = std::array<std::array<Offset, 1>, 4>{
                 std::array<Offset, 1>{Offset{0, 0}},
                 std::array<Offset, 1>{Offset{0, -1}},
                 std::array<Offset, 1>{Offset{-1, -1}},
                 std::array<Offset, 1>{Offset{-1, 0}},
         };
 
-        auto otherOffsets = std::array<std::array<Offset, 5>, 4>{
+        constexpr auto otherOffsets = std::array<std::array<Offset, 5>, 4>{
                 std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
                 std::array<Offset, 5>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
                 std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
                 std::array<Offset, 5>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
         };
 
-        auto t = Piece::create(PieceType::T, "T"s, std::array<Point, 4>{
+        const auto t = Piece::create(PieceType::T, "T"s, std::array<Point, 4>{
             Point{0, 0}, {-1, 0}, {1, 0}, {0, 1},
         }, otherOffsets, tTransforms);
 
-        auto i = Piece::create(PieceType::I, "I"s, std::array<Point, 4>{
+        const auto i = Piece::create(PieceType::I, "I"s, std::array<Point, 4>{
             Point{0, 0}, {-1, 0}, {1, 0}, {2, 0}
         }, iOffsets, iTransforms);
 
-        auto l = Piece::create(PieceType::L, "L"s, std::array<Point, 4>{
+        const auto l = Piece::create(PieceType::L, "L"s, std::array<Point, 4>{
                 Point{0, 0}, {-1, 0}, {1, 0}, {1, 1}
         }, otherOffsets, tTransforms);
 
-        auto j = Piece::create(PieceType::J, "J"s, std::array<Point, 4>{
+        const auto j = Piece::create(PieceType::J, "J"s, std::array<Point, 4>{
                 Point{0, 0}, {-1, 0}, {1, 0}, {-1, 1}
         }, otherOffsets, tTransforms);
 
-        auto s = Piece::create(PieceType::S, "S"s, std::array<Point, 4>{
+        const auto s = Piece::create(PieceType::S, "S"s, std::array<Point, 4>{
             Point{0, 0}, {-1, 0}, {0, 1}, {1, 1}
         }, otherOffsets, sTransforms);
 
-        auto z = Piece::create(PieceType::Z, "Z"s, std::array<Point, 4>{
+        const auto z = Piece::create(PieceType::Z, "Z"s, std::array<Point, 4>{
             Point{0, 0}, {1, 0}, {0, 1}, {-1, 1}
         }, otherOffsets, zTransforms);
 
-        auto o = Piece::create(PieceType::O, "O"s, std::array<Point, 4>{
+        const auto o = Piece::create(PieceType::O, "O"s, std::array<Point, 4>{
+            Point{0, 0}, {1, 0}, {0, 1}, {1, 1}
+        }, oOffsets, oTransforms);
+
+        return create(t, i, l, j, s, z, o);
+    }
+
+    Factory Factory::createForSSRPlus() {
+        using namespace std::literals::string_literals;
+
+        constexpr std::array<Offset, 20> iCwOffsets{
+            // from Spawn
+            Offset{1, 0}, {2, 0},{ -1, 0},{-1, -1},{ 2,2},
+            // from Right
+            Offset{0, -1}, {-1, -1},{ 2, -1},{-1,1},{ 2, -2},
+            // from Reverse
+            Offset{-1, 0}, { 1, 0},{-2, 0},{ 1,1},{-2, -2},
+            // from Left
+            Offset{0, 1}, {1, 1},{ -2, 1},{ 2, -1},{-2,2},
+        };
+        constexpr std::array<Offset, 20> iCcwOffsets{
+            // from Spawn
+            Offset{0, -1}, { -1, -1},{2, -1},{ 2, -2},{-1,2},
+            // from Right
+            Offset{-1, 0}, { -2, 0},{1, 0},{-2, -2},{ 1,1},
+            // from Reverse
+            Offset{0, 1}, {-2, 1},{ 1, 1},{-2,2},{ 1, -1},
+            // from Left
+            Offset{1, 0}, { 2, 0},{-1, 0},{ 2,2},{-1, -1},
+        };
+
+        constexpr auto oOffsets = std::array<std::array<Offset, 1>, 4>{
+                std::array<Offset, 1>{Offset{0, 0}},
+                std::array<Offset, 1>{Offset{0, -1}},
+                std::array<Offset, 1>{Offset{-1, -1}},
+                std::array<Offset, 1>{Offset{-1, 0}},
+        };
+
+        constexpr auto otherOffsets = std::array<std::array<Offset, 5>, 4>{
+                std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+                std::array<Offset, 5>{Offset{0, 0}, {1, 0}, {1, -1}, {0, 2}, {1, 2}},
+                std::array<Offset, 5>{Offset{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+                std::array<Offset, 5>{Offset{0, 0}, {-1, 0}, {-1, -1}, {0, 2}, {-1, 2}},
+        };
+
+        const auto t = Piece::create(PieceType::T, "T"s, std::array<Point, 4>{
+            Point{0, 0}, {-1, 0}, {1, 0}, {0, 1},
+        }, otherOffsets, tTransforms);
+
+        const auto i = Piece::create<5>(PieceType::I, "I"s, std::array<Point, 4>{
+            Point{0, 0}, {-1, 0}, {1, 0}, {2, 0}
+        }, iCwOffsets, iCcwOffsets, iTransforms);
+
+        const auto l = Piece::create(PieceType::L, "L"s, std::array<Point, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {1, 1}
+        }, otherOffsets, tTransforms);
+
+        const auto j = Piece::create(PieceType::J, "J"s, std::array<Point, 4>{
+                Point{0, 0}, {-1, 0}, {1, 0}, {-1, 1}
+        }, otherOffsets, tTransforms);
+
+        const auto s = Piece::create(PieceType::S, "S"s, std::array<Point, 4>{
+            Point{0, 0}, {-1, 0}, {0, 1}, {1, 1}
+        }, otherOffsets, sTransforms);
+
+        const auto z = Piece::create(PieceType::Z, "Z"s, std::array<Point, 4>{
+            Point{0, 0}, {1, 0}, {0, 1}, {-1, 1}
+        }, otherOffsets, zTransforms);
+
+        const auto o = Piece::create(PieceType::O, "O"s, std::array<Point, 4>{
             Point{0, 0}, {1, 0}, {0, 1}, {1, 1}
         }, oOffsets, oTransforms);
 

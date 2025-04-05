@@ -1,9 +1,12 @@
+#include <cassert>
+
 #include "srs.hpp"
 
 namespace core::srs {
     int right(
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
     ) {
+        assert((fromRotate + 1) % 4 == toRotate);
         auto &toBlocks = piece.blocks[toRotate];
         return right(field, piece, fromRotate, toBlocks, fromX, fromY);
     }
@@ -31,6 +34,7 @@ namespace core::srs {
     int left(
             const Field &field, const Piece &piece, RotateType fromRotate, RotateType toRotate, int fromX, int fromY
     ) {
+        assert((fromRotate + 3) % 4 == toRotate);
         auto &toBlocks = piece.blocks[toRotate];
         return left(field, piece, fromRotate, toBlocks, fromX, fromY);
     }

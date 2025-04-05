@@ -4,7 +4,6 @@
 #include <string>
 #include <algorithm>
 #include <array>
-#include <cassert>
 
 #include "types.hpp"
 
@@ -81,16 +80,16 @@ namespace core {
             PieceType pieceType,
             const std::string &name,
             const std::array<Point, 4> &points,
-            const std::array<Offset, 20> &rightOffsets,
-            const std::array<Offset, 20> &leftOffsets,
+            const std::array<Offset, 20> &cwOffsets,
+            const std::array<Offset, 20> &ccwOffsets,
             const std::array<Transform, 4> &transforms
         );
 
         const PieceType pieceType;
         const std::string name;
         const std::array<Blocks, 4> blocks;
-        const std::array<Offset, 20> rightOffsets;
-        const std::array<Offset, 20> leftOffsets;
+        const std::array<Offset, 20> rightOffsets; // = cwOffsets
+        const std::array<Offset, 20> leftOffsets; // = ccwOffsets
         const size_t offsetsSize;
         const std::array<Transform, 4> transforms;
         const int32_t uniqueRotateBit;
@@ -101,13 +100,13 @@ namespace core {
                 const PieceType pieceType,
                 const std::string name,
                 const std::array<Blocks, 4> blocks,
-                const std::array<Offset, 20> rightOffsets,
-                const std::array<Offset, 20> leftOffsets,
+                const std::array<Offset, 20> cwOffsets,
+                const std::array<Offset, 20> ccwOffsets,
                 const size_t offsetsSize,
                 const std::array<Transform, 4> transforms,
                 const int32_t uniqueRotate,
                 const std::array<int32_t, 4> sameShapeRotates
-        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(rightOffsets), leftOffsets(leftOffsets),
+        ) : pieceType(pieceType), name(name), blocks(blocks), rightOffsets(cwOffsets), leftOffsets(ccwOffsets),
             offsetsSize(offsetsSize), transforms(transforms), uniqueRotateBit(uniqueRotate), sameShapeRotates(sameShapeRotates) {
         };
     };
@@ -115,6 +114,8 @@ namespace core {
     class Factory {
     public:
         static Factory create();
+
+        static Factory createForSSRPlus();
 
         static Factory create(
             const Piece& t,
