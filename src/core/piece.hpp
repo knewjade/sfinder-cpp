@@ -76,6 +76,16 @@ namespace core {
                 const std::array<Transform, 4> &transforms
         );
 
+        template <size_t N>
+        static Piece create(
+            PieceType pieceType,
+            const std::string &name,
+            const std::array<Point, 4> &points,
+            const std::array<Offset, 20> &rightOffsets,
+            const std::array<Offset, 20> &leftOffsets,
+            const std::array<Transform, 4> &transforms
+        );
+
         const PieceType pieceType;
         const std::string name;
         const std::array<Blocks, 4> blocks;
@@ -106,12 +116,22 @@ namespace core {
     public:
         static Factory create();
 
+        static Factory create(
+            const Piece& t,
+            const Piece& i,
+            const Piece& l,
+            const Piece& j,
+            const Piece& s,
+            const Piece& z,
+            const Piece& o
+        );
+
         const Piece &get(PieceType piece) const;
 
         const Blocks &get(PieceType piece, RotateType rotate) const;
 
     private:
-        Factory(const std::array<Piece, 7> pieces, const std::array<Blocks, 28> blocks)
+         Factory(const std::array<Piece, 7> pieces, const std::array<Blocks, 28> blocks)
                 : pieces(pieces), blocks(blocks) {
         };
 
