@@ -248,7 +248,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::move(
+    void PerfectFinder<>::move(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution,
@@ -260,7 +260,7 @@ namespace finder {
     );
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::search(
+    void PerfectFinder<>::search(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution
@@ -318,7 +318,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::accept(const Configure &configure, const Record &record) {
+    void PerfectFinder<>::accept(const Configure &configure, const Record &record) {
         assert(!best.solution.empty());
 
         if (best.solution[0].x == -1 || shouldUpdate(configure.leastLineClears, best, record)) {
@@ -327,7 +327,7 @@ namespace finder {
     }
 
     template<>
-    void PerfectFinder<core::srs::MoveGenerator>::move(
+    void PerfectFinder<>::move(
             const Configure &configure,
             const Candidate &candidate,
             Solution &solution,
@@ -407,7 +407,7 @@ namespace finder {
     }
 
     template<>
-    Solution PerfectFinder<core::srs::MoveGenerator>::run(
+    Solution PerfectFinder<>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty, bool leastLineClears, int initCombo
     ) {
@@ -463,7 +463,7 @@ namespace finder {
     }
 
     template<>
-    Solution PerfectFinder<core::srs::MoveGenerator>::run(
+    Solution PerfectFinder<>::run(
             const core::Field &field, const std::vector<core::PieceType> &pieces,
             int maxDepth, int maxLine, bool holdEmpty
     ) {
