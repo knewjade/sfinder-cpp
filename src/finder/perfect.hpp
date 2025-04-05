@@ -67,10 +67,10 @@ namespace finder {
             core::PieceType pieceType, const core::Move &move, int numCleared, bool b2b
     );
 
-    template<class T = core::srs::MoveGenerator>
+    template<class T = core::srs::MoveGenerator<>>
     class PerfectFinder {
     public:
-        PerfectFinder<T>(const core::Factory &factory, T &moveGenerator)
+        PerfectFinder(const core::Factory &factory, T &moveGenerator)
                 : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
         }
 
