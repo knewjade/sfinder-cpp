@@ -1,6 +1,7 @@
 #include "two_lines_pc.hpp"
 
 #include <set>
+#include <cassert>
 
 namespace finder {
     namespace {
