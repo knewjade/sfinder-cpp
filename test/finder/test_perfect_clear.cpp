@@ -336,6 +336,7 @@ namespace finder {
         }
     }
 
+    // Equivalent to ConcurrentPerfectClearTest::case8
     TEST_F(PerfectClearTest, case8) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
@@ -353,10 +354,22 @@ namespace finder {
         {
             auto pieces = std::vector{
                 core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
-        };
+            };
             auto result = finder.run(field, pieces, maxLine, false);
             EXPECT_TRUE(!result.empty());
-            // L-Spawn 4,2 -> S-Spawn 6,1 -> J-Spawn 5,0
+
+            auto expected = std::vector{
+                Operation{core::PieceType::L, core::RotateType::Spawn, 4, 2},
+                Operation{core::PieceType::S, core::RotateType::Spawn, 6, 1},
+                Operation{core::PieceType::J, core::RotateType::Spawn, 5, 0},
+            };
+            EXPECT_EQ(result.size(), expected.size());
+            for (int index = 0; index < expected.size(); ++index) {
+                EXPECT_EQ(result[index].pieceType, expected[index].pieceType);
+                EXPECT_EQ(result[index].rotateType, expected[index].rotateType);
+                EXPECT_EQ(result[index].x, expected[index].x);
+                EXPECT_EQ(result[index].y, expected[index].y);
+            }
         }
     }
 
