@@ -78,7 +78,7 @@ namespace core {
             Left,
         };
 
-        template<bool Allow180 = false>
+        template<bool Allow180 = false, bool AllowSoftdropTap = true>
         class MoveGenerator {
         public:
             MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
@@ -250,6 +250,13 @@ namespace core {
             ) {
                 auto &field = targetObject.field;
 
+                // When AllowSoftdropTap is false and the piece is in the air, it can only pass through and no operations are allowed
+                if constexpr (!AllowSoftdropTap) {
+                    if (!field.isOnGround(blocks, x, y)) {
+                        return MoveResults::No;
+                    }
+                }
+
                 // When reach by harddrop
                 if (field.canReachOnHarddrop(blocks, x, y)) {
                     return isFirstCall ? MoveResults::Harddrop : MoveResults::Softdrop;
@@ -333,7 +340,7 @@ namespace core {
             Left,
         };
 
-        template<bool Allow180 = false>
+        template<bool Allow180 = false, bool AllowSoftdropTap = true>
         class Reachable {
         public:
             Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
@@ -537,6 +544,13 @@ namespace core {
 
             MoveResults check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
                 auto &field = targetObject.field;
+
+                // When AllowSoftdropTap is false and the piece is in the air, it can only pass through and no operations are allowed
+                if constexpr (!AllowSoftdropTap) {
+                    if (!field.isOnGround(blocks, x, y)) {
+                        return MoveResults::No;
+                    }
+                }
 
                 // When reach by harddrop
                 if (field.canReachOnHarddrop(blocks, x, y)) {

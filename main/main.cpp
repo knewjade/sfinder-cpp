@@ -4,7 +4,6 @@
 #include <core/moves.hpp>
 
 #include "core/field.hpp"
-#include "core/srs.hpp"
 #include "core/types.hpp"
 #include "finder/perfect.hpp"
 
@@ -52,9 +51,10 @@ void benchmark() {
     );
 
     constexpr bool Allow180 = true;
+    constexpr bool AllowSoftdropTap = false;
 
     auto factory = core::Factory::create();
-    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+    auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
     auto finder = finder::PerfectFinder(factory, moveGenerator);
 
     {
@@ -108,9 +108,10 @@ void sample() {
     using namespace std::literals::string_literals;
 
     constexpr bool Allow180 = true;
+    constexpr bool AllowSoftdropTap = false;
 
     auto factory = core::Factory::create();
-    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+    auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
     auto finder = finder::PerfectFinder(factory, moveGenerator);
 
     auto field = core::createField(

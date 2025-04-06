@@ -470,7 +470,7 @@ namespace finder {
             auto pieces = std::vector{
                 core::PieceType::T, core::PieceType::T, core::PieceType::T, core::PieceType::T,
                 core::PieceType::T,
-        };
+            };
             auto result = finder.run(field, pieces, maxDepth, maxLine, true);
             EXPECT_TRUE(!result.empty());
         }
@@ -498,6 +498,44 @@ namespace finder {
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
             EXPECT_TRUE(!result.empty());
             // L-Spawn 4,2 -> S-Spawn 6,1 -> J-Spawn 5,0
+        }
+    }
+
+    TEST_F(PerfectTest, case9) {
+        auto factory = core::Factory::create();
+
+        auto field = core::createField(
+                "XXXX_XXXXX"s +
+                "XX____XXXX"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                ""
+        );
+        auto maxDepth = 2;
+        auto maxLine = 5;
+
+        {
+            // constexpr bool Allow180 = false;
+            // constexpr bool AllowSoftdropTap = true;
+            auto moveGenerator = core::srs::MoveGenerator(factory);
+            auto finder = PerfectFinder(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+        }
+        {
+            constexpr bool Allow180 = false;
+            constexpr bool AllowSoftdropTap = false;
+            auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+            auto finder = PerfectFinder(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
