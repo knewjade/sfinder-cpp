@@ -176,7 +176,6 @@ namespace finder {
 
     TSpinShapes getTSpinShape(const core::Field &field, int x, int y, core::RotateType rotateType);
 
-    // TODO Allow180
     template<bool Allow180>
     int getAttackIfTSpin(
             core::srs_rotate_end::Reachable<Allow180> &reachable, const core::Factory &factory, const core::Field &field,
@@ -223,7 +222,7 @@ namespace finder {
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
-            auto head = fromRotate * 5;
+            auto head = fromRotate * core::Piece::MaxOffsetRotate90;
             int width = FIELD_WIDTH - fromBlocks.width;
             for (int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.rightOffsets[index];
@@ -234,7 +233,7 @@ namespace finder {
                     int fromX = toX - offset.x;
                     int fromY = toY - offset.y;
                     int srsResult = core::srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
-                    if (0 <= srsResult && srsResult % 5 == 4) {
+                    if (0 <= srsResult && srsResult % core::Piece::MaxOffsetRotate90 == core::Piece::MaxOffsetRotate90 - 1) {
                         // T-Spin Regular
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
@@ -255,7 +254,7 @@ namespace finder {
             int toLeftX = toX + fromBlocks.minX;
             int toLowerY = toY + fromBlocks.minY;
 
-            auto head = fromRotate * 5;
+            auto head = fromRotate * core::Piece::MaxOffsetRotate90;
             int width = FIELD_WIDTH - fromBlocks.width;
             for (int index = head; index < head + piece.offsetsSize; ++index) {
                 auto &offset = piece.leftOffsets[index];
@@ -266,7 +265,7 @@ namespace finder {
                     int fromX = toX - offset.x;
                     int fromY = toY - offset.y;
                     int srsResult = core::srs::left(field, piece, fromRotate, toBlocks, fromX, fromY);
-                    if (0 <= srsResult && srsResult % 5 == 4) {
+                    if (0 <= srsResult && srsResult % core::Piece::MaxOffsetRotate90 == core::Piece::MaxOffsetRotate90 - 1) {
                         // T-Spin Regular
                         int baseAttack = numCleared * 2;
                         return b2b ? baseAttack + 1 : baseAttack;
