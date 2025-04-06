@@ -205,6 +205,31 @@ namespace core {
                 EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 4, 1, false}));
             }
         }
+
+        TEST_F(SRSMoveGeneratorTest, case7) {
+            auto field = createField(
+                    "XXXX____XX"s +
+                    "XXX___XXXX"s +
+                    "XXXXX__XXX"s +
+                    "XXXX___XXX"s +
+                    ""
+            );
+
+            auto factory = Factory::create();
+
+            {
+                auto generator = MoveGenerator(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::L, 4);
+
+                EXPECT_EQ(moves.size(), 4);
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 4, 2, false}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 3, true}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 6, 3, true}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Left, 5, 1, true}));
+            }
+        }
     }
 
     namespace srs_rotate_end {

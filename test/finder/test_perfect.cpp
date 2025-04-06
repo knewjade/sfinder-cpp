@@ -476,6 +476,31 @@ namespace finder {
         }
     }
 
+    TEST_F(PerfectTest, case8) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectFinder(factory, moveGenerator);
+
+        auto field = core::createField(
+                "XXXX____XX"s +
+                "XXX___XXXX"s +
+                "XXXXX__XXX"s +
+                "XXXX___XXX"s +
+                ""
+        );
+        auto maxDepth = 3;
+        auto maxLine = 4;
+
+        {
+            auto pieces = std::vector{
+                    core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+            EXPECT_FALSE(!result.empty());
+            // L-Spawn 4,2 -> S-Spawn 6,1 -> J-Spawn 5,0
+        }
+    }
+
     template<int N>
     std::array<core::PieceType, N> toPieces(int value) {
         int arr[N];
