@@ -336,6 +336,30 @@ namespace finder {
         }
     }
 
+    TEST_F(PerfectClearTest, case8) {
+        auto factory = core::Factory::create();
+        auto moveGenerator = core::srs::MoveGenerator(factory);
+        auto finder = PerfectClearFinder(factory, moveGenerator);
+
+        auto field = core::createField(
+                "XXXX____XX"s +
+                "XXX___XXXX"s +
+                "XXXXX__XXX"s +
+                "XXXX___XXX"s +
+                ""
+        );
+        auto maxLine = 4;
+
+        {
+            auto pieces = std::vector{
+                core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
+        };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+            // L-Spawn 4,2 -> S-Spawn 6,1 -> J-Spawn 5,0
+        }
+    }
+
     TEST_F(PerfectClearTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);
