@@ -66,7 +66,7 @@ namespace core {
             );
 
             auto factory = Factory::create();
-            auto generator = srs::MoveGenerator(factory);
+            auto generator = MoveGenerator(factory);
 
             {
                 auto moves = std::vector<Move>();
@@ -100,7 +100,7 @@ namespace core {
             );
 
             auto factory = Factory::create();
-            auto generator = srs::MoveGenerator(factory);
+            auto generator = MoveGenerator(factory);
 
             {
                 auto moves = std::vector<Move>();
@@ -120,7 +120,7 @@ namespace core {
             );
 
             auto factory = Factory::create();
-            auto generator = srs::MoveGenerator(factory);
+            auto generator = MoveGenerator(factory);
 
             {
                 auto moves = std::vector<Move>();
@@ -139,7 +139,7 @@ namespace core {
             );
 
             auto factory = Factory::create();
-            auto generator = srs::MoveGenerator(factory);
+            auto generator = MoveGenerator(factory);
 
             {
                 auto moves = std::vector<Move>();
@@ -159,7 +159,7 @@ namespace core {
             );
 
             auto factory = Factory::create();
-            auto generator = srs::MoveGenerator(factory);
+            auto generator = MoveGenerator(factory);
 
             {
                 auto moves = std::vector<Move>();
@@ -171,6 +171,40 @@ namespace core {
                 EXPECT_FALSE(assertMove(moves, Move{RotateType::Spawn, 4, 0, false}));
             }
         }
+
+        TEST_F(SRSMoveGeneratorTest, case6_srsplus_r180) {
+            auto field = createField(
+                    "XX__XXXXXX"s +
+                    "XX____XXXX"s +
+                    "XXXX_XXXXX"s +
+                    ""
+            );
+
+            auto factory = Factory::createForSSRPlus();
+
+            {
+                // constexpr bool Allow180 = false;
+                auto generator = MoveGenerator(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::T, 3);
+
+                EXPECT_EQ(moves.size(), 1);
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 3, 1, false}));
+                EXPECT_FALSE(assertMove(moves, Move{RotateType::Reverse, 4, 1, false}));
+            }
+            {
+                constexpr bool Allow180 = true;
+                auto generator = MoveGenerator<Allow180>(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::T, 3);
+
+                EXPECT_EQ(moves.size(), 2);
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Spawn, 3, 1, false}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 4, 1, false}));
+            }
+        }
     }
 
     namespace srs_rotate_end {
@@ -179,7 +213,7 @@ namespace core {
 
         TEST_F(SRSRotateEndReachableTest, case1) {
             auto factory = Factory::create();
-            auto reachable = srs_rotate_end::Reachable(factory);
+            auto reachable = Reachable(factory);
 
             {
                 auto field = createField(
@@ -263,6 +297,43 @@ namespace core {
                 EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Right, 2, 1, 24));
                 EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Reverse, 3, 1, 24));
                 EXPECT_FALSE(reachable.checks(field, PieceType::O, RotateType::Left, 3, 0, 24));
+            }
+        }
+
+        TEST_F(SRSRotateEndReachableTest, case2_srsplus_r180) {
+            auto factory = Factory::createForSSRPlus();
+
+            {
+                // constexpr bool Allow180 = false;
+                auto reachable = Reachable(factory);
+
+                auto field = createField(
+                        "XXXX__XXXX"s +
+                        "__XX__XXXX"s +
+                        "__XX__XXXX"s +
+                        "X_____XXXX"s +
+                        "X_____XXXX"s +
+                        ""
+                );
+
+                EXPECT_TRUE(reachable.checks(field, PieceType::T, RotateType::Right, 1, 1, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::T, RotateType::Left, 1, 2, 24));
+            }
+            {
+                constexpr bool Allow180 = true;
+                auto reachable = Reachable<Allow180>(factory);
+
+                auto field = createField(
+                        "XXXX__XXXX"s +
+                        "__XX__XXXX"s +
+                        "__XX__XXXX"s +
+                        "X_____XXXX"s +
+                        "X_____XXXX"s +
+                        ""
+                );
+
+                EXPECT_TRUE(reachable.checks(field, PieceType::T, RotateType::Right, 1, 1, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::T, RotateType::Left, 1, 2, 24));
             }
         }
     }

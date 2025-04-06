@@ -438,6 +438,44 @@ namespace finder {
         }
     }
 
+    TEST_F(PerfectTest, case7_srsplus_r180) {
+        auto factory = core::Factory::createForSSRPlus();
+
+        auto field = core::createField(
+                "XXX___XXXX"s +
+                "X_XX__XXXX"s +
+                "__XX__XXXX"s +
+                "X_____XXXX"s +
+                "X_____XXXX"s +
+                ""
+        );
+        auto maxDepth = 5;
+        auto maxLine = 5;
+
+        {
+            // constexpr bool Allow180 = false;
+            auto moveGenerator = core::srs::MoveGenerator(factory);
+            auto finder = PerfectFinder(factory, moveGenerator);
+            auto pieces = std::vector{
+                    core::PieceType::T, core::PieceType::T, core::PieceType::T, core::PieceType::T,
+                    core::PieceType::T,
+            };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true);
+            EXPECT_FALSE(!result.empty());
+        }
+        {
+            constexpr bool Allow180 = true;
+            auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+            auto finder = PerfectFinder(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::T, core::PieceType::T, core::PieceType::T, core::PieceType::T,
+                core::PieceType::T,
+        };
+            auto result = finder.run(field, pieces, maxDepth, maxLine, true);
+            EXPECT_TRUE(!result.empty());
+        }
+    }
+
     template<int N>
     std::array<core::PieceType, N> toPieces(int value) {
         int arr[N];

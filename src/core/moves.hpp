@@ -227,7 +227,7 @@ namespace core {
                         field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
                         int fromX = toX - offset.x;
                         int fromY = toY - offset.y;
-                        int srsResult = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        int srsResult = srs::rotate180(field, piece, fromRotate, toBlocks, fromX, fromY);
                         if (srsResult == -1) {
                             continue;
                         }
@@ -489,14 +489,14 @@ namespace core {
                         field.canPutAtMaskIndex(fromBlocks, fromLeftX, fromLowerY)) {
                         int fromX = toX - offset.x;
                         int fromY = toY - offset.y;
-                        int srsResult = srs::right(field, piece, fromRotate, toBlocks, fromX, fromY);
+                        int srsResult = srs::rotate180(field, piece, fromRotate, toBlocks, fromX, fromY);
                         if (srsResult == -1) {
                             continue;
                         }
 
                         auto &kicks = piece.rotate180Offsets[srsResult];
                         if (offset.x == kicks.x && offset.y == kicks.y) {
-                            auto result = check(targetObject, fromBlocks, fromX, fromY, From::None, false);
+                            auto result = check(targetObject, fromBlocks, fromX, fromY, From::None);
                             if (result != MoveResults::No) {
                                 return result;
                             }
