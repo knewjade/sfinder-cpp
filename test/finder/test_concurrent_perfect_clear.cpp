@@ -337,6 +337,83 @@ namespace finder {
         }
     }
 
+    // Equivalent to PerfectClearTest::case8
+    TEST_F(ConcurrentPerfectClearTest, case8) {
+        auto factory = core::Factory::create();
+        auto threadPool = ThreadPool(4);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
+
+        auto field = core::createField(
+                "XXXX____XX"s +
+                "XXX___XXXX"s +
+                "XXXXX__XXX"s +
+                "XXXX___XXX"s +
+                ""
+        );
+        auto maxLine = 4;
+
+        {
+            auto pieces = std::vector{
+                core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
+        };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+
+            auto expected = std::vector{
+                Operation{core::PieceType::L, core::RotateType::Spawn, 4, 2},
+                Operation{core::PieceType::S, core::RotateType::Spawn, 6, 1},
+                Operation{core::PieceType::J, core::RotateType::Spawn, 5, 0},
+            };
+            EXPECT_EQ(result.size(), expected.size());
+            for (int index = 0; index < expected.size(); ++index) {
+                EXPECT_EQ(result[index].pieceType, expected[index].pieceType);
+                EXPECT_EQ(result[index].rotateType, expected[index].rotateType);
+                EXPECT_EQ(result[index].x, expected[index].x);
+                EXPECT_EQ(result[index].y, expected[index].y);
+            }
+        }
+    }
+
+    TEST_F(ConcurrentPerfectClearTest, case8_depth6) {
+        auto factory = core::Factory::create();
+        auto threadPool = ThreadPool(4);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
+
+        auto field = core::createField(
+                "________XX"s +
+                "________XX"s +
+                "X_XXX____X"s +
+                "XXXX___XXX"s +
+                ""
+        );
+        auto maxLine = 4;
+
+        {
+            auto pieces = std::vector{
+                core::PieceType::S, core::PieceType::T, core::PieceType::Z, core::PieceType::S,
+                core::PieceType::L, core::PieceType::J, core::PieceType::I,
+        };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+
+            auto expected = std::vector{
+                Operation{core::PieceType::S, core::RotateType::Left, 1, 2},
+                Operation{core::PieceType::Z, core::RotateType::Spawn, 7, 1},
+                Operation{core::PieceType::T, core::RotateType::Reverse, 2, 3},
+                Operation{core::PieceType::L, core::RotateType::Spawn, 4, 2},
+                Operation{core::PieceType::S, core::RotateType::Spawn, 6, 1},
+                Operation{core::PieceType::J, core::RotateType::Spawn, 5, 0},
+            };
+            EXPECT_EQ(result.size(), expected.size());
+            for (int index = 0; index < expected.size(); ++index) {
+                EXPECT_EQ(result[index].pieceType, expected[index].pieceType);
+                EXPECT_EQ(result[index].rotateType, expected[index].rotateType);
+                EXPECT_EQ(result[index].x, expected[index].x);
+                EXPECT_EQ(result[index].y, expected[index].y);
+            }
+        }
+    }
+
     TEST_F(ConcurrentPerfectClearTest, longtest1) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
