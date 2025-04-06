@@ -496,7 +496,7 @@ namespace finder {
                     core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
             };
             auto result = finder.run(field, pieces, maxDepth, maxLine, false);
-            EXPECT_FALSE(!result.empty());
+            EXPECT_TRUE(!result.empty());
             // L-Spawn 4,2 -> S-Spawn 6,1 -> J-Spawn 5,0
         }
     }
