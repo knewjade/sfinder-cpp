@@ -9,7 +9,7 @@
 
 namespace finder {
     // Entry point to find best perfect clear
-    template<bool Allow180 = false, class M = core::srs::MoveGenerator<Allow180>>
+    template<bool Allow180 = false, bool AllowSoftdropTap = true, class M = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>>
     class ConcurrentPerfectClearFinder {
     public:
         ConcurrentPerfectClearFinder<M>(const core::Factory &factory, ThreadPool &threadPool)
@@ -25,7 +25,7 @@ namespace finder {
         ) {
             if (maxDepth == 1) {
                 auto moveGenerator = M(factory_);
-                auto finder = PerfectClearFinder<Allow180, M>(factory_, moveGenerator);
+                auto finder = PerfectClearFinder<Allow180, AllowSoftdropTap, M>(factory_, moveGenerator);
                 return finder.run(
                         field, pieces, maxDepth, maxLine, holdEmpty, leastLineClears, initCombo, initB2b,
                         searchTypes, alwaysRegularAttack, lastHoldPriority, fastSearchStartDepth
@@ -117,7 +117,7 @@ namespace finder {
 
                             auto moveGenerator = M(factory_);
                             auto reachable = core::srs_rotate_end::Reachable(factory_);
-                            auto finder = PCFindRunner<Allow180, M, Candidate, Record>(
+                            auto finder = PCFindRunner<Allow180, AllowSoftdropTap, M, Candidate, Record>(
                                     factory_, moveGenerator, reachable, runnerStatus_
                             );
 
@@ -236,8 +236,9 @@ namespace finder {
 
                             auto moveGenerator = M(factory_);
                             auto reachable = core::srs_rotate_end::Reachable(factory_);
-                            auto finder = PCFindRunner<Allow180, M, Candidate, Record>(factory_, moveGenerator, reachable,
-                                                                             runnerStatus_);
+                            auto finder = PCFindRunner<Allow180, AllowSoftdropTap, M>(
+                                factory_, moveGenerator, reachable, runnerStatus_
+                            );
                             Record record;
                             {
                                 std::lock_guard<std::mutex> guard(mutex);
@@ -350,7 +351,7 @@ namespace finder {
 
                             auto moveGenerator = M(factory_);
                             auto reachable = core::srs_rotate_end::Reachable(factory_);
-                            auto finder = PCFindRunner<Allow180, M, Candidate, Record>(
+                            auto finder = PCFindRunner<Allow180, AllowSoftdropTap, M, Candidate, Record>(
                                     factory_, moveGenerator, reachable, runnerStatus_
                             );
 
@@ -517,12 +518,12 @@ namespace finder {
                 const core::Field &field,
                 const C &candidate,
                 M &moveGenerator,
-                core::srs_rotate_end::Reachable<> &reachable,
+                core::srs_rotate_end::Reachable<Allow180, AllowSoftdropTap> &reachable,
                 std::vector<core::Move> &moves,
                 const std::vector<core::PieceType> &pieces,
                 std::vector<PreOperation<C>> &output
         ) const {
-            auto mover = Mover<Allow180, M, C>(factory_, moveGenerator, reachable);
+            auto mover = Mover<Allow180, AllowSoftdropTap, M, C>(factory_, moveGenerator, reachable);
 
             int pieceSize = pieces.size();
 
@@ -585,7 +586,7 @@ namespace finder {
         const core::Factory &factory_;
         ThreadPool &threadPool_;
         M moveGenerator_;
-        core::srs_rotate_end::Reachable<> reachable_;
+        core::srs_rotate_end::Reachable<Allow180, AllowSoftdropTap> reachable_;
         RunnerStatus runnerStatus_{};
     };
 }

@@ -255,6 +255,21 @@ namespace core {
                 EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 4, 3, true}));
                 EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 5, 2, false}));
             }
+            {
+                constexpr bool Allow180 = false;
+                constexpr bool AllowSoftdropTap = false;
+                auto generator = MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::J, 4);
+
+                EXPECT_EQ(moves.size(), 3);
+                EXPECT_FALSE(assertMove(moves, Move{RotateType::Spawn, 5, 2, false}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Right, 4, 1, true}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 3, 3, true}));
+                EXPECT_TRUE(assertMove(moves, Move{RotateType::Reverse, 4, 3, true}));
+                EXPECT_FALSE(assertMove(moves, Move{RotateType::Reverse, 5, 2, false}));
+            }
         }
     }
 
@@ -385,6 +400,47 @@ namespace core {
 
                 EXPECT_TRUE(reachable.checks(field, PieceType::T, RotateType::Right, 1, 1, 24));
                 EXPECT_TRUE(reachable.checks(field, PieceType::T, RotateType::Left, 1, 2, 24));
+            }
+        }
+
+        TEST_F(SRSRotateEndReachableTest, case3) {
+            auto factory = Factory::create();
+
+            {
+                // constexpr bool Allow180 = false;
+                // constexpr bool AllowSoftdropTap = true;
+                auto reachable = Reachable(factory);
+
+                auto field = createField(
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XX____XXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        ""
+                );
+
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Spawn, 3, 3, 24));
+                EXPECT_TRUE(reachable.checks(field, PieceType::I, RotateType::Reverse, 4, 3, 24));
+            }
+            {
+                constexpr bool Allow180 = false;
+                constexpr bool AllowSoftdropTap = false;
+                auto reachable = Reachable<Allow180, AllowSoftdropTap>(factory);
+
+                auto field = createField(
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XX____XXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        "XXXX_XXXXX"s +
+                        ""
+                );
+
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Spawn, 3, 3, 24));
+                EXPECT_FALSE(reachable.checks(field, PieceType::I, RotateType::Reverse, 4, 3, 24));
             }
         }
     }
