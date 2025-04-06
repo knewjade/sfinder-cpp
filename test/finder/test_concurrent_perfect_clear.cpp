@@ -96,7 +96,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case1) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "XXXXX__XXX"s +
@@ -123,7 +123,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case2) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "XXXXX__XXX"s +
@@ -157,7 +157,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case3) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -186,7 +186,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case4) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -222,7 +222,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case5) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "____XXXXXX"s +
@@ -265,7 +265,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, case6) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "XX________"s +
@@ -340,7 +340,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, longtest1) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "XX________"s +
@@ -385,7 +385,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, longtest2) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         auto field = core::createField(
                 "__________"s +
@@ -429,7 +429,7 @@ namespace finder {
     TEST_F(ConcurrentPerfectClearTest, twoLineFollowUp) {
         auto factory = core::Factory::create();
         auto threadPool = ThreadPool(4);
-        auto finder = ConcurrentPerfectClearFinder<core::srs::MoveGenerator>(factory, threadPool);
+        auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
 
         {
             auto field = core::createField(

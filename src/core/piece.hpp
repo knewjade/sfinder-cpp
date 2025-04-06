@@ -161,7 +161,7 @@ namespace core {
         const Blocks &get(PieceType piece, RotateType rotate) const;
 
     private:
-        Factory(std::array<Piece, 7> &pieces, std::array<Blocks, 28> &blocks) : pieces(pieces), blocks(blocks) {
+        Factory(const std::array<Piece, 7> &pieces, const std::array<Blocks, 28> &blocks) : pieces(pieces), blocks(blocks) {
         };
 
         const std::array<Piece, 7> pieces;

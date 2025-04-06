@@ -51,9 +51,10 @@ void benchmark() {
             ""
     );
 
-    auto factory = core::Factory::create();
-    auto moveGenerator = core::srs::MoveGenerator(factory);
-    auto finder = finder::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+    auto factory = core::Factory::createForSSRPlus();
+    constexpr bool Allow180 = true;
+    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+    auto finder = finder::PerfectClearFinder<Allow180>(factory, moveGenerator);
 
     {
         auto elapsed = std::chrono::system_clock::now() - start;
@@ -75,7 +76,7 @@ void benchmark() {
 
         auto start2 = std::chrono::system_clock::now();
 
-        auto result = finder.run(field, pieces, maxDepth, maxLine, false);
+        auto result = finder.run(field, pieces, maxLine, false);
 
         if (!result.empty()) {
             success += 1;
@@ -106,8 +107,9 @@ void sample() {
     using namespace std::literals::string_literals;
 
     auto factory = core::Factory::create();
+    // constexpr bool Allow180 = true;
     auto moveGenerator = core::srs::MoveGenerator(factory);
-    auto finder = finder::PerfectClearFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+    auto finder = finder::PerfectClearFinder(factory, moveGenerator);
 
     auto field = core::createField(
             "_XXXXXX___"s +
@@ -126,7 +128,7 @@ void sample() {
     const bool holdEmpty = false;  // If true, hold is empty at start
 
     auto result = finder.run(
-            field, pieces, maxDepth, maxLine, holdEmpty, false, 0, finder::SearchTypes::TSpin
+            field, pieces, maxLine, holdEmpty
     );
 
     if (!result.empty()) {
@@ -150,7 +152,7 @@ void sample() {
 }
 
 int main() {
-//    benchmark();
+    benchmark();
     sample();
 
     return 0;

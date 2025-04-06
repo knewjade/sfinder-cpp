@@ -66,7 +66,7 @@ namespace finder {
         AllSpins = 2,
     };
 
-    template<class M, class C>
+    template<bool Allow180, class M, class C>
     class Mover;
 
     template<class C, class R>
@@ -91,18 +91,18 @@ namespace finder {
     };
 
     // Main finder implementation
-    template<class M = core::srs::MoveGenerator, class C = TSpinCandidate, class R = TSpinRecord>
+    template<bool Allow180 = false, class M = core::srs::MoveGenerator<Allow180>, class C = TSpinCandidate, class R = TSpinRecord>
     class PCFindRunner {
     public:
-        PCFindRunner<M, C, R>(
-                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable,
+        PCFindRunner(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable<Allow180> &reachable,
                 RunnerStatus &status
-        ) : mover(Mover<M, C>(factory, moveGenerator, reachable)), recorder(Recorder<C, R>()),
+        ) : mover(Mover<Allow180, M, C>(factory, moveGenerator, reachable)), recorder(Recorder<C, R>()),
             status(status) {
         }
 
-        PCFindRunner<M, C, R>(
-                PCFindRunner<M, C, R> &&rhs
+        PCFindRunner(
+                PCFindRunner &&rhs
         ) : mover(std::move(rhs.mover)), recorder(std::move(rhs.recorder)), status(rhs.status) {}
 
         Solution run(const Configure &configure, const core::Field &field, const C &candidate) {
@@ -213,17 +213,17 @@ namespace finder {
         }
 
     private:
-        Mover<M, C> mover;
+        Mover<Allow180, M, C> mover;
         Recorder<C, R> recorder;
         RunnerStatus &status;
     };
 
     // Mover implementations
-    template<class M>
-    class Mover<M, TSpinCandidate> {
+    template<bool Allow180, class M>
+    class Mover<Allow180, M, TSpinCandidate> {
     public:
-        Mover<M, TSpinCandidate>(
-                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+        Mover(
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable<Allow180> &reachable
         ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
@@ -238,7 +238,7 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PCFindRunner<M, TSpinCandidate, TSpinRecord> *finder
+                PCFindRunner<Allow180, M> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -262,7 +262,7 @@ namespace finder {
                     operation.x = move.x;
                     operation.y = move.y;
 
-                    int tSpinAttack = !lastDepth ? getAttackIfTSpin(
+                    int tSpinAttack = !lastDepth ? getAttackIfTSpin<Allow180>(
                             moveGenerator, reachable, factory, field, pieceType, move, numCleared, candidate.b2b
                     ) : 0;
 
@@ -311,7 +311,7 @@ namespace finder {
                     operation.x = s.move.x;
                     operation.y = s.move.y;
 
-                    int tSpinAttack = !lastDepth ? getAttackIfTSpin(
+                    int tSpinAttack = !lastDepth ? getAttackIfTSpin<Allow180>(
                             moveGenerator, reachable, factory, field, pieceType, s.move, s.numCleared, candidate.b2b
                     ) : 0;
 
@@ -420,14 +420,14 @@ namespace finder {
     private:
         const core::Factory &factory;
         M &moveGenerator;
-        core::srs_rotate_end::Reachable reachable;
+        core::srs_rotate_end::Reachable<Allow180> reachable;
     };
 
-    template<class M>
-    class Mover<M, FastCandidate> {
+    template<bool Allow180, class M>
+    class Mover<Allow180, M, FastCandidate> {
     public:
         Mover<M, FastCandidate>(
-                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable<Allow180> &reachable
         ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
@@ -442,7 +442,7 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PCFindRunner<M, FastCandidate, FastRecord> *finder
+                PCFindRunner<Allow180, M, FastCandidate, FastRecord> *finder
         ) {
             assert(0 < candidate.leftLine);
 
@@ -591,14 +591,14 @@ namespace finder {
     private:
         const core::Factory &factory;
         M &moveGenerator;
-        core::srs_rotate_end::Reachable reachable;
+        core::srs_rotate_end::Reachable<Allow180> reachable;
     };
 
-    template<class M>
-    class Mover<M, AllSpinsCandidate> {
+    template<bool Allow180, class M>
+    class Mover<Allow180, M, AllSpinsCandidate> {
     public:
         Mover<M, AllSpinsCandidate>(
-                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable &reachable
+                const core::Factory &factory, M &moveGenerator, core::srs_rotate_end::Reachable<Allow180> &reachable
         ) : factory(factory), moveGenerator(moveGenerator), reachable(reachable) {
         }
 
@@ -613,11 +613,11 @@ namespace finder {
                 int nextIndex,
                 int nextHoldIndex,
                 int nextHoldCount,
-                PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord> *finder
+                PCFindRunner<Allow180, M, AllSpinsCandidate, AllSpinsRecord> *finder
         ) {
             assert(0 < candidate.leftLine);
 
-            auto getAttack = configure.alwaysRegularAttack ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
+            auto getAttack = configure.alwaysRegularAttack ? getAttackIfAllSpins<true, Allow180> : getAttackIfAllSpins<false, Allow180>;
 
             moveGenerator.search(moves, field, pieceType, candidate.leftLine);
 
@@ -755,7 +755,7 @@ namespace finder {
         ) {
             assert(0 < candidate.leftLine);
 
-            auto getAttack = alwaysRegularAttack ? getAttackIfAllSpins<true> : getAttackIfAllSpins<false>;
+            auto getAttack = alwaysRegularAttack ? getAttackIfAllSpins<true, Allow180> : getAttackIfAllSpins<false, Allow180>;
 
             moveGenerator.search(moves, field, pieceType, candidate.leftLine);
 
@@ -817,7 +817,7 @@ namespace finder {
     private:
         const core::Factory &factory;
         M &moveGenerator;
-        core::srs_rotate_end::Reachable reachable;
+        core::srs_rotate_end::Reachable<Allow180> reachable;
     };
 
     // Recorder defines
@@ -891,11 +891,11 @@ namespace finder {
     };
 
     // Entry point to find best perfect clear
-    template<class M = core::srs::MoveGenerator>
+    template<bool Allow180 = false, class M = core::srs::MoveGenerator<Allow180>>
     class PerfectClearFinder {
     public:
-        PerfectClearFinder<M>(const core::Factory &factory, M &moveGenerator)
-                : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable(factory)) {
+        PerfectClearFinder(const core::Factory &factory, M &moveGenerator)
+                : factory(factory), moveGenerator(moveGenerator), reachable(core::srs_rotate_end::Reachable<Allow180>(factory)) {
         }
 
         // If `alwaysRegularAttack` is true, mini spin is judged as regular attack
@@ -945,7 +945,7 @@ namespace finder {
                                      : FastCandidate{1, 0, maxLine, 0, 0, 0, 0,
                                                      initCombo, initCombo};
 
-                    auto finder = PCFindRunner<M, FastCandidate, FastRecord>(
+                    auto finder = PCFindRunner<Allow180, M, FastCandidate, FastRecord>(
                             factory, moveGenerator, reachable, status
                     );
                     return finder.run(configure, freeze, candidate);
@@ -963,7 +963,7 @@ namespace finder {
                                      : TSpinCandidate{1, 0, maxLine, 0, 0, 0, 0,
                                                       initCombo, initCombo, 0, initB2b, leftNumOfT};
 
-                    auto finder = PCFindRunner<M, TSpinCandidate, TSpinRecord>(
+                    auto finder = PCFindRunner<Allow180, M>(
                             factory, moveGenerator, reachable, status
                     );
                     return finder.run(configure, freeze, candidate);
@@ -976,7 +976,7 @@ namespace finder {
                                      : AllSpinsCandidate{1, 0, maxLine, 0, 0, 0, 0,
                                                          initCombo, initCombo, 0, initB2b};
 
-                    auto finder = PCFindRunner<M, AllSpinsCandidate, AllSpinsRecord>(
+                    auto finder = PCFindRunner<Allow180, M, AllSpinsCandidate, AllSpinsRecord>(
                             factory, moveGenerator, reachable, status
                     );
                     return finder.run(configure, freeze, candidate);
@@ -1085,7 +1085,7 @@ namespace finder {
     private:
         const core::Factory &factory;
         M &moveGenerator;
-        core::srs_rotate_end::Reachable reachable;
+        core::srs_rotate_end::Reachable<Allow180> reachable;
         RunnerStatus status{};
     };
 }
