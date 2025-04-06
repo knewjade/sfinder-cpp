@@ -51,9 +51,11 @@ void benchmark() {
             ""
     );
 
+    constexpr bool Allow180 = true;
+
     auto factory = core::Factory::create();
-    auto moveGenerator = core::srs::MoveGenerator(factory);
-    auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+    auto finder = finder::PerfectFinder(factory, moveGenerator);
 
     {
         auto elapsed = std::chrono::system_clock::now() - start;
@@ -105,9 +107,11 @@ void benchmark() {
 void sample() {
     using namespace std::literals::string_literals;
 
+    constexpr bool Allow180 = true;
+
     auto factory = core::Factory::create();
-    auto moveGenerator = core::srs::MoveGenerator(factory);
-    auto finder = finder::PerfectFinder<core::srs::MoveGenerator>(factory, moveGenerator);
+    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+    auto finder = finder::PerfectFinder(factory, moveGenerator);
 
     auto field = core::createField(
             "_XXXXXX___"s +
