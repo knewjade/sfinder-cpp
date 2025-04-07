@@ -271,6 +271,38 @@ namespace core {
                 EXPECT_FALSE(assertMove(moves, Move{RotateType::Reverse, 5, 2, false}));
             }
         }
+
+        TEST_F(SRSMoveGeneratorTest, case9) {
+            auto field = createField(
+                    "__XXXXXXXX"s +
+                    "________XX"s +
+                    "________XX"s +
+                    "XXXXXX____"s +
+                    "XXXXXX____"s +
+                    ""
+            );
+
+            auto factory = Factory::create();
+
+            {
+                auto generator = MoveGenerator(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::T, 5);
+
+                EXPECT_EQ(moves.size(), 23);
+            }
+            {
+                constexpr bool Allow180 = false;
+                constexpr bool AllowSoftdropTap = false;
+                auto generator = MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+
+                auto moves = std::vector<Move>();
+                generator.search(moves, field, PieceType::T, 5);
+
+                EXPECT_EQ(moves.size(), 23);
+            }
+        }
     }
 
     namespace srs_rotate_end {

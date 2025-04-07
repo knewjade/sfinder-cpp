@@ -55,8 +55,9 @@ void benchmark() {
 
     auto factory = core::Factory::createForSSRPlus();
     constexpr bool Allow180 = true;
-    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
-    auto finder = finder::PerfectClearFinder<Allow180>(factory, moveGenerator);
+    constexpr bool AllowSoftdropTap = true;
+    auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+    auto finder = finder::PerfectClearFinder<Allow180, AllowSoftdropTap>(factory, moveGenerator);
 
     {
         auto elapsed = std::chrono::system_clock::now() - start;
