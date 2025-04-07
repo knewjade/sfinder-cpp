@@ -337,6 +337,43 @@ namespace finder {
         }
     }
 
+    TEST_F(ConcurrentPerfectClearTest, case7_srsplus_r180) {
+        auto factory = core::Factory::createForSSRPlus();
+        auto threadPool = ThreadPool(4);
+
+        auto field = core::createField(
+                "XXX___XXXX"s +
+                "X_XX__XXXX"s +
+                "__XX__XXXX"s +
+                "X_____XXXX"s +
+                "X_____XXXX"s +
+                ""
+        );
+        auto maxLine = 5;
+
+        {
+            // constexpr bool Allow180 = false;
+            auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
+            auto pieces = std::vector{
+                core::PieceType::T, core::PieceType::T, core::PieceType::T, core::PieceType::T,
+                core::PieceType::T,
+            };
+            auto result = finder.run(field, pieces, maxLine, true);
+            EXPECT_FALSE(!result.empty());
+        }
+        {
+            constexpr bool Allow180 = true;
+            auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
+            auto finder = PerfectClearFinder<Allow180>(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::T, core::PieceType::T, core::PieceType::T, core::PieceType::T,
+                core::PieceType::T,
+            };
+            auto result = finder.run(field, pieces, maxLine, true);
+            EXPECT_TRUE(!result.empty());
+        }
+    }
+
     // Equivalent to PerfectClearTest::case8
     TEST_F(ConcurrentPerfectClearTest, case8) {
         auto factory = core::Factory::create();
@@ -411,6 +448,42 @@ namespace finder {
                 EXPECT_EQ(result[index].x, expected[index].x);
                 EXPECT_EQ(result[index].y, expected[index].y);
             }
+        }
+    }
+
+    TEST_F(ConcurrentPerfectClearTest, case9) {
+        auto factory = core::Factory::createForSSRPlus();
+        auto threadPool = ThreadPool(4);
+
+        auto field = core::createField(
+                "XXXX_XXX__"s +
+                "XX____XX__"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                ""
+        );
+        auto maxLine = 5;
+
+        {
+            // constexpr bool Allow180 = false;
+            // constexpr bool AllowSoftdropTap = true;
+            auto finder = ConcurrentPerfectClearFinder(factory, threadPool);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+        }
+        {
+            constexpr bool Allow180 = false;
+            constexpr bool AllowSoftdropTap = false;
+            auto finder = ConcurrentPerfectClearFinder<Allow180, AllowSoftdropTap>(factory, threadPool);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_FALSE(!result.empty());
         }
     }
 

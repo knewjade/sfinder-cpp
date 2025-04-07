@@ -4,9 +4,8 @@
 
 namespace core {
     namespace {
-        constexpr unsigned int kFieldWidthUnsigned = static_cast<unsigned int> (FIELD_WIDTH);
+        constexpr unsigned int kFieldWidthUnsigned = FIELD_WIDTH;
         constexpr int kFieldWidth = FIELD_WIDTH;
-        constexpr int kMaxFieldHeight = MAX_FIELD_HEIGHT;
     }
 
     namespace {
@@ -38,6 +37,28 @@ namespace core {
 
         int boardIndex = index + 4 * rotateType;
         return (visitedBoard[boardIndex] & mask) != 0;
+    }
+
+    void Cache::visitPartially(int x, int y, RotateType rotateType) {
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
+
+        int index = y / 6;
+        uint64_t mask = getXMask(x, y - 6 * index);
+
+        int boardIndex = index + 4 * rotateType;
+        visitedPartiallyBoard[boardIndex] |= mask;
+    }
+
+    bool Cache::isVisitPartially(int x, int y, core::RotateType rotateType) const {
+        assert(0 <= x && x < kFieldWidth);
+        assert(0 <= y && y < kMaxFieldHeight);
+
+        int index = y / 6;
+        uint64_t mask = getXMask(x, y - 6 * index);
+
+        int boardIndex = index + 4 * rotateType;
+        return (visitedPartiallyBoard[boardIndex] & mask) != 0;
     }
 
     void Cache::found(int x, int y, RotateType rotateType) {
@@ -82,24 +103,6 @@ namespace core {
 
         int boardIndex = index + 4 * rotateType;
         return (pushedBoard[boardIndex] & mask) != 0;
-    }
-
-    void Cache::clear() {
-        for (auto &board : visitedBoard) {
-            board = 0;
-        }
-        for (auto &board : foundBoard) {
-            board = 0;
-        }
-        for (auto &board : pushedBoard) {
-            board = 0;
-        }
-    }
-
-    void Cache::resetTrail() {
-        for (auto &board : visitedBoard) {
-            board = 0;
-        }
     }
 
     namespace harddrop {

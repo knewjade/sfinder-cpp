@@ -373,6 +373,43 @@ namespace finder {
         }
     }
 
+    TEST_F(PerfectClearTest, case9) {
+        auto factory = core::Factory::create();
+
+        auto field = core::createField(
+                "XXXX_XXXXX"s +
+                "XX____XXXX"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                "XXXX_XXXXX"s +
+                ""
+        );
+        auto maxLine = 5;
+
+        {
+            // constexpr bool Allow180 = false;
+            // constexpr bool AllowSoftdropTap = true;
+            auto moveGenerator = core::srs::MoveGenerator(factory);
+            auto finder = PerfectClearFinder(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_TRUE(!result.empty());
+        }
+        {
+            constexpr bool Allow180 = false;
+            constexpr bool AllowSoftdropTap = false;
+            auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+            auto finder = PerfectClearFinder<Allow180, AllowSoftdropTap>(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::O, core::PieceType::I, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_FALSE(!result.empty());
+        }
+    }
+
     TEST_F(PerfectClearTest, longtest1) {
         auto factory = core::Factory::create();
         auto moveGenerator = core::srs::MoveGenerator(factory);

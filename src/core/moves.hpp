@@ -50,17 +50,48 @@ namespace core {
 
         [[nodiscard]] bool isFound(int x, int y, RotateType rotateType) const;
 
+        void visitPartially(int x, int y, RotateType rotateType);
+
+        [[nodiscard]] bool isVisitPartially(int x, int y, RotateType rotateType) const;
+
         void push(int x, int y, RotateType rotateType);
 
         [[nodiscard]] bool isPushed(int x, int y, RotateType rotateType) const;
 
-        void resetTrail();
+        template<bool AllowSoftdropTap>
+        void clear() {
+            for (auto &board: visitedBoard) {
+                board = 0;
+            }
+            if constexpr (!AllowSoftdropTap) {
+                for (auto &board: visitedPartiallyBoard) {
+                    board = 0;
+                }
+            }
+            for (auto &board: foundBoard) {
+                board = 0;
+            }
+            for (auto &board: pushedBoard) {
+                board = 0;
+            }
+        }
 
-        void clear();
+        template<bool AllowSoftdropTap>
+        void resetTrail() {
+            for (auto &board: visitedBoard) {
+                board = 0;
+            }
+            if constexpr (!AllowSoftdropTap) {
+                for (auto &board: visitedPartiallyBoard) {
+                    board = 0;
+                }
+            }
+        }
 
     private:
         Bitboard visitedBoard[4 * 4];
         Bitboard foundBoard[4 * 4];
+        Bitboard visitedPartiallyBoard[4 * 4];
         Bitboard pushedBoard[4 * 4];
     };
 
@@ -82,24 +113,25 @@ namespace core {
             None,
             Right,
             Left,
+            Down,
         };
 
-        template<bool Allow180 = false>
+        template<bool Allow180 = false, bool AllowSoftdropTap = true>
         class MoveGenerator {
         public:
             explicit MoveGenerator(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
             }
 
-            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight)  {
+            void search(std::vector<Move> &moves, const Field &field, PieceType pieceType, int validHeight) {
                 appearY = validHeight;
 
-                cache.clear();
+                cache.clear<AllowSoftdropTap>();
 
                 auto &piece = factory.get(pieceType);
                 auto target = TargetObject{field, piece};
 
                 for (int rotate = 0; rotate < 4; ++rotate) {
-                    auto rotateType = static_cast<RotateType >(rotate);
+                    auto rotateType = static_cast<RotateType>(rotate);
 
                     auto &blocks = factory.get(pieceType, rotateType);
                     for (int x = -blocks.minX, maxX = FIELD_WIDTH - blocks.maxX; x < maxX; ++x) {
@@ -118,19 +150,20 @@ namespace core {
                                         moves.push_back(Move{newRotate, newX, newY, result == MoveResults::Harddrop});
                                     }
                                 }
-                                cache.resetTrail();
+                                cache.resetTrail<AllowSoftdropTap>();
                             }
                         }
                     }
                 }
             }
 
-            bool canReach(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y, int validHeight) {
+            bool canReach(const Field &field, PieceType pieceType, RotateType rotateType, int x, int y,
+                          int validHeight) {
                 assert(field.canPut(factory.get(pieceType, rotateType), x, y));
 
                 appearY = validHeight;
 
-                cache.clear();
+                cache.clear<AllowSoftdropTap>();
 
                 auto &piece = factory.get(pieceType);
 
@@ -294,34 +327,53 @@ namespace core {
             }
 
             MoveResults check(
-                    const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from, bool isFirstCall
+                const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from, bool isFirstCall
             ) {
                 auto &field = targetObject.field;
 
+                // When AllowSoftdropTap is false, vertical movement is only allowed down to the ground. (= can be moved with Harddrop).
+                // In other words, upward movement is only allowed during continuous rise from the ground or on the ground.
+                bool allowUp = true;
+                if constexpr (!AllowSoftdropTap) {
+                    allowUp = from == From::Down || field.isOnGround(blocks, x, y);
+                }
+
                 // When reach by harddrop
-                if (field.canReachOnHarddrop(blocks, x, y)) {
+                if (allowUp && field.canReachOnHarddrop(blocks, x, y)) {
                     return isFirstCall ? MoveResults::Harddrop : MoveResults::Softdrop;
                 }
 
                 // When reach the top
-                if (appearY <= y) {
+                if (allowUp && appearY <= y) {
                     return MoveResults::Softdrop;
                 }
 
                 RotateType rotate = blocks.rotateType;
 
-                // Visited already
-                if (cache.isVisit(x, y, rotate)) {
-                    // Return no when it has been visited and not found because it can be covered by other path
-                    return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
-                }
+                // Since the possible operations differ depending on whether it's in the air or not,
+                // the states are managed separately so that each state can be searched.
+                if (allowUp) {
+                    // Visited already
+                    if (cache.isVisit(x, y, rotate)) {
+                        // Return no when it has been visited and not found because it can be covered by other path
+                        return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+                    }
 
-                cache.visit(x, y, rotate);
+                    cache.visit(x, y, rotate);
+                } else {
+                    // Visited already
+                    if (cache.isVisitPartially(x, y, rotate)) {
+                        // Return no when it has been visited and not found because it can be covered by other path
+                        return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+                    }
+
+                    cache.visitPartially(x, y, rotate);
+                }
 
                 // Move up
                 int upY = y + 1;
-                if (upY < appearY && field.canPut(blocks, x, upY)) {
-                    auto result = check(targetObject, blocks, x, upY, From::None, false);
+                if (allowUp && upY < appearY && field.canPut(blocks, x, upY)) {
+                    auto result = check(targetObject, blocks, x, upY, From::Down, false);
                     if (result != MoveResults::No) {
                         return result;
                     }
@@ -379,9 +431,10 @@ namespace core {
             None,
             Right,
             Left,
+            Down,
         };
 
-        template<bool Allow180 = false>
+        template<bool Allow180 = false, bool AllowSoftdropTap = true>
         class Reachable {
         public:
             explicit Reachable(const Factory &factory) : factory(factory), cache(Cache()), appearY(-1) {
@@ -392,7 +445,7 @@ namespace core {
 
                 appearY = validHeight;
 
-                cache.clear();
+                cache.clear<AllowSoftdropTap>();
 
                 auto &piece = factory.get(pieceType);
 
@@ -586,29 +639,48 @@ namespace core {
             MoveResults check(const TargetObject &targetObject, const Blocks &blocks, int x, int y, From from) {
                 auto &field = targetObject.field;
 
+                // When AllowSoftdropTap is false, vertical movement is only allowed down to the ground. (= can be moved with Harddrop).
+                // In other words, upward movement is only allowed during continuous rise from the ground or on the ground.
+                bool allowUp = true;
+                if constexpr (!AllowSoftdropTap) {
+                    allowUp = from == From::Down || field.isOnGround(blocks, x, y);
+                }
+
                 // When reach by harddrop
-                if (field.canReachOnHarddrop(blocks, x, y)) {
+                if (allowUp && field.canReachOnHarddrop(blocks, x, y)) {
                     return MoveResults::Softdrop;
                 }
 
                 // When reach the top
-                if (appearY <= y) {
+                if (allowUp && appearY <= y) {
                     return MoveResults::Softdrop;
                 }
 
                 RotateType rotate = blocks.rotateType;
 
-                // Visited already
-                if (cache.isVisit(x, y, rotate)) {
-                    // Return no when it has been visited and not found because it can be covered by other path
-                    return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
-                }
+                // Since the possible operations differ depending on whether it's in the air or not,
+                // the states are managed separately so that each state can be searched.
+                if (allowUp) {
+                    // Visited already
+                    if (cache.isVisit(x, y, rotate)) {
+                        // Return no when it has been visited and not found because it can be covered by other path
+                        return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+                    }
 
-                cache.visit(x, y, rotate);
+                    cache.visit(x, y, rotate);
+                } else {
+                    // Visited already
+                    if (cache.isVisitPartially(x, y, rotate)) {
+                        // Return no when it has been visited and not found because it can be covered by other path
+                        return cache.isFound(x, y, rotate) ? MoveResults::Softdrop : MoveResults::No;
+                    }
+
+                    cache.visitPartially(x, y, rotate);
+                }
 
                 // Move up
                 int upY = y + 1;
-                if (upY < appearY && field.canPut(blocks, x, upY)) {
+                if (allowUp && upY < appearY && field.canPut(blocks, x, upY)) {
                     auto result = check(targetObject, blocks, x, upY, From::None);
                     if (result != MoveResults::No) {
                         return result;

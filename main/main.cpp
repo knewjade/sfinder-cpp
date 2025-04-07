@@ -6,7 +6,9 @@
 #include "core/moves.hpp"
 #include "core/field.hpp"
 #include "core/types.hpp"
+#include "finder/concurrent_perfect_clear.hpp"
 #include "finder/perfect_clear.hpp"
+#include "finder/thread_pool.hpp"
 
 template<int N>
 std::array<core::PieceType, N> toPieces(int value) {
@@ -53,8 +55,9 @@ void benchmark() {
 
     auto factory = core::Factory::createForSSRPlus();
     constexpr bool Allow180 = true;
-    auto moveGenerator = core::srs::MoveGenerator<Allow180>(factory);
-    auto finder = finder::PerfectClearFinder<Allow180>(factory, moveGenerator);
+    constexpr bool AllowSoftdropTap = true;
+    auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+    auto finder = finder::PerfectClearFinder<Allow180, AllowSoftdropTap>(factory, moveGenerator);
 
     {
         auto elapsed = std::chrono::system_clock::now() - start;
@@ -107,9 +110,10 @@ void sample() {
     using namespace std::literals::string_literals;
 
     auto factory = core::Factory::create();
-    // constexpr bool Allow180 = true;
-    auto moveGenerator = core::srs::MoveGenerator(factory);
-    auto finder = finder::PerfectClearFinder(factory, moveGenerator);
+    constexpr bool Allow180 = true;
+    constexpr bool AllowSoftdropTap = false;
+    auto threadPool = finder::ThreadPool(4);
+    auto finder = finder::ConcurrentPerfectClearFinder<Allow180, AllowSoftdropTap>(factory, threadPool);
 
     auto field = core::createField(
             "_XXXXXX___"s +
