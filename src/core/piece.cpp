@@ -363,8 +363,8 @@ namespace core {
             Offset{0, 0}, { -1, 0},{-1, 2},{ -1,1},{0, 2},{0,1},
         };
 
-        constexpr auto i0To2Offset = Offset{1, 0};
-        constexpr auto iRToLOffset = Offset{0, -1};
+        constexpr auto i0To2Offset = Offset{1, -1};
+        constexpr auto iRToLOffset = Offset{-1, -1};
         const std::array<Offset, 24> iRotate180Offsets{
             // from Spawn
             otherRotate180Offsets[0] + i0To2Offset, otherRotate180Offsets[1] + i0To2Offset, otherRotate180Offsets[2] + i0To2Offset,
