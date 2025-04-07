@@ -1123,6 +1123,25 @@ namespace core {
             }
         }
 
+        TEST_F(SRSPlusRotationTest, case_i_180_from_spawn_no_kick) {
+            auto factory = Factory::createForSSRPlus();
+            auto &piece = factory.get(I);
+
+            constexpr auto bias = 0;
+
+            {
+                const auto field = createField(""s +
+                        "__XXXXXX__"s +
+                        "__X    X__"s +
+                        "__X____X__"s +
+                        "__XXXXXX__"s +
+                        ""
+                );
+                const auto index = rotate180(field, piece, Spawn, Reverse, 4, 2);
+                EXPECT_EQ(index - bias, 0);
+            }
+        }
+
         TEST_F(SRSPlusRotationTest, case_i_180_from_spawn) {
             auto factory = Factory::createForSSRPlus();
             auto &piece = factory.get(I);
@@ -1137,11 +1156,11 @@ namespace core {
                         ""
                 );
                 const auto index = rotate180(field, piece, Spawn, Reverse, 4, 1);
-                EXPECT_EQ(index - bias, 0);
+                EXPECT_EQ(index - bias, 1);
             }
         }
 
-        TEST_F(SRSPlusRotationTest, case_i_180_from_right) {
+        TEST_F(SRSPlusRotationTest, case_i_180_from_right_no_kick) {
             auto factory = Factory::createForSSRPlus();
             auto &piece = factory.get(I);
 
@@ -1158,6 +1177,46 @@ namespace core {
                         ""
                 );
                 const auto index = rotate180(field, piece, Right, Left, 5, 3);
+                EXPECT_EQ(index - bias, 1);
+            }
+        }
+
+        TEST_F(SRSPlusRotationTest, case_i_180_from_right) {
+            auto factory = Factory::createForSSRPlus();
+            auto &piece = factory.get(I);
+
+            constexpr auto bias = 6;
+
+            {
+                const auto field = createField(""s +
+                        "___XXXX___"s +
+                        "___X_ X___"s +
+                        "___X_ X___"s +
+                        "___X_ X___"s +
+                        "___X_ X___"s +
+                        "XXXXXXXXX_"s +
+                        ""
+                );
+                const auto index = rotate180(field, piece, Right, Left, 5, 3);
+                EXPECT_EQ(index - bias, 0);
+            }
+        }
+
+        TEST_F(SRSPlusRotationTest, case_i_180_from_reverse_no_kick) {
+            auto factory = Factory::createForSSRPlus();
+            auto &piece = factory.get(I);
+
+            constexpr auto bias = 12;
+
+            {
+                const auto field = createField(""s +
+                        "__XXXXXX__"s +
+                        "__X____X__"s +
+                        "__X    X__"s +
+                        "__XXXXXX__"s +
+                        ""
+                );
+                const auto index = rotate180(field, piece, Reverse, Spawn, 5, 1);
                 EXPECT_EQ(index - bias, 0);
             }
         }
@@ -1176,6 +1235,27 @@ namespace core {
                         ""
                 );
                 const auto index = rotate180(field, piece, Reverse, Spawn, 5, 1);
+                EXPECT_EQ(index - bias, 1);
+            }
+        }
+
+        TEST_F(SRSPlusRotationTest, case_i_180_from_left_no_kick) {
+            auto factory = Factory::createForSSRPlus();
+            auto &piece = factory.get(I);
+
+            constexpr auto bias = 18;
+
+            {
+                const auto field = createField(""s +
+                        "___XXXX___"s +
+                        "___X _X___"s +
+                        "___X _X___"s +
+                        "___X _X___"s +
+                        "___X _X___"s +
+                        "XXXXXXXXX_"s +
+                        ""
+                );
+                const auto index = rotate180(field, piece, Left, Right, 4, 2);
                 EXPECT_EQ(index - bias, 0);
             }
         }
@@ -1197,7 +1277,7 @@ namespace core {
                         ""
                 );
                 const auto index = rotate180(field, piece, Left, Right, 5, 2);
-                EXPECT_EQ(index - bias, 0);
+                EXPECT_EQ(index - bias, 1);
             }
         }
     }
