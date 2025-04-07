@@ -339,8 +339,6 @@ namespace finder {
     // Equivalent to ConcurrentPerfectClearTest::case8
     TEST_F(PerfectClearTest, case8) {
         auto factory = core::Factory::create();
-        auto moveGenerator = core::srs::MoveGenerator(factory);
-        auto finder = PerfectClearFinder(factory, moveGenerator);
 
         auto field = core::createField(
                 "XXXX____XX"s +
@@ -352,6 +350,10 @@ namespace finder {
         auto maxLine = 4;
 
         {
+            // constexpr bool Allow180 = false;
+            // constexpr bool AllowSoftdropTap = true;
+            auto moveGenerator = core::srs::MoveGenerator(factory);
+            auto finder = PerfectClearFinder(factory, moveGenerator);
             auto pieces = std::vector{
                 core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
             };
@@ -370,6 +372,17 @@ namespace finder {
                 EXPECT_EQ(result[index].x, expected[index].x);
                 EXPECT_EQ(result[index].y, expected[index].y);
             }
+        }
+        {
+            constexpr bool Allow180 = false;
+            constexpr bool AllowSoftdropTap = false;
+            auto moveGenerator = core::srs::MoveGenerator<Allow180, AllowSoftdropTap>(factory);
+            auto finder = PerfectClearFinder<Allow180, AllowSoftdropTap>(factory, moveGenerator);
+            auto pieces = std::vector{
+                core::PieceType::S, core::PieceType::L, core::PieceType::J, core::PieceType::I,
+            };
+            auto result = finder.run(field, pieces, maxLine, false);
+            EXPECT_FALSE(!result.empty());
         }
     }
 
